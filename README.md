@@ -3,6 +3,8 @@ Unauthorized utilities for scheming up scenes. Move mountains, carve canyons, or
 
 (Power Tools for DQB2)
 
+Big thanks to [prior work by turtle-insect](https://github.com/turtle-insect/DQB2) and others!
+
 Work in Progress!
 
 # Motivating Example
