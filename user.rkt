@@ -31,19 +31,22 @@
 
 {begin
   (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
+  #;(clear-map! stage #:add-chunk-ids? #t)
 
   (define floor-y 40)
   (define hilltop-y (+ floor-y 12))
 
-  (create-floor! stage #:y floor-y)
-  (place-topography! stage top1 #:x 120 #:z 230
-                     #:y-start hilltop-y #:y-end floor-y
-                     #:block (block 'Ice))
-  (place-topography! stage top2 #:x 145 #:z 230
-                     #:y-start hilltop-y #:y-end floor-y
-                     #:block (block 'Ice))
-  (place-topography! stage top3 #:x 170 #:z 230
-                     #:y-start hilltop-y #:y-end floor-y
-                     #:block (block 'Ice))
+  {begin
+    (create-floor! stage #:y floor-y)
+    (place-topography! stage top1 #:x 120 #:z 230
+                       #:y-start hilltop-y #:y-end floor-y
+                       #:block (block 'Ice))
+    (place-topography! stage top2 #:x 145 #:z 230
+                       #:y-start hilltop-y #:y-end floor-y
+                       #:block (block 'Ice))
+    (place-topography! stage top3 #:x 170 #:z 230
+                       #:y-start hilltop-y #:y-end floor-y
+                       #:block (block 'Ice))
+    }
   (save-stgdat! stage)
   }
