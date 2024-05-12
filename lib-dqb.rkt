@@ -3,7 +3,8 @@
 (provide open-stgdat save-stgdat!
          create-floor!
          place-topography!
-         clear-map!)
+         clear-map!
+         put-block!)
 
 (require (submod "lib.rkt" typed))
 
@@ -218,3 +219,14 @@
                 (let ([addr (get-address chunk-id chunk-x y chunk-z)])
                   (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
                   (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16))))))))))
+
+(define (put-block! [stage : Stage] [point : Point] [block : Integer])
+  (let ([chunky (IoA-abs->rel (point-x point) (point-z point))])
+    (and chunky
+         (let ([buffer (stage-buffer stage)]
+               [chunk-id (first chunky)]
+               [chunk-x (second chunky)]
+               [chunk-z (third chunky)])
+           (let ([addr (get-address chunk-id chunk-x (point-y point) chunk-z)])
+             (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
+             (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16)))))))

@@ -6,6 +6,8 @@
          topography->pict
          ; rethink:
          candidates-points
+         steps->path todo
+         point point-x point-y point-z
          )
 
 (require pict
@@ -155,6 +157,53 @@
         (if (distance-from-orig . > . steps)
             #f ; stop expanding
             (list xz (* slope (- distance-from-orig)))))))
+
+  ; Should return next ring... and that's all we need!?!
+  ; As long as we store each ring, that fully defines the shape, right?
+  (define (todo [ring : (Listof Point)]
+                #:max-drop [max-drop : Nonnegative-Integer]
+                #:min-drop [min-drop : Nonnegative-Integer])
+    (define last-y (+ -2 (point-y (first ring))))
+    (: recurse (-> (Listof Point) (Listof Point)))
+    (define (recurse [ring : (Listof Point)])
+      (if (empty? ring)
+          (list)
+          (let* ([w-choices '(1 2 2 3 3 4 4 5)]
+                 [w (list-ref w-choices (random (length w-choices)))]
+                 [w (min w (length ring))]
+                 [delta-y (case (random 2)
+                            [(0) -1]
+                            [(1) 1]
+                            [else (error "assert fail")])]
+                 [_ (set! last-y (+ last-y delta-y))]
+                 [blah (for/list : (Listof Point)
+                         ([p (take ring w)])
+                         (let* ([above-y (point-y p)]
+                                [y (max last-y (- above-y max-drop))]
+                                [y (min y (- above-y min-drop))])
+                           (set! last-y y) ; Hmm...
+                           (point (point-x p)
+                                  y
+                                  ; TODO how do we know which direction to grow?
+                                  ; Hard-coded +1 z here isn't good:
+                                  (+ 1 (point-z p)))))])
+            (append blah (recurse (drop ring w))))))
+    (recurse ring))
+
+  (: steps->path (-> Point (Listof (U 'N 'S 'E 'W)) (Listof Point)))
+  (define (steps->path start dirs)
+    (if (empty? dirs)
+        (list start)
+        (let-values ([(dx dz)
+                      (case (car dirs)
+                        [(N) (values 0 -1)]
+                        [(S) (values 0 1)]
+                        [(E) (values 1 0)]
+                        [(W) (values -1 0)])])
+          (let ([next (point (+ dx (point-x start))
+                             (point-y start)
+                             (+ dz (point-z start)))])
+            (cons start (steps->path next (cdr dirs)))))))
   } ; end of module
 
 (require (submod 'typed))
