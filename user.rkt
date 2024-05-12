@@ -40,12 +40,34 @@
 ; * 98/a8/b8/c8 - concave chisel NW/SW/SE/NE
 ; * d8/e8 - flat chisel hi/lo
 (define-blocks block
+  ; x01 - unbreakable floor of map
   [Earth #x02]
+  [Grassy-Earth #x03]
   [Limegrassy-Earth #x04]
+  [Tilled-Soil #x05]
+  [Clay #x06] ; unsure
+  [Mossy-Earth #x07]
   [Chalk #x08]
   [Chunky-Chalk #x09]
+  [Obsidian #x0A]
+  [Sand #x0B]
+  [Sandstone #x0C]
+  [Sandy-Sandstone #x0D]
+  ; x0E - a reddish block
+  [Ash #x0F] ; unsure
+  ; x10 - illegal
+  ; x11 - purple peat?
+  [Accumulated-Snow #x12] ; unsure
+  [Snow #x13] ; unsure
   [Ice #x14]
   [Clodstone #x15]
+  [Crumbly-Clodstone #x16]
+  [Basalt #x17]
+  ; x18 - nothing?
+  [Lava #x19]
+  [Vault-Wall #x1A]
+  [Viny-Vault-Wall #x1B]
+  ; ======
   [Light-Dolomite #x82]
   [Dark-Dolomite #x83]
   [Stony-Soil #x8D]
