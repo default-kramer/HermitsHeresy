@@ -167,19 +167,13 @@
           #f ; stop expanding
           (list xz (* slope (- distance-from-orig)))))))
 
-; Warning: the `wall` is relative to nothing (global coordinates)
-; but the `interior` is relative to the bounding box, so we store
-; the x/z-offsets to be able to adjust later.
-; This design is questionable...
 (struct ring ([wall : (Listof Point)]
-              [interior : (Setof XZ)]
-              [x-offset : Integer]
-              [z-offset : Integer])
+              [interior : (Setof XZ)])
   #:transparent #:type-name Ring)
 
 (define (ring-inside? [ring : Ring] [p : Point])
-  (let ([x (+ (ring-x-offset ring) (point-x p))]
-        [z (+ (ring-z-offset ring) (point-z p))]
+  (let ([x (point-x p)]
+        [z (point-z p)]
         [interior (ring-interior ring)])
     (set-member? interior (cons x z))))
 
@@ -205,30 +199,26 @@
                     [(width depth)
                      (values (+ 1 (- max-x min-x))
                              (+ 1 (- max-z min-z)))]
-                    ; Mutable vector for computing Group IDs.
-                    ; The XZ coordinates are relative to the bounding box,
-                    ; so the passed-in points must be adjusted accordingly.
-                    [(vec) (ann (make-vector (* width depth) 'unset)
-                                (Vectorof GroupId))])
-        (define (vecget [x : Integer] [z : Integer])
-          (vector-ref vec (+ x (* width z))))
-        (define (vecset! [x : Integer] [z : Integer] [status : GroupId])
-          (vector-set! vec (+ x (* width z)) status))
+                    ; Mutable hash for computing Group IDs.
+                    [(groups) (ann (make-hash) (Mutable-HashTable XZ GroupId))])
+        (define (groups-get [x : Integer] [z : Integer])
+          (hash-ref groups (cons x z) (lambda () 'unset)))
+        (define (groups-set! [x : Integer] [z : Integer] [id : GroupId])
+          (hash-set! groups (cons x z) id))
+
         (for ([point points])
-          (let ([x (- (point-x point) min-x)]
-                [z (- (point-z point) min-z)])
-            (vecset! x z 'wall)))
+          (groups-set! (point-x point) (point-z point) 'wall))
 
         (: flood! (-> Integer Integer Integer Void))
         (define (flood! x z group-id)
-          (when (and (> x -1)
-                     (< x width)
-                     (> z -1)
-                     (< z depth))
-            (let ([existing (vecget x z)])
+          (when (and (>= x min-x)
+                     (<= x max-x)
+                     (>= z min-z)
+                     (<= z max-z))
+            (let ([existing (groups-get x z)])
               (define recurse?
                 (case existing
-                  [(unset) (begin (vecset! x z group-id) #t)]
+                  [(unset) (begin (groups-set! x z group-id) #t)]
                   [else #f]))
               (when recurse?
                 (flood! (+ x -1) z group-id)
@@ -237,26 +227,26 @@
                 (flood! x (+ z 1) group-id))))
           (void))
         (let ([group-id 1])
-          (for ([x (in-range width)])
-            (for ([z (in-range depth)])
+          (for ([x (in-range min-x (+ 1 max-x))])
+            (for ([z (in-range min-z (+ 1 max-z))])
               (set! group-id (+ 1 group-id))
               (flood! x z group-id))))
 
         (define outside-group-ids : (Setof Integer) (set))
         (define (mark-outside! [x : Integer] [z : Integer])
-          (let ([sts (vecget x z)])
+          (let ([sts (groups-get x z)])
             (case sts
               [(unset) (error "Assert fail!")]
               [(wall) (void)]
               [else (set! outside-group-ids (set-add outside-group-ids sts))])))
-        (for ([x (list 0 (+ width -1))])
-          (for ([z (in-range depth)])
+        (for ([x (list min-x max-x)])
+          (for ([z (in-range min-z (+ 1 max-z))])
             (mark-outside! x z)))
-        (for ([z (list 0 (+ depth -1))])
-          (for ([x (in-range width)])
+        (for ([z (list min-z max-z)])
+          (for ([x (in-range min-x (+ 1 max-x))])
             (mark-outside! x z)))
         (define inside-group-ids
-          (let* ([ids (filter integer? (vector->list vec))]
+          (let* ([ids (filter integer? (hash-values groups) #;(vector->list vec))]
                  [ids (filter (lambda (i)
                                 (not (set-member? outside-group-ids i)))
                               ids)])
@@ -265,9 +255,9 @@
              (= 1 (set-count inside-group-ids))
              ; Now we know this is actually a ring
              (let ([interior (ann (set) (Setof XZ))])
-               (for ([x (in-range width)])
-                 (for ([z (in-range depth)])
-                   (let ([group-id (vecget x z)])
+               (for ([x (in-range min-x (+ 1 max-x))])
+                 (for ([z (in-range min-z (+ 1 max-z))])
+                   (let ([group-id (groups-get x z)])
                      (define inside? : Boolean
                        (case group-id
                          [(unset) (error "Assert fail!")]
@@ -276,9 +266,7 @@
                      (when inside?
                        (set! interior (set-add interior (cons x z)))))))
                (ring points ; TODO should filter to "wall only", and probably sort
-                     interior
-                     (- min-x)
-                     (- min-z)))))))
+                     interior))))))
 
 ; Should return next ring... and that's all we need!?!
 ; As long as we store each ring, that fully defines the shape, right?
