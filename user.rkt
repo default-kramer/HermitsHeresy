@@ -1,6 +1,9 @@
 #lang racket
 
-(require "lib.rkt" "lib-dqb.rkt" pict)
+(require (except-in "lib.rkt" draw-topography)
+         "lib2.rkt"
+         "lib-dqb.rkt"
+         pict)
 
 (define (show top)
   (scale (topography->pict top) 10))

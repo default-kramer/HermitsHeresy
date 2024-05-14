@@ -6,7 +6,7 @@
          clear-map!
          put-block!)
 
-(require (submod "lib.rkt" typed))
+(require "lib.rkt")
 
 (define-type Stgdat-Kind (U 'IoA))
 

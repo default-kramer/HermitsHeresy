@@ -1,19 +1,17 @@
-#lang racket
+#lang typed/racket
 
-(provide draw-topography
-         expand-topography
+(provide expand-topography
          basic-hill-expander
-         topography->pict
          ; rethink:
          candidates-points
          steps->path todo
          point point-x point-y point-z
          )
 
-(require pict
-         (only-in racket/draw make-color))
+(module+ test
+  (require typed/rackunit))
 
-{module typed typed/racket
+{begin
   (provide (all-defined-out))
 
   ; X - if x1 < x2 then x1 is east of x2
@@ -34,6 +32,9 @@
     #:transparent #:type-name Scene)
 
   (define-type XZ (Pairof Integer Integer))
+
+  (define (point->xz [p : Point])
+    (ann (cons (point-x p) (point-z p)) XZ))
 
   (define (neighbors [xz : XZ])
     (let ([x (car xz)]
@@ -131,18 +132,27 @@
 
     (step orig-top (build-candidates orig-top)))
 
-  (define (get-bounds [xzs : (Listof XZ)])
-    (for/fold ([min-x : Integer 999999] ; TODO should improve this
-               [min-z : Integer 999999]
-               [max-x : Integer -999999]
-               [max-z : Integer -999999])
-              ([xz xzs])
-      (let ([x (car xz)]
-            [z (cdr xz)])
-        (values (min min-x x)
-                (min min-z z)
-                (max max-x x)
-                (max max-z z)))))
+  (define (get-bounds [xzs : (Listof XZ)] #:padding [padding : Integer 0])
+    (match xzs
+      [(list xz more ...)
+       (let-values ([(min-x min-z max-x max-z)
+                     (for/fold ([min-x : Integer (car xz)]
+                                [min-z : Integer (cdr xz)]
+                                [max-x : Integer (car xz)]
+                                [max-z : Integer (cdr xz)])
+                               ([xz more])
+                       (let ([x (car xz)]
+                             [z (cdr xz)])
+                         (values (min min-x x)
+                                 (min min-z z)
+                                 (max max-x x)
+                                 (max max-z z))))])
+         (values (- min-x padding)
+                 (- min-z padding)
+                 (+ max-x padding)
+                 (+ max-z padding)))]
+      [else
+       (error "Cannot get-bounds of empty list")]))
 
   (define (basic-hill-expander #:steps [steps : Integer]
                                #:slope [slope : Integer])
@@ -157,6 +167,119 @@
         (if (distance-from-orig . > . steps)
             #f ; stop expanding
             (list xz (* slope (- distance-from-orig)))))))
+
+  ; Warning: the `wall` is relative to nothing (global coordinates)
+  ; but the `interior` is relative to the bounding box, so we store
+  ; the x/z-offsets to be able to adjust later.
+  ; This design is questionable...
+  (struct ring ([wall : (Listof Point)]
+                [interior : (Setof XZ)]
+                [x-offset : Integer]
+                [z-offset : Integer])
+    #:transparent #:type-name Ring)
+
+  (define (ring-inside? [ring : Ring] [p : Point])
+    (let ([x (+ (ring-x-offset ring) (point-x p))]
+          [z (+ (ring-z-offset ring) (point-z p))]
+          [interior (ring-interior ring)])
+      (set-member? interior (cons x z))))
+
+  (: points->ring (-> (Listof Point) (U #f Ring)))
+  (define (points->ring points)
+    ; We are going to create an XZ bounding box that surrounds all the given
+    ; points. Then we will determine the Group ID of each XZ inside that box.
+    ; The given list of points (XZ only) are assigned a Group ID of 'wall.
+    ; All other XZs within the box will be assigned an integer Group ID
+    ; using a flood fill algorithm such that XZs not separated by a 'wall
+    ; will all have the same Group ID.
+    ; A group that reaches any edge of the bounding box is considered
+    ; "outside" the ring, and a group that does not is considered "inside".
+    (define-type GroupId (U 'unset 'wall Integer))
+    (if (empty? points)
+        #f
+        (let*-values ([(min-x min-z max-x max-z)
+                       ; Pad the bounding box by one in all directions.
+                       ; This means that when we are done, if this is a proper ring
+                       ; it must have only one outside group and only one inside group.
+                       ; (Without this, walls could separate corners into distinct groups.)
+                       (get-bounds (map point->xz points) #:padding 1)]
+                      [(width depth)
+                       (values (+ 1 (- max-x min-x))
+                               (+ 1 (- max-z min-z)))]
+                      ; Mutable vector for computing Group IDs.
+                      ; The XZ coordinates are relative to the bounding box,
+                      ; so the passed-in points must be adjusted accordingly.
+                      [(vec) (ann (make-vector (* width depth) 'unset)
+                                  (Vectorof GroupId))])
+          (define (vecget [x : Integer] [z : Integer])
+            (vector-ref vec (+ x (* width z))))
+          (define (vecset! [x : Integer] [z : Integer] [status : GroupId])
+            (vector-set! vec (+ x (* width z)) status))
+          (for ([point points])
+            (let ([x (- (point-x point) min-x)]
+                  [z (- (point-z point) min-z)])
+              (vecset! x z 'wall)))
+
+          (: flood! (-> Integer Integer Integer Void))
+          (define (flood! x z group-id)
+            (when (and (> x -1)
+                       (< x width)
+                       (> z -1)
+                       (< z depth))
+              (let ([existing (vecget x z)])
+                (define recurse?
+                  (case existing
+                    [(unset) (begin (vecset! x z group-id) #t)]
+                    [else #f]))
+                (when recurse?
+                  (flood! (+ x -1) z group-id)
+                  (flood! (+ x 1) z group-id)
+                  (flood! x (+ z -1) group-id)
+                  (flood! x (+ z 1) group-id))))
+            (void))
+          (let ([group-id 1])
+            (for ([x (in-range width)])
+              (for ([z (in-range depth)])
+                (set! group-id (+ 1 group-id))
+                (flood! x z group-id))))
+
+          (define outside-group-ids : (Setof Integer) (set))
+          (define (mark-outside! [x : Integer] [z : Integer])
+            (let ([sts (vecget x z)])
+              (case sts
+                [(unset) (error "Assert fail!")]
+                [(wall) (void)]
+                [else (set! outside-group-ids (set-add outside-group-ids sts))])))
+          (for ([x (list 0 (+ width -1))])
+            (for ([z (in-range depth)])
+              (mark-outside! x z)))
+          (for ([z (list 0 (+ depth -1))])
+            (for ([x (in-range width)])
+              (mark-outside! x z)))
+          (define inside-group-ids
+            (let* ([ids (filter integer? (vector->list vec))]
+                   [ids (filter (lambda (i)
+                                  (not (set-member? outside-group-ids i)))
+                                ids)])
+              (list->set ids)))
+          (and (= 1 (set-count outside-group-ids))
+               (= 1 (set-count inside-group-ids))
+               ; Now we know this is actually a ring
+               (let ([interior (ann (set) (Setof XZ))])
+                 (for ([x (in-range width)])
+                   (for ([z (in-range depth)])
+                     (let ([group-id (vecget x z)])
+                       (define inside? : Boolean
+                         (case group-id
+                           [(unset) (error "Assert fail!")]
+                           [(wall) #t]
+                           [else (set-member? inside-group-ids group-id)]))
+                       (when inside?
+                         (set! interior (set-add interior (cons x z)))))))
+                 (ring points ; TODO should filter to "wall only", and probably sort
+                       interior
+                       (- min-x)
+                       (- min-z)))))))
 
   ; Should return next ring... and that's all we need!?!
   ; As long as we store each ring, that fully defines the shape, right?
@@ -206,37 +329,10 @@
             (cons start (steps->path next (cdr dirs)))))))
   } ; end of module
 
-(require (submod 'typed))
-
-(define (topography->pict top)
-  (define peaks (topography-peaks top))
-  (define keys (hash-keys peaks))
-  (define-values (min-x min-z max-x max-z)
-    (get-bounds keys))
-  (define-values (min-y max-y)
-    (let ([heights (hash-values peaks)])
-      (values (apply min heights)
-              (apply max heights))))
-  (define (make-row z)
-    (apply hc-append
-           (for/list ([x (in-range min-x (add1 max-x))])
-             (let ([item (hash-ref peaks (cons x z) #f)])
-               (if item
-                   (let* ([a 0]
-                          [b (+ 1 (- max-y min-y))]
-                          [c (+ 1 (- item min-y))]
-                          [ratio (/ c b)]
-                          [ratio (+ 0.4 (* 0.6 ratio))])
-                     (filled-rectangle 1 1 #:draw-border? #f
-                                       #:color (make-color 0 0 0 ratio)))
-                   (blank 1 1))))))
-  (apply vc-append (for/list ([z (in-range min-z (add1 max-z))])
-                     (make-row z))))
-
-(define-syntax-rule (draw-topography id ...)
+(define (handle-drawn-topography [lines : (Vectorof Any)])
+  ; Handles both macros (typed and untyped)
   (let ()
-    (define peaks (list))
-    (define lines '#(id ...))
+    (define peaks : (Listof (Pairof XZ Integer)) (list))
     (for ([z (in-range (vector-length lines))])
       (let ([chars (list->vector (string->list (format "~a" (vector-ref lines z))))])
         (for ([x (in-range (vector-length chars))])
@@ -244,3 +340,58 @@
             (when (not (equal? #\- ch))
               (set! peaks (cons (cons (cons x z) 0) peaks)))))))
     (topography (make-immutable-hash peaks))))
+
+(define-syntax-rule (draw-topography id ...)
+  (handle-drawn-topography '#(id ...)))
+
+{module+ test
+  (define-syntax-rule (top->ring id ...)
+    (let* ([top (draw-topography id ...)]
+           [points (topography-peaks top)]
+           [points (map (lambda ([xz : XZ]) (point (car xz) 0 (cdr xz)))
+                        (hash-keys points))])
+      (points->ring points)))
+  (define-syntax-rule (in?? ring xzs ...)
+    (map (lambda ([xz : XZ])
+           (ring-inside? ring (point (car xz) 0 (cdr xz))))
+         '(xzs ...)))
+  (let ([ring (top->ring --XX---
+                         X-----X)])
+    (check-false ring))
+  (let ([ring (top->ring -X-
+                         X-X
+                         -X-)])
+    (check-true (ring? ring))
+    (when ring
+      (check-equal? (list #f #t #f
+                          #t #t #t
+                          #f #t #f)
+                    (in?? ring
+                          (0 . 0) (1 . 0) (2 . 0)
+                          (0 . 1) (1 . 1) (2 . 1)
+                          (0 . 2) (1 . 2) (2 . 2)))))
+  (let ([ring (top->ring --XX--
+                         -X--X-
+                         X----X
+                         -XXX-X
+                         ----X-)])
+    (check-true (ring? ring))
+    (when ring
+      (check-equal? (list #f #f #t #t #f #f
+                          #f #t #t #t #t #f
+                          #t #t #t #t #t #t
+                          #f #t #t #t #t #t
+                          #f #f #f #f #t #f)
+                    (in?? ring
+                          (0 . 0) (1 . 0) (2 . 0) (3 . 0) (4 . 0) (5 . 0)
+                          (0 . 1) (1 . 1) (2 . 1) (3 . 1) (4 . 1) (5 . 1)
+                          (0 . 2) (1 . 2) (2 . 2) (3 . 2) (4 . 2) (5 . 2)
+                          (0 . 3) (1 . 3) (2 . 3) (3 . 3) (4 . 3) (5 . 3)
+                          (0 . 4) (1 . 4) (2 . 4) (3 . 4) (4 . 4) (5 . 4)))))
+  (let ([ring (top->ring --XX--
+                         -X--X-
+                         X-----
+                         -XXX-X
+                         ----X-)])
+    (check-false ring))
+  } ; end test submodule
