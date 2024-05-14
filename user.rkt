@@ -81,26 +81,6 @@
   [Umber #xD1]
   [Lumpy-Umber #xF1])
 
-(define (put-cliff! path #:max-drop max-drop #:min-drop min-drop)
-  (let loop ([path path]
-             [blocks (map block '(Chert Light-Dolomite Clodstone Dark-Dolomite))]
-             [idx 0])
-    (let ([done? #t]
-          [block (list-ref blocks idx)])
-      (for ([p path])
-        (when (> (point-y p) 0)
-          (set! done? #f)
-          (for ([y (in-range (+ 1 (point-y p)))])
-            (put-block! stage (point (point-x p)
-                                     y
-                                     (point-z p))
-                        block))))
-      (when (not done?)
-        (loop (todo path #:max-drop max-drop #:min-drop min-drop)
-              blocks
-              (modulo (+ 1 idx)
-                      (length blocks)))))))
-
 (define (shift p #:x [dx 0] #:y [dy 0] #:z [dz 0])
   (define (go p)
     (point (+ dx (point-x p))
@@ -110,7 +90,27 @@
       (map go p)
       (go p)))
 
-{begin
+{module+ main
+  (define (put-cliff! path #:max-drop max-drop #:min-drop min-drop)
+    (let loop ([path path]
+               [blocks (map block '(Chert Light-Dolomite Clodstone Dark-Dolomite))]
+               [idx 0])
+      (let ([done? #t]
+            [block (list-ref blocks idx)])
+        (for ([p path])
+          (when (> (point-y p) 0)
+            (set! done? #f)
+            (for ([y (in-range (+ 1 (point-y p)))])
+              (put-block! stage (point (point-x p)
+                                       y
+                                       (point-z p))
+                          block))))
+        (when (not done?)
+          (loop (todo path #:max-drop max-drop #:min-drop min-drop)
+                blocks
+                (modulo (+ 1 idx)
+                        (length blocks)))))))
+
   (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
   (clear-map! stage #:add-chunk-ids? #f)
 
