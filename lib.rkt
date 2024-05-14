@@ -196,9 +196,6 @@
                      ; it must have only one outside group and only one inside group.
                      ; (Without this, walls could separate corners into distinct groups.)
                      (get-bounds (map point->xz points) #:padding 1)]
-                    [(width depth)
-                     (values (+ 1 (- max-x min-x))
-                             (+ 1 (- max-z min-z)))]
                     ; Mutable hash for computing Group IDs.
                     [(groups) (ann (make-hash) (Mutable-HashTable XZ GroupId))])
         (define (groups-get [x : Integer] [z : Integer])
@@ -265,7 +262,11 @@
                          [else (set-member? inside-group-ids group-id)]))
                      (when inside?
                        (set! interior (set-add interior (cons x z)))))))
-               (ring points ; TODO should filter to "wall only", and probably sort
+               (define (wall? [point : Point])
+                 (define (outside? [xz : XZ])
+                   (not (set-member? interior xz)))
+                 (ormap outside? (neighbors (point->xz point))))
+               (ring (filter wall? points) ; TODO sort...?
                      interior))))))
 
 ; Should return next ring... and that's all we need!?!
