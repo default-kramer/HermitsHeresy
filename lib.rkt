@@ -43,6 +43,18 @@
           (cons x (add1 z))
           (cons x (sub1 z)))))
 
+(define (neighbors-diagonal [xz : XZ])
+  (let ([x (car xz)]
+        [z (cdr xz)])
+    (list (cons x (add1 z))
+          (cons (add1 x) (add1 z))
+          (cons (add1 x) z)
+          (cons (add1 x) (sub1 z))
+          (cons x (sub1 z))
+          (cons (sub1 x) (sub1 z))
+          (cons (sub1 x) z)
+          (cons (sub1 x) (add1 z)))))
+
 ; Topography defines the contour/elevation of a section of land,
 ; by storing the maximum Y coordinate (the "peak") of each XZ pair.
 ; So abbreviating to "top" can mean "just the top layer"
@@ -167,7 +179,10 @@
           #f ; stop expanding
           (list xz (* slope (- distance-from-orig)))))))
 
-(struct ring ([wall : (Listof Point)]
+; Ouch! There is a failing test explaining why the `shell`
+; is not totally well-defined yet...
+(struct ring ([points : (Listof Point)] ; the points that defined the ring
+              [shell : (Listof XZ)] ; will be sorted
               [interior : (Setof XZ)])
   #:transparent #:type-name Ring)
 
@@ -262,11 +277,46 @@
                          [else (set-member? inside-group-ids group-id)]))
                      (when inside?
                        (set! interior (set-add interior (cons x z)))))))
-               (define (wall? [point : Point])
-                 (define (outside? [xz : XZ])
-                   (not (set-member? interior xz)))
-                 (ormap outside? (neighbors (point->xz point))))
-               (ring (filter wall? points) ; TODO sort...?
+               (define (interior? [xz : XZ])
+                 (set-member? interior xz))
+               (define shell
+                 (let ()
+                   (define (shell? [a : (U Point XZ)])
+                     (let ([xz (if (point? a)
+                                   (point->xz a)
+                                   a)])
+                       (and (not (interior? xz))
+                            (ormap interior? (neighbors xz)))))
+                   (define start : XZ
+                     ; Remember that we padded the bounding box by 1.
+                     ; So we know there will be at least one shell? point
+                     ; having z=min-z
+                     (let loop ([x min-x])
+                       (let ([xz (cons x min-z)])
+                         (cond
+                           [(> x max-x) (error "assert fail")]
+                           [(shell? xz) xz]
+                           [else (loop (+ 1 x))]))))
+                   (: get-shell (-> XZ XZ (Listof XZ)))
+                   (define (get-shell [curr : XZ] [prev : XZ])
+                     (let* ([candidates (neighbors-diagonal curr)]
+                            [candidates (filter shell? candidates)]
+                            [next
+                             (match candidates
+                               [(list a b)
+                                (cond
+                                  [(equal? a prev) b]
+                                  [(equal? b prev) a]
+                                  [else a])]
+                               [else (error "assert fail")])])
+                       (cond
+                         [(equal? start next)
+                          (list curr)]
+                         [else
+                          (cons curr (get-shell next curr))])))
+                   (get-shell start start)))
+               (ring points
+                     shell
                      interior))))))
 
 ; Should return next ring... and that's all we need!?!
@@ -301,16 +351,20 @@
           (append blah (recurse (drop ring w))))))
   (recurse ring))
 
-(: steps->path (-> Point (Listof (U 'N 'S 'E 'W)) (Listof Point)))
+(: steps->path (-> Point (Listof (U 'N 'NE 'E 'SE 'S 'SW 'W 'NW)) (Listof Point)))
 (define (steps->path start dirs)
   (if (empty? dirs)
       (list start)
       (let-values ([(dx dz)
                     (case (car dirs)
                       [(N) (values 0 -1)]
-                      [(S) (values 0 1)]
+                      [(NE) (values 1 -1)]
                       [(E) (values 1 0)]
-                      [(W) (values -1 0)])])
+                      [(SE) (values 1 1)]
+                      [(S) (values 0 1)]
+                      [(SW) (values -1 1)]
+                      [(W) (values -1 0)]
+                      [(NW) (values -1 -1)])])
         (let ([next (point (+ dx (point-x start))
                            (point-y start)
                            (+ dz (point-z start)))])
@@ -350,13 +404,16 @@
                          -X-)])
     (check-true (ring? ring))
     (when ring
-      (check-equal? (list #f #t #f
-                          #t #t #t
-                          #f #t #f)
-                    (in?? ring
+      (check-equal? (in?? ring
                           (0 . 0) (1 . 0) (2 . 0)
                           (0 . 1) (1 . 1) (2 . 1)
-                          (0 . 2) (1 . 2) (2 . 2)))))
+                          (0 . 2) (1 . 2) (2 . 2))
+                    (list #f #t #f
+                          #t #t #t
+                          #f #t #f))
+      (check-equal? (ring-shell ring)
+                    (map point->xz (steps->path (point 1 99 -1)
+                                                '(SE SE SW SW NW NW NE))))))
   (let ([ring (top->ring --XX--
                          -X--X-
                          X----X
@@ -364,21 +421,38 @@
                          ----X-)])
     (check-true (ring? ring))
     (when ring
-      (check-equal? (list #f #f #t #t #f #f
-                          #f #t #t #t #t #f
-                          #t #t #t #t #t #t
-                          #f #t #t #t #t #t
-                          #f #f #f #f #t #f)
-                    (in?? ring
+      (define steps '(E SE SE SE S SW SW NW W W NW NW NE NE))
+      (check-equal? (ring-shell ring)
+                    (map point->xz (steps->path (point 2 99 -1) steps)))
+      (check-equal? (in?? ring
                           (0 . 0) (1 . 0) (2 . 0) (3 . 0) (4 . 0) (5 . 0)
                           (0 . 1) (1 . 1) (2 . 1) (3 . 1) (4 . 1) (5 . 1)
                           (0 . 2) (1 . 2) (2 . 2) (3 . 2) (4 . 2) (5 . 2)
                           (0 . 3) (1 . 3) (2 . 3) (3 . 3) (4 . 3) (5 . 3)
-                          (0 . 4) (1 . 4) (2 . 4) (3 . 4) (4 . 4) (5 . 4)))))
+                          (0 . 4) (1 . 4) (2 . 4) (3 . 4) (4 . 4) (5 . 4))
+                    (list #f #f #t #t #f #f
+                          #f #t #t #t #t #f
+                          #t #t #t #t #t #t
+                          #f #t #t #t #t #t
+                          #f #f #f #f #t #f))))
   (let ([ring (top->ring --XX--
                          -X--X-
                          X-----
                          -XXX-X
                          ----X-)])
     (check-false ring))
+  ; Here's a tricky one... It's not clear what I would want to even do here.
+  ; The motivation for rings was to support cliff/plateau creation, and I don't know
+  ; how I would create a cliff for the following topography algorithmically.
+  ; So maybe the following should not be a ring.
+  ; (Also remember: using shell points rather than border points means
+  ;  we could now relax the "one interior group" restriction because we
+  ;  no longer care if the topography is completely "filled in".
+  ;  e.g. A solid 5x5 square of points has a perfectly usable shell.)
+  (fail "The shell concept is not fully baked. Commented-out code that follows would crash:")
+  #;(let ([ring (top->ring --XXXXX
+                           ----X-X
+                           --XX--X
+                           ---XXXX)])
+      (check-true (ring? ring)))
   } ; end test submodule
