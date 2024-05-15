@@ -181,6 +181,7 @@
 
 ; Ouch! There is a failing test explaining why the `shell`
 ; is not totally well-defined yet...
+; Also, what is the list of points really for?
 (struct ring ([points : (Listof Point)] ; the points that defined the ring
               [shell : (Listof XZ)] ; will be sorted
               [interior : (Setof XZ)])
@@ -318,6 +319,13 @@
                (ring points
                      shell
                      interior))))))
+
+(define (expand-ring [ring : Ring])
+  (let* ([shell (ring-shell ring)]
+         [next-points (map (lambda ([xz : XZ])
+                             (point (car xz) 1 (cdr xz)))
+                           shell)])
+    (points->ring next-points)))
 
 ; Should return next ring... and that's all we need!?!
 ; As long as we store each ring, that fully defines the shape, right?

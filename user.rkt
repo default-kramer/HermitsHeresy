@@ -91,7 +91,7 @@
       (go p)))
 
 {module+ main
-  (define (put-cliff! path #:max-drop max-drop #:min-drop min-drop)
+  (define (put-cliff! stage path #:max-drop max-drop #:min-drop min-drop)
     (let loop ([path path]
                [blocks (map block '(Chert Light-Dolomite Clodstone Dark-Dolomite))]
                [idx 0])
@@ -111,8 +111,18 @@
                 (modulo (+ 1 idx)
                         (length blocks)))))))
 
-  (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
-  (clear-map! stage #:add-chunk-ids? #f)
+  (define (put-plateau! stage ring #:y y #:layer-height layer-height #:min-y [min-y 1])
+    (let* ([shell (ring-shell ring)]
+           [min-y (max 0 min-y)]
+           [y (min 95 y)])
+      (for ([xz shell])
+        (for ([y (in-range min-y (+ 1 y))])
+          (put-block! stage (point (car xz) y (cdr xz)) (block 'Clodstone))))
+      (when (> y (+ layer-height min-y))
+        (put-plateau! stage (expand-ring ring)
+                      #:y (- y layer-height)
+                      #:layer-height layer-height
+                      #:min-y min-y))))
 
   (define floor-y 40)
   (define hilltop-y (+ floor-y 12))
@@ -121,13 +131,17 @@
                                                    E E E E E S E N
                                                    E N E E N E N E
                                                    E E E N E E)))
-  ;path
-  ;(define path2 (todo path))
-  ;path2
+
+  (define ring
+    (let ([steps '(E E SE SE SE W W SW W W NW W W NE NE)])
+      (points->ring (steps->path (point 100 1 200) steps))))
 
   {begin
-    (put-cliff! path #:min-drop 1 #:max-drop 5)
-    (put-cliff! (shift path #:x 40) #:min-drop 2 #:max-drop 7)
+    (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
+    (clear-map! stage #:add-chunk-ids? #f)
+    (put-plateau! stage ring #:y 70 #:layer-height 5)
+    #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
+    #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
     (save-stgdat! stage)}
   #;{begin
       (create-floor! stage #:y floor-y)
