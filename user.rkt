@@ -61,7 +61,7 @@
   ; x10 - illegal
   ; x11 - purple peat?
   [Accumulated-Snow #x12] ; unsure
-  [Snow #x13] ; unsure
+  [Snow #x13]
   [Ice #x14]
   [Clodstone #x15]
   [Crumbly-Clodstone #x16]
@@ -136,15 +136,15 @@
     (let ([steps '(E E SE SE SE W W SW W W NW W W NE NE)])
       (points->ring (steps->path (point 100 1 200) steps))))
 
-  {begin
-    (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
-    (clear-map! stage #:add-chunk-ids? #f)
-    (put-plateau! stage ring #:y 70 #:layer-height 5)
-    ; y=31 is the min y that exceeds sea level on IoA
-    (create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)
-    #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
-    #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
-    (save-stgdat! stage)}
+  #;{begin
+      (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
+      #;(clear-map! stage #:add-chunk-ids? #f)
+      #;(put-plateau! stage ring #:y 70 #:layer-height 5)
+      ; y=31 is the min y that exceeds sea level on IoA
+      (create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)
+      #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
+      #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
+      (save-stgdat! stage)}
   #;{begin
       (create-floor! stage #:y floor-y)
       (place-topography! stage top1 #:x 120 #:z 230

@@ -8,6 +8,9 @@
 
 (require "lib.rkt")
 
+(module+ test
+  (require typed/rackunit))
+
 (define-type Stgdat-Kind (U 'IoA))
 
 (define header-length #x110)
@@ -125,6 +128,37 @@
      (* y 32 32 2)
      (* z 32 2)
      (* x 2)))
+
+(module+ test
+  ; blue tablet bottom:
+  (check-equal? (get-address 55 19 53 14)
+                #x22AAA96)
+  (check-equal? (get-address 55 20 53 14)
+                #x22AAA98)
+  (check-equal? (get-address 55 21 53 14)
+                #x22AAA9A)
+  ; blue tablet next row:
+  (check-equal? (get-address 55 19 54 14)
+                #x22AB296)
+  (check-equal? (get-address 55 20 54 14)
+                #x22AB298)
+  (check-equal? (get-address 55 21 54 14)
+                #x22AB29A)
+  ; blue tablet next row:
+  (check-equal? (get-address 55 19 55 14)
+                #x22ABA96)
+  (check-equal? (get-address 55 20 55 14)
+                #x22ABA98)
+  (check-equal? (get-address 55 21 55 14)
+                #x22ABA9A)
+  ; blue tablet top row:
+  (check-equal? (get-address 55 19 56 14)
+                #x22AC296)
+  (check-equal? (get-address 55 20 56 14)
+                #x22AC298)
+  (check-equal? (get-address 55 21 56 14)
+                #x22AC29A)
+  )
 
 (define (block-put! [buffer : Bytes] [addr : Integer] [block : Integer])
   (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
