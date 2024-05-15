@@ -140,6 +140,8 @@
     (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
     (clear-map! stage #:add-chunk-ids? #f)
     (put-plateau! stage ring #:y 70 #:layer-height 5)
+    ; y=31 is the min y that exceeds sea level on IoA
+    (create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)
     #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
     #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
     (save-stgdat! stage)}

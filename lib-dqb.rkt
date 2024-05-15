@@ -126,15 +126,21 @@
      (* z 32 2)
      (* x 2)))
 
-(define (create-floor! [stage : Stage] #:y [y : Integer])
+(define (block-put! [buffer : Bytes] [addr : Integer] [block : Integer])
+  (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
+  (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16)))
+
+(define (create-floor! [stage : Stage]
+                       #:y [y : Integer]
+                       #:block [block : Integer]
+                       #:y-start [y-start : Integer y])
   (let* ([buffer (stage-buffer stage)])
     (for ([chunk (in-range (chunk-count stage))])
-      (let ([addr (get-address chunk 0 y 0)])
-        (for ([xz (in-range (* 32 32))])
-          (bytes-set! buffer addr 11)
-          (set! addr (+ 1 addr))
-          (bytes-set! buffer addr #xD8)
-          (set! addr (+ 1 addr))))))
+      (for ([y (in-range y-start (+ 1 y))])
+        (let ([addr (get-address chunk 0 y 0)])
+          (for ([xz (in-range (* 32 32))])
+            (block-put! buffer addr block)
+            (set! addr (+ 2 addr)))))))
   (void))
 
 (define (clear-map! [stage : Stage]
@@ -217,8 +223,7 @@
               (for ([y (in-range (min y-start y-end)
                                  (+ 1 (max y-start y-end)))])
                 (let ([addr (get-address chunk-id chunk-x y chunk-z)])
-                  (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
-                  (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16))))))))))
+                  (block-put! buffer addr block)))))))))
 
 (define (put-block! [stage : Stage] [point : Point] [block : Integer])
   (let ([chunky (IoA-abs->rel (point-x point) (point-z point))])
@@ -228,5 +233,4 @@
                [chunk-x (second chunky)]
                [chunk-z (third chunky)])
            (let ([addr (get-address chunk-id chunk-x (point-y point) chunk-z)])
-             (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
-             (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16)))))))
+             (block-put! buffer addr block))))))
