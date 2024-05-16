@@ -138,9 +138,9 @@
 
   #;{begin
       (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
-      (clear-map! stage #:floor-y 35)
-      (for ([point (IoA-get-special-locs 'blue-tablet)])
-        (put-block! stage point (block 'Ice)))
+      (clear-map! stage #:above-y 45 #:keep-items? #t)
+      #;(for ([point (IoA-get-special-locs 'blue-tablet)])
+          (put-block! stage point (block 'Ice)))
       #;(put-plateau! stage ring #:y 70 #:layer-height 5)
       ; y=31 is the min y that exceeds sea level on IoA
       #;(create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)

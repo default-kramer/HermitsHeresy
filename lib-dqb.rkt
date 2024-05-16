@@ -214,18 +214,24 @@
 
 (define (clear-map! [stage : Stage]
                     #:above-y [above-y : Integer 0]
+                    #:keep-items? [keep-items? : Boolean #f]
                     #:add-chunk-ids? [add-chunk-ids? : Boolean #f])
   (define buffer (stage-buffer stage))
   ; Reset count of 24-byte records to zero
   ; (this is probably a 4-byte number but 0xC8000 is the max)
-  (bytes-set! buffer #x24E7CD 0)
-  (bytes-set! buffer #x24E7CE 0)
-  (bytes-set! buffer #x24E7CF 0)
+  (when (not keep-items?)
+    (bytes-set! buffer #x24E7CD 0)
+    (bytes-set! buffer #x24E7CE 0)
+    (bytes-set! buffer #x24E7CF 0))
   (for ([chunk (in-range (chunk-count stage))])
     (let ([addr (get-address chunk 0 0 0)])
       (for ([y (in-range 96)])
         (for ([xz (in-range (* 32 32))])
-          (when (> y above-y)
+          (when (and (> y above-y)
+                     (or (not keep-items?)
+                         (case (bytes-ref buffer (+ 1 addr))
+                           [(0 8) #t] ; UNSURE: it's a simple block
+                           [else #f])))
             (block-put! buffer addr 0))
           (set! addr (+ 2 addr))))))
   (when add-chunk-ids?
