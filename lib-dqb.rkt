@@ -10,6 +10,11 @@
          IoA-find-ring
          IoA-get-special-locs)
 
+; TODO how to do this from submodule?
+;(module+ everything
+(provide (all-defined-out))
+;)
+
 (require "lib.rkt")
 
 (module+ test

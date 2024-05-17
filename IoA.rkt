@@ -95,7 +95,7 @@
   (require "lib-dqb.rkt"
            (only-in "lib.rkt" point))
   (define bmp (bitmap "test.bmp"))
-  (define pixels (pict->argb-pixels bmp))  
+  (define pixels (pict->argb-pixels bmp))
   #;(begin
       (define B00 (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
       (clear-map! B00 #:above-y 45 #:keep-items? #f)
