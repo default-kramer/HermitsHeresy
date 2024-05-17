@@ -212,14 +212,17 @@
 (define (create-floor! [stage : Stage]
                        #:y [y : Integer]
                        #:block [block : Integer]
-                       #:y-start [y-start : Integer y])
+                       #:y-start [y-start : Integer y]
+                       #:chunk-filter [chunk-filter : (U #f (Listof Integer)) #f])
   (let* ([buffer (stage-buffer stage)])
     (for ([chunk (in-range (chunk-count stage))])
-      (for ([y (in-range y-start (+ 1 y))])
-        (let ([addr (get-address chunk 0 y 0)])
-          (for ([xz (in-range (* 32 32))])
-            (block-put! buffer addr block)
-            (set! addr (+ 2 addr)))))))
+      (when (or (not chunk-filter)
+                (member chunk chunk-filter))
+        (for ([y (in-range y-start (+ 1 y))])
+          (let ([addr (get-address chunk 0 y 0)])
+            (for ([xz (in-range (* 32 32))])
+              (block-put! buffer addr block)
+              (set! addr (+ 2 addr))))))))
   (void))
 
 (define (clear-map! [stage : Stage]

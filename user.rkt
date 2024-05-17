@@ -91,18 +91,20 @@
                      #:min-y 34 #:max-y 34)))
   (println hh-mountain-ring)
 
-  #;{begin
-      (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
-      (clear-map! stage) ; #:above-y 45 #:keep-items? #t)
-      (create-floor! stage #:y 33 #:y-start 1 #:block (block 'Ice))
-      #;(for ([point (IoA-get-special-locs 'blue-tablet)])
-          (put-block! stage point (block 'Ice)))
-      #;(put-plateau! stage ring #:y 70 #:layer-height 5)
-      ; y=31 is the min y that exceeds sea level on IoA
-      #;(create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)
-      #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
-      #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
-      (save-stgdat! stage)}
+  {begin
+    (define B00 (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
+    #;(clear-map! stage) ; #:above-y 45 #:keep-items? #t)
+    (create-floor! B00 #:y 40 #:y-start 40 #:block (block 'Clodstone)
+                   #:chunk-filter ;'(144 171 198 225 252))
+                   '(115 141 168 195 222 249))
+    #;(for ([point (IoA-get-special-locs 'blue-tablet)])
+        (put-block! stage point (block 'Ice)))
+    #;(put-plateau! stage ring #:y 70 #:layer-height 5)
+    ; y=31 is the min y that exceeds sea level on IoA
+    #;(create-floor! stage #:y 31 #:block (block 'Snow) #:y-start 1)
+    #;(put-cliff! stage path #:min-drop 1 #:max-drop 5)
+    #;(put-cliff! stage (shift path #:x 40) #:min-drop 2 #:max-drop 7)
+    (save-stgdat! B00)}
   #;{begin
       (create-floor! stage #:y floor-y)
       (place-topography! stage top1 #:x 120 #:z 230
