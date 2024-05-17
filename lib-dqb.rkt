@@ -1,10 +1,13 @@
 #lang typed/racket
 
 (provide open-stgdat save-stgdat!
+         block
          create-floor!
          place-topography!
          clear-map!
          put-block!
+         print-block-stats
+         IoA-find-ring
          IoA-get-special-locs)
 
 (require "lib.rkt")
@@ -136,6 +139,13 @@
         (and xz (cons (+ x (* 32 (car xz)))
                       (+ z (* 32 (cdr xz)))))))
     func))
+
+(: IoA-chunky->point (-> Integer Integer Integer Integer Point))
+(define (IoA-chunky->point chunk x y z)
+  (let* ([xz (IoA-rel->abs chunk x z)])
+    (or (and xz
+             (point (car xz) y (cdr xz)))
+        (error "Invalid chunk coords" chunk x y z))))
 
 (define (get-address [chunk : Integer] [x : Integer] [y : Integer] [z : Integer])
   (+ #x183FEF0
@@ -269,6 +279,86 @@
           (inc-x!)))))
   (void))
 
+(define (point-neighbors [p : Point])
+  (map (lambda ([xz : XZ]) (point (car xz) (point-y p) (cdr xz)))
+       (neighbors (point->xz p))))
+
+(define (print-block-stats [stage : Stage]
+                           #:min-y [min-y : Integer]
+                           #:max-y [max-y : Integer])
+  (define buffer (stage-buffer stage))
+  (for ([chunk (in-range (chunk-count stage))])
+    (for ([y (in-range min-y (+ 1 max-y))])
+      (for ([x (in-range 32)])
+        (for ([z (in-range 32)])
+          (let* ([addr (get-address chunk x y z)]
+                 [a (bytes-ref buffer addr)]
+                 [b (bytes-ref buffer (+ 1 addr))])
+            (when (not (= 0 a b))
+              (println (cons a b)))))))))
+
+(define (IoA-find-ring [stage : Stage] [block : Integer]
+                       #:min-y [min-y : Integer 0] #:max-y [max-y : Integer 95])
+  (define block-lo (bitwise-bit-field block 0 8))
+  (define block-hi (bitwise-bit-field block 8 16))
+  (println (list block-lo block-hi))
+  (define buffer (stage-buffer stage))
+  (define (is-block? [p : Point])
+    (let ([addr (get-address2 p)])
+      (and addr
+           (= block-lo (bytes-ref buffer addr))
+           (= block-hi (bytes-ref buffer (+ 1 addr))))))
+  (define (test-ring! [start : Point] [seen : (Mutable-HashTable Point #t)])
+    (: go (-> Point (Listof Point) (U #f Ring)))
+    (define (go p accum)
+      (set! accum (cons p accum))
+      (cond
+        [(and (equal? p start)
+              (not (= 1 (length accum))))
+         #;(println (list "GOT BACK TO START" accum))
+         (points->ring accum)]
+        [(not (is-block? p))
+         (hash-set! seen p #t)
+         #f]
+        [(hash-ref seen p (lambda () #f))
+         #f]
+        [else
+         (hash-set! seen p #t)
+         (let loop ([tries (point-neighbors p)])
+           (match tries
+             [(list) #f]
+             [(list a rest ...)
+              (or (go a accum)
+                  (loop rest))]))]))
+    (go start (list)))
+  (let ([seen (ann (make-hash) (Mutable-HashTable Point #t))]
+        [result (ann #f (U #f Ring))])
+    (let loop : (U #f Ring)
+      ([chunk : Integer 0]
+       [y : Integer min-y]
+       [x : Integer 0]
+       [z : Integer 0])
+      (let ([p (IoA-chunky->point chunk x y z)])
+        (when (not (hash-ref seen p (lambda () #f)))
+          (when (is-block? p)
+            #;(println (list "FOUND STARTER" p))
+            (set! result (test-ring! p seen)))
+          (hash-set! seen p #t))
+        (set! z (+ 1 z))
+        (when (= z 32)
+          (set! z 0)
+          (set! x (+ 1 x)))
+        (when (= x 32)
+          (set! x 0)
+          (set! y (+ 1 y)))
+        (when (> y max-y)
+          (set! y min-y)
+          (set! chunk (+ 1 chunk)))
+        (cond
+          [result result]
+          [(>= chunk (chunk-count stage)) #f]
+          [else (loop chunk y x z)])))))
+
 (define (place-topography! [stage : Stage] [top : Topography]
                            #:x [x : Integer]
                            #:z [z : Integer]
@@ -309,3 +399,59 @@
                [chunk-z (third chunky)])
            (let ([addr (get-address chunk-id chunk-x (point-y point) chunk-z)])
              (block-put! buffer addr block))))))
+
+(define-syntax-rule (define-blocks f [id val] ...)
+  (define (f a)
+    (case a
+      [(id) (bitwise-ior #x800 val)]
+      ...
+      [else (error "Unknown block:" a)])))
+
+; For example, Stony-Soil has a "value" of 9c and could be written to file as 9c 08
+; The 08 means "no chisel" (and maybe "placed by user"? because 9c 00 also works).
+; Chisel status can be one of (all in hex):
+; * 08 - no chisel
+; * 18/38/58/78 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4) | 8
+; * 28/48/68/88 - diagonal chisel SW/SE/NW/NE
+; * 98/a8/b8/c8 - concave chisel NW/SW/SE/NE
+; * d8/e8 - flat chisel hi/lo
+; * 0a - no chisel, for a different set of blocks?
+;   And then presumably 1a/3a/5a/7a diagonal chisel, da/ea flat chisel, etc...
+(define-blocks block
+  ; x01 - unbreakable floor of map
+  [Earth #x02]
+  [Grassy-Earth #x03]
+  [Limegrassy-Earth #x04]
+  [Tilled-Soil #x05]
+  [Clay #x06] ; unsure
+  [Mossy-Earth #x07]
+  [Chalk #x08]
+  [Chunky-Chalk #x09]
+  [Obsidian #x0A]
+  [Sand #x0B]
+  [Sandstone #x0C]
+  [Sandy-Sandstone #x0D]
+  ; x0E - a reddish block
+  [Ash #x0F] ; unsure
+  ; x10 - illegal
+  ; x11 - purple peat?
+  [Accumulated-Snow #x12] ; unsure
+  [Snow #x13]
+  [Ice #x14]
+  [Clodstone #x15]
+  [Crumbly-Clodstone #x16]
+  [Basalt #x17]
+  ; x18 - nothing?
+  [Lava #x19]
+  [Vault-Wall #x1A] ; Vault Wall that I place saves as #xA7A I think...?
+  [Viny-Vault-Wall #x1B]
+  ; ======
+  [Light-Dolomite #x82]
+  [Dark-Dolomite #x83]
+  [Stony-Soil #x8D]
+  [Arid-Earth #x93]
+  [Chert #x95]
+  [Chunky-Chert #x99]
+  [Spoiled-Soil #x9C]
+  [Umber #xD1]
+  [Lumpy-Umber #xF1])

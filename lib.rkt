@@ -309,7 +309,7 @@
                                   [(equal? a prev) b]
                                   [(equal? b prev) a]
                                   [else a])]
-                               [else (error "assert fail")])])
+                               [else (error "assert fail" candidates)])])
                        (cond
                          [(equal? start next)
                           (list curr)]
@@ -463,4 +463,11 @@
                            --XX--X
                            ---XXXX)])
       (check-true (ring? ring)))
+
+  ; This doesn't crash (but some similar pattern that I placed does?)
+  (let ([ring (top->ring XXXX-
+                         X---X
+                         X-XX-
+                         XXX--)])
+    (check-true (ring? ring)))
   } ; end test submodule

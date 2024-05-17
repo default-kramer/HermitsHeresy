@@ -27,60 +27,6 @@
   (expand-topography top1 (basic-hill-expander #:steps 12 #:slope 1)))
 (show top3)
 
-(define-syntax-rule (define-blocks f [id val] ...)
-  (define (f a)
-    (case a
-      [(id) (bitwise-ior #x800 val)]
-      ...
-      [else (error "Unknown block:" a)])))
-
-; For example, Stony-Soil has a "value" of 9c and could be written to file as 9c 08
-; The 08 means "no chisel" (and maybe "placed by user"? because 9c 00 also works).
-; Chisel status can be one of (all in hex):
-; * 08 - no chisel
-; * 18/38/58/78 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4) | 8
-; * 28/48/68/88 - diagonal chisel SW/SE/NW/NE
-; * 98/a8/b8/c8 - concave chisel NW/SW/SE/NE
-; * d8/e8 - flat chisel hi/lo
-(define-blocks block
-  ; x01 - unbreakable floor of map
-  [Earth #x02]
-  [Grassy-Earth #x03]
-  [Limegrassy-Earth #x04]
-  [Tilled-Soil #x05]
-  [Clay #x06] ; unsure
-  [Mossy-Earth #x07]
-  [Chalk #x08]
-  [Chunky-Chalk #x09]
-  [Obsidian #x0A]
-  [Sand #x0B]
-  [Sandstone #x0C]
-  [Sandy-Sandstone #x0D]
-  ; x0E - a reddish block
-  [Ash #x0F] ; unsure
-  ; x10 - illegal
-  ; x11 - purple peat?
-  [Accumulated-Snow #x12] ; unsure
-  [Snow #x13]
-  [Ice #x14]
-  [Clodstone #x15]
-  [Crumbly-Clodstone #x16]
-  [Basalt #x17]
-  ; x18 - nothing?
-  [Lava #x19]
-  [Vault-Wall #x1A]
-  [Viny-Vault-Wall #x1B]
-  ; ======
-  [Light-Dolomite #x82]
-  [Dark-Dolomite #x83]
-  [Stony-Soil #x8D]
-  [Arid-Earth #x93]
-  [Chert #x95]
-  [Chunky-Chert #x99]
-  [Spoiled-Soil #x9C]
-  [Umber #xD1]
-  [Lumpy-Umber #xF1])
-
 (define (shift p #:x [dx 0] #:y [dy 0] #:z [dz 0])
   (define (go p)
     (point (+ dx (point-x p))
@@ -136,9 +82,19 @@
     (let ([steps '(E E SE SE SE W W SW W W NW W W NE NE)])
       (points->ring (steps->path (point 100 1 200) steps))))
 
+  ; Be careful to not accidentally write to B01
+  (define hh-mountain-ring
+    (let ([B01 (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B01/STGDAT01.BIN"))])
+      #;(print-block-stats B01 #:min-y 34 #:max-y 34)
+      (IoA-find-ring B01 #;(block 'Vault-Wall)
+                     #xA7A ; vault wall that I placed?
+                     #:min-y 34 #:max-y 34)))
+  (println hh-mountain-ring)
+
   #;{begin
       (define stage (open-stgdat 'IoA (string->path "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT01.BIN")))
-      (clear-map! stage #:above-y 45 #:keep-items? #t)
+      (clear-map! stage) ; #:above-y 45 #:keep-items? #t)
+      (create-floor! stage #:y 33 #:y-start 1 #:block (block 'Ice))
       #;(for ([point (IoA-get-special-locs 'blue-tablet)])
           (put-block! stage point (block 'Ice)))
       #;(put-plateau! stage ring #:y 70 #:layer-height 5)
