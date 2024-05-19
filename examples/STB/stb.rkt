@@ -16,7 +16,9 @@
   (define B00 (mark-writable (load-stage 'IoA 'B00)))
 
   (fill-area! B00 cs-plateau (block 'Chert) #:y-min 1 #:y-max 50)
-  (fill-area! B00 mountain (block 'Sand) #:y-min 1 #:y-max 94)
+  (clear-area! B00 mountain #:y-min 50)
+  (put-hill! B00 mountain (block 'Sand) #:y-min 1 #:y-max 94
+             #:step-start 50 #:step-height 4)
 
   (save-stage! B00)
   }

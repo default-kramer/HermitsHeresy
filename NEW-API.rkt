@@ -8,6 +8,8 @@
          bitmap->area
          area-contains?
          xz
+         put-hill!
+         clear-area!
          )
 
 (require (prefix-in dqb: "lib-dqb.rkt")
@@ -21,6 +23,8 @@
 (struct stage ([stage : dqb:Stage])
   #:transparent #:type-name Stage)
 
+; We actually allow mutations to a writable-stage, we just cannot
+; allow those changes to be saved and overwrite the original file.
 (struct writable-stage stage ()
   #:transparent #:type-name Writable-Stage)
 
@@ -37,6 +41,14 @@
 (struct xz ([x : Integer]
             [z : Integer])
   #:type-name XZ #:transparent)
+
+(define (neighbors [val : XZ])
+  (let ([x (xz-x val)]
+        [z (xz-z val)])
+    (list (xz (add1 x) z)
+          (xz (sub1 x) z)
+          (xz x (add1 z))
+          (xz x (sub1 z)))))
 
 (struct rect ([start : XZ]
               [end : XZ])
@@ -103,13 +115,13 @@
   (define stg (dqb:open-stgdat kind path))
   (stage stg))
 
-(define (clear-map! [stage : Writable-Stage]
+(define (clear-map! [stage : Stage]
                     #:above-y [above-y : Integer 0]
                     #:keep-items? [keep-items? : Boolean #f])
   (let ([stg (stage-stage stage)])
     (dqb:clear-map! stg #:above-y above-y #:keep-items? keep-items?)))
 
-(: fill-area! (->* (Writable-Stage Area Integer #:y-max Integer)
+(: fill-area! (->* (Stage Area Integer #:y-max Integer)
                    (#:y-min Integer)
                    Void))
 (define (fill-area! stage area block #:y-max y-max #:y-min [y-min : Integer 1])
@@ -127,3 +139,88 @@
 
 (define (save-stage! [stage : Writable-Stage])
   (dqb:save-stgdat! (stage-stage stage)))
+
+(: rand (All (A) (-> (Vectorof A) A)))
+(define (rand vec)
+  (vector-ref vec (random (vector-length vec))))
+
+(: find-outskirts (-> Area (-> XZ Any) (Listof XZ)))
+(define (find-outskirts area extra-outside?)
+  (define (outside? [xz : XZ])
+    (or (not (area-contains? area xz))
+        (extra-outside? xz)))
+  (define (inside? [xz : XZ])
+    (not (outside? xz)))
+  (define (outskirts? [xz : XZ])
+    (and (inside? xz)
+         (ormap outside? (neighbors xz))))
+  (define result (ann (list) (Listof XZ)))
+  (define bounds (area-bounds area))
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (let* ([xz (xz x z)])
+        (when (outskirts? xz)
+          (set! result (cons xz result))))))
+  result)
+
+(: put-hill! (->* (Stage Area Integer #:y-max Integer)
+                  (#:y-min Integer
+                   #:step-start Integer
+                   #:step-height Integer
+                   #:run-lengths (Vectorof Integer)
+                   #:run-heights (Vectorof Integer))
+                  Void))
+(define (put-hill! stage area block #:y-max y-max
+                   #:y-min [y-min 1]
+                   #:step-start [step-start y-min]
+                   #:step-height [step-height 5]
+                   #:run-lengths [run-lengths '#(1 2 2 3 3 4 5)]
+                   #:run-heights [run-heights '#(1 2 2 3 3 4 4 5)])
+  (define (put-column! [xz : XZ] [y-max : Integer])
+    (for ([y (in-range y-min (+ 1 y-max))])
+      (let ([p (point (xz-x xz) y (xz-z xz))])
+        (or (dqb:put-block! STG p block)
+            (error "TODO out of range" p)))))
+  (define STG (stage-stage stage))
+  (define bounds (area-bounds area))
+  (define heights (ann (make-hash) (Mutable-HashTable XZ Integer)))
+  (define (done? [xz : XZ])
+    (hash-ref heights xz (lambda () #f)))
+  (: gen-hill! (-> (Listof XZ) Integer Void))
+  (define (gen-hill! outskirts floor)
+    (cond
+      [(>= floor y-max)
+       (void)]
+      [(empty? outskirts)
+       (void)]
+      [else
+       (for ([xz outskirts])
+         (when (not (done? xz))
+           (define height (min (+ floor (rand run-heights))
+                               y-max))
+           (hash-set! heights xz height)
+           (put-column! xz height)))
+       (gen-hill! (shuffle (find-outskirts area done?))
+                  (+ step-height floor))]))
+  ; Fill in sides
+  (gen-hill! (find-outskirts area (lambda (xz) #f)) step-start)
+  ; Fill in top
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (let ([xz (xz x z)])
+        (when (and (not (done? xz))
+                   (area-contains? area xz))
+          (put-column! xz y-max)))))
+  (void))
+
+(define (clear-area! [stage : Stage] [area : Area] #:y-min [y-min : Integer 1])
+  (define STG (stage-stage stage))
+  (define bounds (area-bounds area))
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (when (area-contains? area (xz x z))
+        (for ([y (in-range y-min 96)])
+          (let ([p (point x y z)])
+            (or (dqb:put-block! STG p 0)
+                (error "TODO out of range" p)))))))
+  (void))
