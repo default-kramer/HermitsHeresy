@@ -69,13 +69,22 @@
           (error "bad height" h))))
   (define pixels (pict->argb-pixels bmp))
   (define xzs (ann (make-hash) (Mutable-HashTable XZ #t)))
+  (define all-empty? : Boolean #t)
+  (define all-full? : Boolean #t)
   (let ([index 0])
     (for ([z (in-range depth)])
       (for ([x (in-range width)])
         (let ([alpha (bytes-ref pixels index)])
           (set! index (+ 4 index)) ; 4 bytes per pixel
-          (when (> alpha 0)
-            (hash-set! xzs (xz x z) #t))))))
+          (cond
+            [(> alpha 0)
+             (set! all-empty? #f)
+             (hash-set! xzs (xz x z) #t)]
+            [else
+             (set! all-full? #f)])))))
+  (when (or all-empty? all-full?)
+    (error "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
+           (if all-empty? "all" "zero")))
   (area (rect (xz 0 0) (xz width depth))
         (list->set (hash-keys xzs))))
 
