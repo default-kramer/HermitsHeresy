@@ -15,7 +15,8 @@
 (provide (all-defined-out))
 ;)
 
-(require "lib.rkt")
+(require "lib.rkt"
+         "zlib.rkt")
 
 (module+ test
   (require typed/rackunit))
@@ -50,44 +51,69 @@
 (define zipper-path "C:\\Users\\kramer\\Documents\\code\\HermitsHeresy\\DQB2ZipUtil\\bin\\Debug\\net8.0\\DQB2ZipUtil.exe")
 
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
-  (define temp-file (build-path temp-dir (format "dqb2~a.in.hhtemp" (random 999999))))
-  (define decompress
-    (let-values ([(a b c d)
-                  (subprocess #f #f #f ; #f
-                              zipper-path
-                              "-d" path temp-file)])
-      a))
-  (define finished? (sync/timeout 10 decompress))
-  (when (not finished?)
-    (error "Decompression failed")) ; TODO should show exit code and stdout/stderr
-  (let* ([all-bytes (file->bytes temp-file)]
-         [header (subbytes all-bytes 0 header-length)]
-         [buffer (subbytes all-bytes header-length (- (bytes-length all-bytes) header-length))]
-         [info (stgdat-file kind path)])
-    ; TODO delete temp file here
-    (stage info header buffer)))
+  #;{begin
+      (define temp-file (build-path temp-dir (format "dqb2~a.in.hhtemp" (random 999999))))
+      (define decompress
+        (let-values ([(a b c d)
+                      (subprocess #f #f #f ; #f
+                                  zipper-path
+                                  "-d" path temp-file)])
+          a))
+      (define finished? (sync/timeout 10 decompress))
+      (when (not finished?)
+        (error "Decompression failed")) ; TODO should show exit code and stdout/stderr
+      (let* ([all-bytes (file->bytes temp-file)]
+             [header (subbytes all-bytes 0 header-length)]
+             ; WARNING this is probably a bug:
+             #;[buffer (subbytes all-bytes header-length (- (bytes-length all-bytes) header-length))]
+             ; ... and this is probably the fix:
+             [buffer (subbytes all-bytes header-length (bytes-length all-bytes))]
+             [info (stgdat-file kind path)])
+        ; TODO delete temp file here
+        (stage info header buffer))}
+  {begin
+    (define all-bytes (file->bytes path))
+    (define header (subbytes all-bytes 0 header-length))
+    (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
+    ; I'm guessing IoA probably always uncompresses to exactly 163,053,024 bytes (including the header),
+    ; and we'll just add some room to spare just in case
+    (define buffer-size #xA000000)
+    (define buffer (uncompress compressed buffer-size))
+    (stage (stgdat-file kind path) header buffer)
+    })
 
 (define (save-stgdat! [stage : Stage])
-  (define temp-file (build-path temp-dir (format "dqb2~a.out.hhtemp" (random 999999))))
-  (let ([header (stage-header stage)]
-        [buffer (stage-buffer stage)]
-        [port (open-output-file temp-file #:exists 'truncate)])
-    (write-bytes header port)
-    (write-bytes buffer port)
-    (close-output-port port))
-  (define orig-file (stgdat-file-path (stage-loaded-from stage)))
-  ; TODO copy orig-file to backups dir before overwriting
-  (define compress
-    (let-values ([(a b c d)
-                  (subprocess #f #f #f ; #f
-                              zipper-path
-                              "-c" temp-file orig-file)])
-      a))
-  (define finished? (sync/timeout 10 compress))
-  (when (not finished?)
-    (error "Compression failed")) ; TODO should show exit code and stdout/stderr
-  (println (format "WROTE TO: ~a" orig-file))
-  (void))
+  #;{begin
+      (define temp-file (build-path temp-dir (format "dqb2~a.out.hhtemp" (random 999999))))
+      (let ([header (stage-header stage)]
+            [buffer (stage-buffer stage)]
+            [port (open-output-file temp-file #:exists 'truncate)])
+        (write-bytes header port)
+        (write-bytes buffer port)
+        (close-output-port port))
+      (define orig-file (stgdat-file-path (stage-loaded-from stage)))
+      ; TODO copy orig-file to backups dir before overwriting
+      (define compress
+        (let-values ([(a b c d)
+                      (subprocess #f #f #f ; #f
+                                  zipper-path
+                                  "-c" temp-file orig-file)])
+          a))
+      (define finished? (sync/timeout 10 compress))
+      (when (not finished?)
+        (error "Compression failed")) ; TODO should show exit code and stdout/stderr
+      (println (format "WROTE TO: ~a" orig-file))
+      (void)}
+  {begin
+    (define header (stage-header stage))
+    (define compressed (compress (stage-buffer stage)))
+    (define orig-file (stgdat-file-path (stage-loaded-from stage)))
+    (with-output-to-file orig-file #:exists 'truncate
+      (lambda ()
+        (write-bytes header)
+        (write-bytes compressed)))
+    (println (format "WROTE TO: ~a" orig-file))
+    (void)})
 
 (define (TODO [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])
