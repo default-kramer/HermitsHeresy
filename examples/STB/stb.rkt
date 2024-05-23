@@ -14,7 +14,7 @@
 
 #;{begin
     (define B00 (mark-writable (load-stage 'IoA 'B00)))
-    (clear-stage! B00 'all)
+    (clear-area! B00 'all #:keep-items? #f)
     (repair-sea! B00 'all)
 
     #;(put-hill! B00 cs-plateau (block 'Ice) #:y-min 1 #:y-max 50)

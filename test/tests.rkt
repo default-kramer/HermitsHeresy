@@ -11,7 +11,7 @@
   ; 2024-05-23 looks correct to my eyes
   (let ([stage (load 'IoA "STGDAT01.001.bin")])
     (check-equal? (blocks-hash stage) '(8305176 9691690))
-    (clear-stage! stage 'all)
+    (clear-area! stage 'all #:keep-items? #f)
     (repair-sea! stage 'all)
     (check-equal? (blocks-hash stage) '(5119984 1574160)))
   }

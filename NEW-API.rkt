@@ -9,10 +9,9 @@
          area-contains?
          xz
          put-hill!
-         clear-area!
          print-column
          repair-sea!
-         clear-stage!
+         clear-area!
          )
 
 (module+ for-testing
@@ -21,7 +20,6 @@
 (require (prefix-in dqb: "lib-dqb.rkt")
          (prefix-in lib: (only-in "lib.rkt" point))
          typed/pict
-         typed/racket/stream
          (only-in typed/racket/draw Bitmap%))
 
 (module+ test
@@ -146,37 +144,15 @@
               [contains-func : (-> XZ Any)])
   #:transparent #:type-name Area)
 
-; The following stream code uses way too much memory, why?
-#;(define-syntax-rule (in-area area)
-    (in-stream (area-xzs area)))
-
-#;(: area-xzs (-> Area (Sequenceof XZ)))
-#;(define (area-xzs area)
-    (let* ([bounds (area-bounds area)]
-           [contains? (area-contains-func area)]
-           [x (+ -1 (xz-x (rect-start bounds)))] ; move cursor prior
-           [z (xz-z (rect-start bounds))]
-           [end-x (xz-x (rect-end bounds))]
-           [end-z (xz-z (rect-end bounds))])
-      (: advance! (-> (Sequenceof XZ)))
-      (define (advance!)
-        (set! x (+ 1 x))
-        (when (>= x end-x)
-          (set! x 0)
-          (set! z (+ 1 z)))
-        (if (< z end-z)
-            (let ([current (xz x z)])
-              (if (contains? current)
-                  (stream-cons current (advance!))
-                  (advance!)))
-            (list)))
-      (advance!)))
-
-#;{module+ test
-    (check-equal? (stream->list (stream-take (area-xzs (stage-full-area 'IoA)) 3))
-                  ; 7 OOB chunks means that the first valid X is 7*32 = 224
-                  (list (xz 224 0) (xz 225 0) (xz 226 0)))
-    }
+(define-syntax-rule (for/area ([xz-id area-expr])
+                      body ...)
+  (let* ([area (ann area-expr Area)]
+         [bounds (area-bounds area)])
+    (for ([z (in-rect/z bounds)])
+      (for ([x (in-rect/x bounds)])
+        (let ([xz-id (xz x z)])
+          (when (area-contains? area xz-id)
+            body ...))))))
 
 (define (area-contains? [area : Area] [xz : XZ])
   ((area-contains-func area) xz))
@@ -272,15 +248,12 @@
                    (#:y-min Integer)
                    Void))
 (define (fill-area! stage area block #:y-max y-max #:y-min [y-min : Integer 1])
-  (let ([stg (stage-stage stage)]
-        [bounds (area-bounds area)])
-    (for ([x (in-rect/x bounds)])
-      (for ([z (in-rect/z bounds)])
-        (when (area-contains? area (xz x z))
-          (for ([y (in-range y-min (+ 1 y-max))])
-            (let ([p (lib:point x y z)])
-              (or (dqb:put-block! stg p block)
-                  (error "TODO out of range:" p)))))))
+  (let ([stg (stage-stage stage)])
+    (for/area ([xz area])
+      (for ([y (in-range y-min (+ 1 y-max))])
+        (let* ([p (make-point xz y)])
+          (or (stage-write! stage p block)
+              (error "TODO out of range:" p)))))
     (void)))
 
 (define (save-stage! [stage : Writable-Stage])
@@ -359,18 +332,6 @@
           (put-column! xz y-max)))))
   (void))
 
-(define (clear-area! [stage : Stage] [area : Area] #:y-min [y-min : Integer 1])
-  (define STG (stage-stage stage))
-  (define bounds (area-bounds area))
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
-      (when (area-contains? area (xz x z))
-        (for ([y (in-range y-min 96)])
-          (let ([p (lib:point x y z)])
-            (or (dqb:put-block! STG p 0)
-                (error "TODO out of range" p)))))))
-  (void))
-
 (define (print-column [stage : Stage] [xz : XZ])
   (for ([y (in-range 96)])
     (let* ([p (make-point xz y)]
@@ -418,21 +379,18 @@
       [else #f]))
 
   (define area (get-area where stage))
-  (define bounds (area-bounds area))
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
-      (when (area-contains? area (xz x z))
-        (for ([y (in-range (+ 1 water-level))])
-          (let ([p (make-point (xz x z) y)])
-            (when (vacant? p)
-              (stage-write! stage p (if (= y water-level)
-                                        top-sea
-                                        full-sea))))))))
+  (for/area ([xz area])
+    (for ([y (in-range (+ 1 water-level))])
+      (let ([p (make-point xz y)])
+        (when (vacant? p)
+          (stage-write! stage p (if (= y water-level)
+                                    top-sea
+                                    full-sea))))))
   (void))
 
-(define (clear-stage! [stage : Stage] [where : (U 'all Area)]
-                      #:min-y [min-y : Integer 1]
-                      #:keep-items? [keep-items? : Boolean #f])
+(define (clear-area! [stage : Stage] [where : (U 'all Area)]
+                     #:min-y [min-y : Integer 1]
+                     #:keep-items? [keep-items? : Boolean #t])
   (define buffer (dqb:stage-buffer (stage-stage stage)))
   ; Reset count of 24-byte records to zero
   ; (this is probably a 4-byte number but 0xC8000 is the max)
@@ -441,16 +399,13 @@
     (bytes-set! buffer #x24E7CE 0)
     (bytes-set! buffer #x24E7CF 0))
   (define area (get-area where stage))
-  (define bounds (area-bounds area))
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
-      (when (area-contains? area (xz x z))
-        (for ([y (in-range 96)])
-          (let ([p (make-point (xz x z) y)])
-            (when (and (>= y min-y)
-                       (or (not keep-items?)
-                           (simple-block? (or (stage-read stage p) 0))))
-              (stage-write! stage p 0)))))))
+  (for/area ([xz area])
+    (for ([y (in-range 96)])
+      (let ([p (make-point xz y)])
+        (when (and (>= y min-y)
+                   (or (not keep-items?)
+                       (simple-block? (or (stage-read stage p) 0))))
+          (stage-write! stage p 0)))))
   (void))
 
 (define (blocks-hash [stage : Stage]
@@ -459,19 +414,16 @@
   ; If the hash changes, you might need to use an older version of the code
   ; to export the complete data for diffing.
   (define area (get-area where stage))
-  (define bounds (area-bounds area))
   (define hash1 0)
   (define hash2 0)
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
-      (when (area-contains? area (xz x z))
-        (for ([y (in-range 96)])
-          (let* ([p (make-point (xz x z) y)]
-                 [block (or (stage-read stage p)
-                            (error "assert fail"))])
-            ; I think a hash collision would be very unlikely, but I can't prove it.
-            ; Using two different hashes seems like it would be much more resistant
-            ; to any surprising block patterns that might thwart one of the hashes.
-            (set! hash1 (bitwise-and #xFFFFFF (+ block (* hash1 31))))
-            (set! hash2 (bitwise-and #xFFFFFF (+ block (* hash2 17)))))))))
+  (for/area ([xz area])
+    (for ([y (in-range 96)])
+      (let* ([p (make-point xz y)]
+             [block (or (stage-read stage p)
+                        (error "assert fail"))])
+        ; I think a hash collision would be very unlikely, but I can't prove it.
+        ; Using two different hashes seems like it would be much more resistant
+        ; to any surprising block patterns that might thwart one of the hashes.
+        (set! hash1 (bitwise-and #xFFFFFF (+ block (* hash1 31))))
+        (set! hash2 (bitwise-and #xFFFFFF (+ block (* hash2 17)))))))
   (list hash1 hash2))
