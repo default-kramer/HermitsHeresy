@@ -12,12 +12,33 @@
          clear-area!
          print-column
          repair-sea!
+         clear-stage!
          )
+
+(module+ for-testing
+  (provide blocks-hash))
 
 (require (prefix-in dqb: "lib-dqb.rkt")
          (prefix-in lib: (only-in "lib.rkt" point))
          typed/pict
+         typed/racket/stream
          (only-in typed/racket/draw Bitmap%))
+
+(module+ test
+  (require typed/rackunit))
+
+(: simple-block? (-> Integer Boolean))
+(define (simple-block? block)
+  ; Seems to be
+  ; * mask #x0FFF is the block ID
+  ; * mask #xF000 is the chisel status
+  (let ([masked (bitwise-and #x0F00 block)])
+    (case masked
+      ; Blocks placed by the player:
+      [(#x800 #xA00) #t]
+      ; Blocks placed by the game:
+      [(#x000) (not (= 0 block))]
+      [else #f])))
 
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
@@ -28,8 +49,19 @@
 (define (stage-kind [stage : Stage])
   (dqb:stgdat-file-kind (dqb:stage-loaded-from (stage-stage stage))))
 
-(: get-addr (-> Stage Point (U #f Integer)))
-(define (get-addr stage point)
+; Each inner vector is one row, holding chunk IDs from east to west.
+; The outer vector contains all rows from north to south.
+; A chunk ID of false indicates out-of-bounds.
+(define-type Chunk-Layout (Vectorof (Vectorof (U #f Integer))))
+
+(: get-chunk-layout (-> dqb:Stgdat-Kind Chunk-Layout))
+(define (get-chunk-layout kind)
+  (case kind
+    [(IoA) IoA-chunk-layout]
+    [else (error "Unexpected kind:" kind)]))
+
+(: get-addr (-> dqb:Stgdat-Kind Point (U #f Integer)))
+(define (get-addr kind point)
   (define (get-address [chunk : Integer] [x : Integer] [y : Integer] [z : Integer])
     (+ #x183FEF0
        (* chunk #x30000)
@@ -38,27 +70,24 @@
        (* x 2)))
   (let*-values ([(x-offset x) (quotient/remainder (point-x point) 32)]
                 [(z-offset z) (quotient/remainder (point-z point) 32)])
-    (let* ([kind (stage-kind stage)]
-           [chunk-layout (case (stage-kind stage)
-                           [(IoA) IoA-chunk-layout]
-                           [else (error "Unexpected kind:" kind)])]
+    (let* ([chunk-layout (get-chunk-layout kind)]
            [row (vector-ref chunk-layout z-offset)]
            [chunk-id (vector-ref row x-offset)])
       (and chunk-id
            (get-address chunk-id x (point-y point) z)))))
 
-(: stage-read (-> Stage Point (U #f (Pairof Byte Byte))))
+(: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
-  (let ([addr (get-addr stage point)])
+  (let ([addr (get-addr (stage-kind stage) point)])
     (and addr
          (let* ([buffer (dqb:stage-buffer (stage-stage stage))]
-                [a (bytes-ref buffer (+ 0 addr))]
-                [b (bytes-ref buffer (+ 1 addr))])
-           (cons a b)))))
+                [lo (bytes-ref buffer (+ 0 addr))]
+                [hi (bytes-ref buffer (+ 1 addr))])
+           (bitwise-ior lo (arithmetic-shift hi 8))))))
 
 (: stage-write! (-> Stage Point Integer (U #f Void)))
 (define (stage-write! stage point block)
-  (let ([addr (get-addr stage point)])
+  (let ([addr (get-addr (stage-kind stage) point)])
     (and addr
          (let ([buffer (dqb:stage-buffer (stage-stage stage))])
            (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
@@ -114,11 +143,43 @@
             (xz-z (rect-end rect))))
 
 (struct area ([bounds : Rect]
-              [xzs : (Setof XZ)])
+              [contains-func : (-> XZ Any)])
   #:transparent #:type-name Area)
 
+; The following stream code uses way too much memory, why?
+#;(define-syntax-rule (in-area area)
+    (in-stream (area-xzs area)))
+
+#;(: area-xzs (-> Area (Sequenceof XZ)))
+#;(define (area-xzs area)
+    (let* ([bounds (area-bounds area)]
+           [contains? (area-contains-func area)]
+           [x (+ -1 (xz-x (rect-start bounds)))] ; move cursor prior
+           [z (xz-z (rect-start bounds))]
+           [end-x (xz-x (rect-end bounds))]
+           [end-z (xz-z (rect-end bounds))])
+      (: advance! (-> (Sequenceof XZ)))
+      (define (advance!)
+        (set! x (+ 1 x))
+        (when (>= x end-x)
+          (set! x 0)
+          (set! z (+ 1 z)))
+        (if (< z end-z)
+            (let ([current (xz x z)])
+              (if (contains? current)
+                  (stream-cons current (advance!))
+                  (advance!)))
+            (list)))
+      (advance!)))
+
+#;{module+ test
+    (check-equal? (stream->list (stream-take (area-xzs (stage-full-area 'IoA)) 3))
+                  ; 7 OOB chunks means that the first valid X is 7*32 = 224
+                  (list (xz 224 0) (xz 225 0) (xz 226 0)))
+    }
+
 (define (area-contains? [area : Area] [xz : XZ])
-  (set-member? (area-xzs area) xz))
+  ((area-contains-func area) xz))
 
 (define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])
@@ -132,7 +193,7 @@
                       chunk-id)]
           [else (error "assert fail")])))))
 
-(define IoA-chunk-layout
+(define IoA-chunk-layout : Chunk-Layout
   (parse-map '((_ _ _ _ _ _ _ X X X X X X X X _ _ _ X X X _ _ _ _ _ _)
                (_ _ _ _ _ _ X X X X X X X X X X X X X X X X X _ _ _ _)
                (_ _ _ _ X X X X X X X X X X X X X X X X X X X _ _ _ _)
@@ -183,7 +244,8 @@
     (error "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
            (if all-empty? "all" "zero")))
   (area (rect (xz 0 0) (xz width depth))
-        (list->set (hash-keys xzs))))
+        (let ([set (list->set (hash-keys xzs))])
+          (lambda ([xz : XZ]) (set-member? set xz)))))
 
 (: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path) Stage))
 (define (load-stage kind slot)
@@ -211,11 +273,10 @@
                    Void))
 (define (fill-area! stage area block #:y-max y-max #:y-min [y-min : Integer 1])
   (let ([stg (stage-stage stage)]
-        [bounds (area-bounds area)]
-        [area-xzs (area-xzs area)])
+        [bounds (area-bounds area)])
     (for ([x (in-rect/x bounds)])
       (for ([z (in-rect/z bounds)])
-        (when (set-member? area-xzs (xz x z))
+        (when (area-contains? area (xz x z))
           (for ([y (in-range y-min (+ 1 y-max))])
             (let ([p (lib:point x y z)])
               (or (dqb:put-block! stg p block)
@@ -316,7 +377,21 @@
            [val (stage-read stage p)])
       (println (list "y:" y "block:" val)))))
 
-(define (repair-sea! [stage : Stage] [area : Area] #:sea-level [sea-level : (U #f Integer) #f])
+(define (stage-full-area [kind : dqb:Stgdat-Kind])
+  (let* ([chunk-layout (get-chunk-layout kind)]
+         [depth (* 32 (vector-length chunk-layout))]
+         [width (* 32 (vector-length (vector-ref chunk-layout 0)))]
+         [bounds (rect (xz 0 0) (xz width depth))])
+    (define (contains? [xz : XZ])
+      (get-addr kind (make-point xz 0)))
+    (area bounds contains?)))
+
+(define-syntax-rule (get-area x stage)
+  (case x
+    [(all) (stage-full-area (stage-kind stage))]
+    [else (ann x Area)]))
+
+(define (repair-sea! [stage : Stage] [where : (U 'all Area)] #:sea-level [sea-level : (U #f Integer) #f])
   ; Notes from IoA testing:
   ; Sea level is at y=31.
   ; This means that if you place a block such that the bottom sits in the sea
@@ -331,25 +406,72 @@
                                     (case kind
                                       [(IoA) 31]
                                       [else (error "Unexpected kind" kind)])))
-  (define bounds (area-bounds area))
   ; The top-sea and full-sea values that follow are confirmed on IoA.
   ; Other islands might use other values, more investigation needed.
   (define top-sea #x1A4) ; The shallow sea, placed at y = sea level
   (define full-sea #x155) ; Full sea, placed at y < sea level
 
-  (define (vacant? [stage : Stage] [point : Point])
+  (define (vacant? [point : Point])
     ; This probably needs more cases... TBD
-    (match (stage-read stage point)
-      [(cons 0 0) #t]
+    (case (stage-read stage point)
+      [(0) #t]
       [else #f]))
 
+  (define area (get-area where stage))
+  (define bounds (area-bounds area))
   (for ([z (in-rect/z bounds)])
     (for ([x (in-rect/x bounds)])
       (when (area-contains? area (xz x z))
         (for ([y (in-range (+ 1 water-level))])
           (let ([p (make-point (xz x z) y)])
-            (when (vacant? stage p)
+            (when (vacant? p)
               (stage-write! stage p (if (= y water-level)
                                         top-sea
                                         full-sea))))))))
   (void))
+
+(define (clear-stage! [stage : Stage] [where : (U 'all Area)]
+                      #:min-y [min-y : Integer 1]
+                      #:keep-items? [keep-items? : Boolean #f])
+  (define buffer (dqb:stage-buffer (stage-stage stage)))
+  ; Reset count of 24-byte records to zero
+  ; (this is probably a 4-byte number but 0xC8000 is the max)
+  (when (not keep-items?)
+    (bytes-set! buffer #x24E7CD 0)
+    (bytes-set! buffer #x24E7CE 0)
+    (bytes-set! buffer #x24E7CF 0))
+  (define area (get-area where stage))
+  (define bounds (area-bounds area))
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (when (area-contains? area (xz x z))
+        (for ([y (in-range 96)])
+          (let ([p (make-point (xz x z) y)])
+            (when (and (>= y min-y)
+                       (or (not keep-items?)
+                           (simple-block? (or (stage-read stage p) 0))))
+              (stage-write! stage p 0)))))))
+  (void))
+
+(define (blocks-hash [stage : Stage]
+                     #:where [where : (U 'all Area) 'all])
+  ; For use by automated tests, to avoid adding too many large files into git.
+  ; If the hash changes, you might need to use an older version of the code
+  ; to export the complete data for diffing.
+  (define area (get-area where stage))
+  (define bounds (area-bounds area))
+  (define hash1 0)
+  (define hash2 0)
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (when (area-contains? area (xz x z))
+        (for ([y (in-range 96)])
+          (let* ([p (make-point (xz x z) y)]
+                 [block (or (stage-read stage p)
+                            (error "assert fail"))])
+            ; I think a hash collision would be very unlikely, but I can't prove it.
+            ; Using two different hashes seems like it would be much more resistant
+            ; to any surprising block patterns that might thwart one of the hashes.
+            (set! hash1 (bitwise-and #xFFFFFF (+ block (* hash1 31))))
+            (set! hash2 (bitwise-and #xFFFFFF (+ block (* hash2 17)))))))))
+  (list hash1 hash2))
