@@ -437,6 +437,9 @@
 (define-syntax-rule (define-blocks f [id val] ...)
   (define (f a)
     (case a
+      ; Hmm, so far it looks like many or all blocks can be used without the following #x800 mask
+      ; (so having 0 for the hi byte)... and the zero-hi-byte indicates a prebuilt block?
+      ; The #x800 seems to indicate a player-placed block?
       [(id) (bitwise-ior #x800 val)]
       ...
       [else (error "Unknown block:" a)])))
@@ -483,6 +486,7 @@
   [Light-Dolomite #x82]
   [Dark-Dolomite #x83]
   [Stony-Soil #x8D]
+  [Seaside-Sand #x92]
   [Arid-Earth #x93]
   [Chert #x95]
   [Chunky-Chert #x99]

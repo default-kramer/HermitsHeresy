@@ -10,10 +10,12 @@
          xz
          put-hill!
          clear-area!
+         print-column
+         repair-sea!
          )
 
 (require (prefix-in dqb: "lib-dqb.rkt")
-         (only-in "lib.rkt" point)
+         (prefix-in lib: (only-in "lib.rkt" point))
          typed/pict
          (only-in typed/racket/draw Bitmap%))
 
@@ -22,6 +24,45 @@
 
 (struct stage ([stage : dqb:Stage])
   #:transparent #:type-name Stage)
+
+(define (stage-kind [stage : Stage])
+  (dqb:stgdat-file-kind (dqb:stage-loaded-from (stage-stage stage))))
+
+(: get-addr (-> Stage Point (U #f Integer)))
+(define (get-addr stage point)
+  (define (get-address [chunk : Integer] [x : Integer] [y : Integer] [z : Integer])
+    (+ #x183FEF0
+       (* chunk #x30000)
+       (* y 32 32 2)
+       (* z 32 2)
+       (* x 2)))
+  (let*-values ([(x-offset x) (quotient/remainder (point-x point) 32)]
+                [(z-offset z) (quotient/remainder (point-z point) 32)])
+    (let* ([kind (stage-kind stage)]
+           [chunk-layout (case (stage-kind stage)
+                           [(IoA) IoA-chunk-layout]
+                           [else (error "Unexpected kind:" kind)])]
+           [row (vector-ref chunk-layout z-offset)]
+           [chunk-id (vector-ref row x-offset)])
+      (and chunk-id
+           (get-address chunk-id x (point-y point) z)))))
+
+(: stage-read (-> Stage Point (U #f (Pairof Byte Byte))))
+(define (stage-read stage point)
+  (let ([addr (get-addr stage point)])
+    (and addr
+         (let* ([buffer (dqb:stage-buffer (stage-stage stage))]
+                [a (bytes-ref buffer (+ 0 addr))]
+                [b (bytes-ref buffer (+ 1 addr))])
+           (cons a b)))))
+
+(: stage-write! (-> Stage Point Integer (U #f Void)))
+(define (stage-write! stage point block)
+  (let ([addr (get-addr stage point)])
+    (and addr
+         (let ([buffer (dqb:stage-buffer (stage-stage stage))])
+           (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
+           (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16))))))
 
 ; We actually allow mutations to a writable-stage, we just cannot
 ; allow those changes to be saved and overwrite the original file.
@@ -41,6 +82,17 @@
 (struct xz ([x : Integer]
             [z : Integer])
   #:type-name XZ #:transparent)
+
+; OUCH - constructor is now x z y which is confusing!
+; Should hide this... use a generic interface?
+(struct point xz ([y : Integer])
+  #:type-name Point #:transparent)
+
+(define (make-point [xz : XZ] [y : Integer])
+  (point (xz-x xz) (xz-z xz) y))
+
+(define point-x xz-x)
+(define point-z xz-z)
 
 (define (neighbors [val : XZ])
   (let ([x (xz-x val)]
@@ -67,6 +119,39 @@
 
 (define (area-contains? [area : Area] [xz : XZ])
   (set-member? (area-xzs area) xz))
+
+(define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
+  (let ([chunk-id -1])
+    (for/vector : (Vectorof (Vectorof (U #f Integer)))
+      ([row rows])
+      (for/vector : (Vectorof (U #f Integer))
+        ([cell row])
+        (case cell
+          [(_) #f]
+          [(X) (begin (set! chunk-id (+ 1 chunk-id))
+                      chunk-id)]
+          [else (error "assert fail")])))))
+
+(define IoA-chunk-layout
+  (parse-map '((_ _ _ _ _ _ _ X X X X X X X X _ _ _ X X X _ _ _ _ _ _)
+               (_ _ _ _ _ _ X X X X X X X X X X X X X X X X X _ _ _ _)
+               (_ _ _ _ X X X X X X X X X X X X X X X X X X X _ _ _ _)
+               (_ _ _ X X X X X X X X X X X X X X X X X X X X _ _ _ _)
+               (_ _ X X X X X X X X X X X X X X X X X X X X X X X X _)
+               (_ X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (_ X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X X X X X X X X X X X X X X _)
+               (_ X X X X X X X X X X X X X X X X X X X X X X X _ _ _)
+               (_ _ X X X X X X X X X X X X X X X X X X X X X _ _ _ _)
+               (_ _ X X X X X X X X X X X X X X X X X X X _ _ _ _ _ _)
+               (_ _ _ _ X X X X X X X X X X X X X X X _ _ _ _ _ _ _ _)
+               (_ _ _ _ _ _ _ _ _ X X X X X X _ _ _ _ _ _ _ _ _ _ _ _)
+               (_ _ _ _ _ _ _ _ _ X X X X X _ _ _ _ _ _ _ _ _ _ _ _ _)
+               (_ _ _ _ _ _ _ _ _ _ X X X _ _ _ _ _ _ _ _ _ _ _ _ _ _))))
 
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
 (define (bitmap->area arg)
@@ -132,7 +217,7 @@
       (for ([z (in-rect/z bounds)])
         (when (set-member? area-xzs (xz x z))
           (for ([y (in-range y-min (+ 1 y-max))])
-            (let ([p (point x y z)])
+            (let ([p (lib:point x y z)])
               (or (dqb:put-block! stg p block)
                   (error "TODO out of range:" p)))))))
     (void)))
@@ -178,7 +263,7 @@
                    #:run-heights [run-heights '#(1 2 2 3 3 4 4 5)])
   (define (put-column! [xz : XZ] [y-max : Integer])
     (for ([y (in-range y-min (+ 1 y-max))])
-      (let ([p (point (xz-x xz) y (xz-z xz))])
+      (let ([p (lib:point (xz-x xz) y (xz-z xz))])
         (or (dqb:put-block! STG p block)
             (error "TODO out of range" p)))))
   (define STG (stage-stage stage))
@@ -220,7 +305,51 @@
     (for ([x (in-rect/x bounds)])
       (when (area-contains? area (xz x z))
         (for ([y (in-range y-min 96)])
-          (let ([p (point x y z)])
+          (let ([p (lib:point x y z)])
             (or (dqb:put-block! STG p 0)
                 (error "TODO out of range" p)))))))
+  (void))
+
+(define (print-column [stage : Stage] [xz : XZ])
+  (for ([y (in-range 96)])
+    (let* ([p (make-point xz y)]
+           [val (stage-read stage p)])
+      (println (list "y:" y "block:" val)))))
+
+(define (repair-sea! [stage : Stage] [area : Area] #:sea-level [sea-level : (U #f Integer) #f])
+  ; Notes from IoA testing:
+  ; Sea level is at y=31.
+  ; This means that if you place a block such that the bottom sits in the sea
+  ; and the top is out of the sea, that block is at y=31.
+  ;
+  ; Ideally this function would also repair all the 24-byte records.
+  ; (I strongly suspect there is an "undersea" flag there.)
+  ; But for now, too bad, the user would have to manually destroy those items
+  ; before using this function and put them back afterwards.
+  (define kind (stage-kind stage))
+  (define water-level : Integer (or sea-level
+                                    (case kind
+                                      [(IoA) 31]
+                                      [else (error "Unexpected kind" kind)])))
+  (define bounds (area-bounds area))
+  ; The top-sea and full-sea values that follow are confirmed on IoA.
+  ; Other islands might use other values, more investigation needed.
+  (define top-sea #x1A4) ; The shallow sea, placed at y = sea level
+  (define full-sea #x155) ; Full sea, placed at y < sea level
+
+  (define (vacant? [stage : Stage] [point : Point])
+    ; This probably needs more cases... TBD
+    (match (stage-read stage point)
+      [(cons 0 0) #t]
+      [else #f]))
+
+  (for ([z (in-rect/z bounds)])
+    (for ([x (in-rect/x bounds)])
+      (when (area-contains? area (xz x z))
+        (for ([y (in-range (+ 1 water-level))])
+          (let ([p (make-point (xz x z) y)])
+            (when (vacant? stage p)
+              (stage-write! stage p (if (= y water-level)
+                                        top-sea
+                                        full-sea))))))))
   (void))
