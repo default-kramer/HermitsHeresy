@@ -488,7 +488,7 @@
   (void))
 
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
-                     #:min-y [min-y : Integer 1]
+                     #:y-min [min-y : Integer 1]
                      #:keep-items? [keep-items? : Boolean #t])
   ; Reset count of 24-byte records to zero
   ; (this is probably a 4-byte number but 0xC8000 is the max)
