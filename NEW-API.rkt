@@ -12,6 +12,8 @@
          print-column
          repair-sea!
          clear-area!
+         stage->pict
+         TODO
          )
 
 (module+ for-testing
@@ -157,6 +159,13 @@
 (define (area-contains? [area : Area] [xz : XZ])
   ((area-contains-func area) xz))
 
+(define (area-dimensions [area : Area])
+  (let* ([bounds (area-bounds area)]
+         [start (rect-start bounds)]
+         [end (rect-end bounds)])
+    (values (- (xz-x end) (xz-x start))
+            (- (xz-z end) (xz-z start)))))
+
 (define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])
     (for/vector : (Vectorof (Vectorof (U #f Integer)))
@@ -217,8 +226,8 @@
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
-    (error "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
-           (if all-empty? "all" "zero")))
+    (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
+                   (if all-empty? "all" "zero"))))
   (area (rect (xz 0 0) (xz width depth))
         (let ([set (list->set (hash-keys xzs))])
           (lambda ([xz : XZ]) (set-member? set xz)))))
@@ -427,3 +436,41 @@
         (set! hash1 (bitwise-and #xFFFFFF (+ block (* hash1 31))))
         (set! hash2 (bitwise-and #xFFFFFF (+ block (* hash2 17)))))))
   (list hash1 hash2))
+
+(define (stage->pict [stage : Stage]
+                     [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
+  (define area (stage-full-area (stage-kind stage)))
+  (define-values (width depth) (area-dimensions area))
+  (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
+  (define index : Integer 0)
+  (define-syntax-rule (++! i) (let ([val i])
+                                (set! i (+ 1 i))
+                                val))
+  (define column (ann (make-vector 96) (Mutable-Vectorof Integer)))
+  (for ([z (in-range depth)])
+    (for ([x (in-range width)])
+      (for ([y (in-range 96)])
+        (let ([block (stage-read stage (make-point (xz x z) y))])
+          (vector-set! column y (or block 0))))
+      (let ([argb (argb-callback (xz x z) column)])
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 24 32))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 16 24))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 08 16))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 00 08)))))
+  (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
+
+
+; Anywhere `peak-block` occurs in the given area, fill that column up to that peak
+; with the `fill-block`.
+; Is this proc too specific to my use case?
+; Maybe I should (provide stage-read stage-write! for/area) and let user code do this:
+(define (TODO [stage : Stage] [area : Area] [peak-block : Integer] [fill-block : Integer])
+  (for/area ([xz area])
+    (define peak : Integer -1)
+    (for ([y (in-range 96)])
+      (when (= peak-block (or (stage-read stage (make-point xz y)) 0))
+        (set! peak y)))
+    (when peak
+      (for ([y (in-range 1 peak)])
+        (stage-write! stage (make-point xz y) fill-block))))
+  (void))

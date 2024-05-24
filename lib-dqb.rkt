@@ -434,7 +434,7 @@
            (let ([addr (get-address chunk-id chunk-x (point-y point) chunk-z)])
              (block-put! buffer addr block))))))
 
-(define-syntax-rule (define-blocks f [id val] ...)
+(define-syntax-rule (define-blocks f [id val IGNORE ...] ...)
   (define (f a)
     (case a
       ; Hmm, so far it looks like many or all blocks can be used without the following #x800 mask
@@ -492,4 +492,7 @@
   [Chunky-Chert #x99]
   [Spoiled-Soil #x9C]
   [Umber #xD1]
-  [Lumpy-Umber #xF1])
+  [Lumpy-Umber #xF1]
+  [Seaside-Scene-Block #x2CE]
+  [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
+  )
