@@ -13,30 +13,30 @@
 (check-true (area-contains? cs-plateau (xz 300 100)))
 (check-false (area-contains? cs-plateau (xz 10 10)))
 
-#;{module+ main
-    (define B00 (mark-writable (load-stage 'IoA 'B00)))
+{module+ main
+  (define B00 (mark-writable (load-stage 'IoA 'B00)))
 
-    (define manual-floor-block (block 'Seaside-Scene-Block))
-    (define (update-manual-build-pict)
-      (define (seaside-scene? block) (= block manual-floor-block))
-      (define seaside-pict
-        (stage->pict B00 (lambda (xz column)
-                           (if (ormap seaside-scene? (vector->list column))
-                               #xFF0000FF
-                               0))))
-      (send (pict->bitmap seaside-pict) save-file "manual-build.bmp" 'bmp))
-    #;(update-manual-build-pict)
+  (define manual-floor-block (block 'Seaside-Scene-Block))
+  (define (update-manual-build-pict)
+    (define (seaside-scene? block) (= block manual-floor-block))
+    (define seaside-pict
+      (stage->pict B00 (lambda (xz column)
+                         (if (ormap seaside-scene? (vector->list column))
+                             #xFF0000FF
+                             0))))
+    (send (pict->bitmap seaside-pict) save-file "manual-build.bmp" 'bmp))
+  #;(update-manual-build-pict)
 
-    #;(TODO B00 manual-build manual-floor-block (block 'Old-Skool-Wall-Block))
+  #;(TODO B00 manual-build manual-floor-block (block 'Old-Skool-Wall-Block))
 
-    #;(clear-area! B00 'all #:keep-items? #f)
-    #;(repair-sea! B00 'all)
+  #;(clear-area! B00 'all #:keep-items? #f)
+  #;(repair-sea! B00 'all)
 
-    #;(put-hill! B00 cs-plateau (block 'Ice) #:y-min 1 #:y-max 50)
-    #;(clear-area! B00 mountain #:y-min 50)
-    #;(put-hill! B00 mountain (block 'Basalt) #:y-min 1 #:y-max 94
-                 #:step-start 50 #:step-height 4)
+  #;(put-hill! B00 cs-plateau (block 'Ice) #:y-min 1 #:y-max 50)
+  #;(clear-area! B00 mountain #:y-min 50)
+  #;(put-hill! B00 mountain (block 'Basalt) #:y-min 1 #:y-max 94
+               #:step-start 50 #:step-height 4)
 
-    #;(fill! B00 (block 'Seaside-Scene-Block))
-    ;(save-stage! B00)
-    }
+  #;(fill! B00 (block 'Seaside-Scene-Block))
+  ;(save-stage! B00)
+  }
