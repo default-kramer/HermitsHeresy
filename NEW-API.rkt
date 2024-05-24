@@ -37,21 +37,41 @@
       ...
       [else (error "Unknown block:" a)])))
 
-; Blocks are saved as 2 bytes. After endian adjustment we have:
+; Blocks are saved as 2 bytes.
+; One of the bits is a "simple block?" flag.
+; A simple block is fully represented by these 2 bytes, while everything else
+; (e.g. decorative items) will have extra info stored in a 24-byte record elsewhere.
+; After endian adjustment we have this bit layout (applies to simple blocks only):
 ;   cccc p0ii iiii iiii
 ; where
 ;   c - chisel status
 ;   p - flag "placed by player?"
+;   0 - zero, indicates simple block (1 would be non-simple)
 ;   i - block ID
-; The 4-bit chisel status can be one of (all in hex):
+; The 4-bit chisel status can be one of:
 ; * 0 - no chisel
-; * 1/3/5/7 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4) | 8
+; * 1/3/5/7 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4)
 ; * 2/4/6/8 - diagonal chisel SW/SE/NW/NE
 ; * 9/a/b/c - concave chisel NW/SW/SE/NE
 ; * d/e - flat chisel hi/lo
 ; The p flag appears to indicate whether the block was created/placed by the game (0)
 ; or placed by the player (1). I think the huge pyramid the NPCs build also uses a 0 flag.
 ; And maybe all NPC-placed blocks do?
+;
+; Note that not every simple block can be chiseled.
+; For example, shallow (top level) seawater is a simple block (stored as #x1A4 aka "A4 01")
+; but it cannot be chiseled (actually I haven't tested what happens if you try...)
+;
+; For future reference, I believe that every non-simple block must have one of the following values:
+;  04DE (1246)
+;  0537 (1335)
+;  0590 (1424)
+;  05E9 (1513)
+;  0642 (1602)
+;  069B (1691)
+;  06F4 (1780)
+;  074D (1869)
+;  07FF (2047)
 (define-blocks block
   ; x01 - unbreakable floor of map
   [Earth #x02]
