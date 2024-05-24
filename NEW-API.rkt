@@ -19,13 +19,40 @@
 (module+ for-testing
   (provide blocks-hash))
 
-(require (prefix-in dqb: "lib-dqb.rkt")
-         (prefix-in lib: (only-in "lib.rkt" point))
+(require (prefix-in zlib: "zlib.rkt")
          typed/pict
          (only-in typed/racket/draw Bitmap%))
 
 (module+ test
   (require typed/rackunit))
+
+(define-type Stgdat-Kind (U 'IoA))
+
+(define header-length #x110)
+
+(struct stgdat-file ([kind : Stgdat-Kind]
+                     [path : Path])
+  #:transparent #:type-name Stgdat-File)
+
+(struct stage ([loaded-from : Stgdat-File]
+               [header : Bytes] ; mutable (but we probably won't)
+               [buffer : Bytes] ; mutable
+               )
+  #:type-name Stage)
+
+; We actually allow mutations to a writable-stage, we just cannot
+; allow those changes to be saved and overwrite the original file.
+(struct writable-stage stage ()
+  #:transparent #:type-name Writable-Stage)
+
+(: mark-writable (-> Stage Writable-Stage))
+(define (mark-writable stage)
+  (writable-stage (stage-loaded-from stage)
+                  (stage-header stage)
+                  (stage-buffer stage)))
+
+(define (stage-kind [stage : Stage])
+  (stgdat-file-kind (stage-loaded-from stage)))
 
 (: simple-block? (-> Integer Boolean))
 (define (simple-block? block)
@@ -43,24 +70,18 @@
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
 
-(struct stage ([stage : dqb:Stage])
-  #:transparent #:type-name Stage)
-
-(define (stage-kind [stage : Stage])
-  (dqb:stgdat-file-kind (dqb:stage-loaded-from (stage-stage stage))))
-
 ; Each inner vector is one row, holding chunk IDs from east to west.
 ; The outer vector contains all rows from north to south.
 ; A chunk ID of false indicates out-of-bounds.
 (define-type Chunk-Layout (Vectorof (Vectorof (U #f Integer))))
 
-(: get-chunk-layout (-> dqb:Stgdat-Kind Chunk-Layout))
+(: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
 (define (get-chunk-layout kind)
   (case kind
     [(IoA) IoA-chunk-layout]
     [else (error "Unexpected kind:" kind)]))
 
-(: get-addr (-> dqb:Stgdat-Kind Point (U #f Integer)))
+(: get-addr (-> Stgdat-Kind Point (U #f Integer)))
 (define (get-addr kind point)
   (define (get-address [chunk : Integer] [x : Integer] [y : Integer] [z : Integer])
     (+ #x183FEF0
@@ -80,7 +101,7 @@
 (define (stage-read stage point)
   (let ([addr (get-addr (stage-kind stage) point)])
     (and addr
-         (let* ([buffer (dqb:stage-buffer (stage-stage stage))]
+         (let* ([buffer (stage-buffer stage)]
                 [lo (bytes-ref buffer (+ 0 addr))]
                 [hi (bytes-ref buffer (+ 1 addr))])
            (bitwise-ior lo (arithmetic-shift hi 8))))))
@@ -89,18 +110,9 @@
 (define (stage-write! stage point block)
   (let ([addr (get-addr (stage-kind stage) point)])
     (and addr
-         (let ([buffer (dqb:stage-buffer (stage-stage stage))])
+         (let ([buffer (stage-buffer stage)])
            (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
            (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16))))))
-
-; We actually allow mutations to a writable-stage, we just cannot
-; allow those changes to be saved and overwrite the original file.
-(struct writable-stage stage ()
-  #:transparent #:type-name Writable-Stage)
-
-(: mark-writable (-> Stage Writable-Stage))
-(define (mark-writable stage)
-  (writable-stage (stage-stage stage)))
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.
@@ -232,6 +244,16 @@
         (let ([set (list->set (hash-keys xzs))])
           (lambda ([xz : XZ]) (set-member? set xz)))))
 
+(define (open-stgdat [kind : Stgdat-Kind] [path : Path])
+  (define all-bytes (file->bytes path))
+  (define header (subbytes all-bytes 0 header-length))
+  (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
+  ; I'm guessing IoA probably always uncompresses to exactly 163,053,024 bytes (including the header),
+  ; and we'll just add some room to spare just in case
+  (define buffer-size #xA000000)
+  (define buffer (zlib:uncompress compressed buffer-size))
+  (stage (stgdat-file kind path) header buffer))
+
 (: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path) Stage))
 (define (load-stage kind slot)
   (define path (case slot
@@ -244,29 +266,29 @@
                         (build-path sd (~a slot) filename)
                         (error "You must parameterize `save-dir` to load:" slot)))]
                  [else (ann slot Path)]))
-  (define stg (dqb:open-stgdat kind path))
-  (stage stg))
-
-(define (clear-map! [stage : Stage]
-                    #:above-y [above-y : Integer 0]
-                    #:keep-items? [keep-items? : Boolean #f])
-  (let ([stg (stage-stage stage)])
-    (dqb:clear-map! stg #:above-y above-y #:keep-items? keep-items?)))
+  (open-stgdat kind path))
 
 (: fill-area! (->* (Stage Area Integer #:y-max Integer)
                    (#:y-min Integer)
                    Void))
 (define (fill-area! stage area block #:y-max y-max #:y-min [y-min : Integer 1])
-  (let ([stg (stage-stage stage)])
-    (for/area ([xz area])
-      (for ([y (in-range y-min (+ 1 y-max))])
-        (let* ([p (make-point xz y)])
-          (or (stage-write! stage p block)
-              (error "TODO out of range:" p)))))
-    (void)))
+  (for/area ([xz area])
+    (for ([y (in-range y-min (+ 1 y-max))])
+      (let* ([p (make-point xz y)])
+        (or (stage-write! stage p block)
+            (error "TODO out of range:" p)))))
+  (void))
 
 (define (save-stage! [stage : Writable-Stage])
-  (dqb:save-stgdat! (stage-stage stage)))
+  (define header (stage-header stage))
+  (define compressed (zlib:compress (stage-buffer stage)))
+  (define orig-file (stgdat-file-path (stage-loaded-from stage)))
+  (with-output-to-file orig-file #:exists 'truncate
+    (lambda ()
+      (write-bytes header)
+      (write-bytes compressed)))
+  (println (format "WROTE TO: ~a" orig-file))
+  (void))
 
 (: rand (All (A) (-> (Vectorof A) A)))
 (define (rand vec)
@@ -306,10 +328,9 @@
                    #:run-heights [run-heights '#(1 2 2 3 3 4 4 5)])
   (define (put-column! [xz : XZ] [y-max : Integer])
     (for ([y (in-range y-min (+ 1 y-max))])
-      (let ([p (lib:point (xz-x xz) y (xz-z xz))])
-        (or (dqb:put-block! STG p block)
+      (let ([p (make-point xz y)])
+        (or (stage-write! stage p block)
             (error "TODO out of range" p)))))
-  (define STG (stage-stage stage))
   (define bounds (area-bounds area))
   (define heights (ann (make-hash) (Mutable-HashTable XZ Integer)))
   (define (done? [xz : XZ])
@@ -347,7 +368,7 @@
            [val (stage-read stage p)])
       (println (list "y:" y "block:" val)))))
 
-(define (stage-full-area [kind : dqb:Stgdat-Kind])
+(define (stage-full-area [kind : Stgdat-Kind])
   (let* ([chunk-layout (get-chunk-layout kind)]
          [depth (* 32 (vector-length chunk-layout))]
          [width (* 32 (vector-length (vector-ref chunk-layout 0)))]
@@ -400,10 +421,10 @@
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
                      #:min-y [min-y : Integer 1]
                      #:keep-items? [keep-items? : Boolean #t])
-  (define buffer (dqb:stage-buffer (stage-stage stage)))
   ; Reset count of 24-byte records to zero
   ; (this is probably a 4-byte number but 0xC8000 is the max)
   (when (not keep-items?)
+    (define buffer (stage-buffer stage))
     (bytes-set! buffer #x24E7CD 0)
     (bytes-set! buffer #x24E7CE 0)
     (bytes-set! buffer #x24E7CF 0))
