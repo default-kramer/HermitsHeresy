@@ -1,7 +1,6 @@
 #lang racket
 
 (require "../../NEW-API.rkt"
-         (only-in "../../lib-dqb.rkt" block)
          pict
          rackunit)
 

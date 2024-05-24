@@ -4,6 +4,7 @@
          load-stage
          mark-writable
          save-stage!
+         block
          fill-area!
          bitmap->area
          area-contains?
@@ -25,6 +26,74 @@
 
 (module+ test
   (require typed/rackunit))
+
+(define-syntax-rule (define-blocks f [id val IGNORE ...] ...)
+  (define (f a)
+    (case a
+      ; Hmm, so far it looks like many or all blocks can be used without the following #x800 mask
+      ; (so having 0 for the hi byte)... and the zero-hi-byte indicates a prebuilt block?
+      ; The #x800 seems to indicate a player-placed block?
+      [(id) (bitwise-ior #x800 val)]
+      ...
+      [else (error "Unknown block:" a)])))
+
+; Blocks are saved as 2 bytes. After endian adjustment we have:
+;   cccc p0ii iiii iiii
+; where
+;   c - chisel status
+;   p - flag "placed by player?"
+;   i - block ID
+; The 4-bit chisel status can be one of (all in hex):
+; * 0 - no chisel
+; * 1/3/5/7 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4) | 8
+; * 2/4/6/8 - diagonal chisel SW/SE/NW/NE
+; * 9/a/b/c - concave chisel NW/SW/SE/NE
+; * d/e - flat chisel hi/lo
+; The p flag appears to indicate whether the block was created/placed by the game (0)
+; or placed by the player (1). I think the huge pyramid the NPCs build also uses a 0 flag.
+; And maybe all NPC-placed blocks do?
+(define-blocks block
+  ; x01 - unbreakable floor of map
+  [Earth #x02]
+  [Grassy-Earth #x03]
+  [Limegrassy-Earth #x04]
+  [Tilled-Soil #x05]
+  [Clay #x06] ; unsure
+  [Mossy-Earth #x07]
+  [Chalk #x08]
+  [Chunky-Chalk #x09]
+  [Obsidian #x0A]
+  [Sand #x0B]
+  [Sandstone #x0C]
+  [Sandy-Sandstone #x0D]
+  ; x0E - a reddish block
+  [Ash #x0F] ; unsure
+  ; x10 - illegal
+  ; x11 - purple peat?
+  [Accumulated-Snow #x12] ; unsure
+  [Snow #x13]
+  [Ice #x14]
+  [Clodstone #x15]
+  [Crumbly-Clodstone #x16]
+  [Basalt #x17]
+  ; x18 - nothing?
+  [Lava #x19]
+  [Vault-Wall #x1A] ; Vault Wall that I place saves as #xA7A I think...?
+  [Viny-Vault-Wall #x1B]
+  ; ======
+  [Light-Dolomite #x82]
+  [Dark-Dolomite #x83]
+  [Stony-Soil #x8D]
+  [Seaside-Sand #x92]
+  [Arid-Earth #x93]
+  [Chert #x95]
+  [Chunky-Chert #x99]
+  [Spoiled-Soil #x9C]
+  [Umber #xD1]
+  [Lumpy-Umber #xF1]
+  [Seaside-Scene-Block #x2CE]
+  [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
+  )
 
 (define-type Stgdat-Kind (U 'IoA))
 
