@@ -15,6 +15,7 @@
          clear-area!
          stage->pict
          TODO
+         fill!
          )
 
 (module+ for-testing
@@ -577,10 +578,19 @@
 (define (TODO [stage : Stage] [area : Area] [peak-block : Integer] [fill-block : Integer])
   (for/area ([xz area])
     (define peak : Integer -1)
-    (for ([y (in-range 96)])
+    (for ([y (in-range 95 -1 -1)])
       (when (= peak-block (or (stage-read stage (make-point xz y)) 0))
         (set! peak y)))
     (when peak
       (for ([y (in-range 1 peak)])
         (stage-write! stage (make-point xz y) fill-block))))
+  (void))
+
+; TODO TEMP we already have fill-area! can this be combined?
+(define (fill! [stage : Stage] [area : Area] [block : Integer])
+  (for/area ([xz area])
+    (for ([y (in-range 86)])
+      (let ([p (make-point xz y)])
+        (when (= 0 (or (stage-read stage p) 1))
+          (stage-write! stage p block)))))
   (void))

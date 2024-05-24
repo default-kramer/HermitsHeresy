@@ -13,7 +13,7 @@
 (check-true (area-contains? cs-plateau (xz 300 100)))
 (check-false (area-contains? cs-plateau (xz 10 10)))
 
-#;{begin
+#;{module+ main
     (define B00 (mark-writable (load-stage 'IoA 'B00)))
 
     (define manual-floor-block (block 'Seaside-Scene-Block))
@@ -27,7 +27,7 @@
       (send (pict->bitmap seaside-pict) save-file "manual-build.bmp" 'bmp))
     #;(update-manual-build-pict)
 
-    (TODO B00 manual-build manual-floor-block (block 'Old-Skool-Wall-Block))
+    #;(TODO B00 manual-build manual-floor-block (block 'Old-Skool-Wall-Block))
 
     #;(clear-area! B00 'all #:keep-items? #f)
     #;(repair-sea! B00 'all)
@@ -37,5 +37,6 @@
     #;(put-hill! B00 mountain (block 'Basalt) #:y-min 1 #:y-max 94
                  #:step-start 50 #:step-height 4)
 
-    #;(save-stage! B00)
+    #;(fill! B00 (block 'Seaside-Scene-Block))
+    ;(save-stage! B00)
     }
