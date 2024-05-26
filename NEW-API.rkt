@@ -1,9 +1,13 @@
 #lang typed/racket
 
+; TODO let's standardize all ranges to be low <= i < hi.
+; Otherwise it will cause more confusion than it solves.
+; Use naming like y-start and y-end instead of the existing
+; y-min and y-max which are usually inclusive on both ends.
+
 (provide save-dir
          load-stage
          mark-writable
-         save-stage!
          block
          fill-area!
          bitmap->area
@@ -16,6 +20,11 @@
          stage->pict
          TODO
          create-golem-platforms!
+         protected-areas ; WARNING this will probably be slow? And area combiner functions would be better anyway?
+
+         ; WARNING these should make backups probably:
+         copy-everything!
+         save-stage!
          )
 
 (module+ for-testing
@@ -24,6 +33,11 @@
 (require (prefix-in zlib: "zlib.rkt")
          typed/pict
          (only-in typed/racket/draw Bitmap%))
+
+(require/typed racket
+               [copy-file (->* (Path-String Path-String)
+                               (#:exists-ok? Any)
+                               Any)])
 
 (module+ test
   (require typed/rackunit))
@@ -38,6 +52,13 @@
       ...
       [else (error "Unknown block:" a)])))
 
+
+; == ERRATA ==
+; The following idea that there is a "simple block?" flag is not correct.
+; It is just coincidentally true in many cases.
+; But there exist at least some block IDs which do not require a 24-byte record
+; in the range #x400 - #x800, such as many liquids.
+; == END ERRATA ==
 ; Blocks are saved as 2 bytes.
 ; One of the bits is a "simple block?" flag.
 ; A simple block is fully represented by these 2 bytes, while everything else
@@ -116,6 +137,23 @@
   [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
   )
 
+; The precise definition of "simple?" is "any block which can be placed
+; into the blockdata without adding extra information anywhere else."
+; So any item which requires a 24-byte record is not simple.
+; And I think everything else is simple? Time will tell...
+(: simple? (-> Integer Boolean))
+(define (simple? block)
+  (case block
+    ; Copied these from the turtle-insect data files:
+    [(1246 1335 1424 1513 1602 1691 1780 1869 2047) #f]
+    [else #t]))
+
+{module+ test
+  (check-true (simple? (block 'Clodstone)))
+  (check-false (simple? 2047))
+  (check-true (simple? 0)) ; emptiness is simple
+  }
+
 (define-type Stgdat-Kind (U 'IoA))
 
 (define header-length #x110)
@@ -160,6 +198,8 @@
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
 
+(define protected-areas (make-parameter (ann (list) (Listof Area))))
+
 ; Each inner vector is one row, holding chunk IDs from east to west.
 ; The outer vector contains all rows from north to south.
 ; A chunk ID of false indicates out-of-bounds.
@@ -198,11 +238,15 @@
 
 (: stage-write! (-> Stage Point Integer (U #f Void)))
 (define (stage-write! stage point block)
-  (let ([addr (get-addr (stage-kind stage) point)])
-    (and addr
-         (let ([buffer (stage-buffer stage)])
-           (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
-           (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16))))))
+  (define (protected? [area : Area])
+    (area-contains? area point))
+  (define addr (get-addr (stage-kind stage) point))
+  (cond
+    [(not addr) #f]
+    [(ormap protected? (protected-areas)) #f]
+    [else (let ([buffer (stage-buffer stage)])
+            (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
+            (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16)))]))
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.
@@ -313,7 +357,8 @@
       (or (and (integer? h) (cast h Integer))
           (error "bad height" h))))
   (define pixels (pict->argb-pixels bmp))
-  (define xzs (ann (make-hash) (Mutable-HashTable XZ #t)))
+  ; Use Pairof here to make sure XZ and Point are handled correctly
+  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
   (define all-empty? : Boolean #t)
   (define all-full? : Boolean #t)
   (let ([index 0])
@@ -324,7 +369,7 @@
           (cond
             [(> alpha 0)
              (set! all-empty? #f)
-             (hash-set! xzs (xz x z) #t)]
+             (hash-set! xzs (cons x z) #t)]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
@@ -332,7 +377,8 @@
                    (if all-empty? "all" "zero"))))
   (area (rect (xz 0 0) (xz width depth))
         (let ([set (list->set (hash-keys xzs))])
-          (lambda ([xz : XZ]) (set-member? set xz)))))
+          (lambda ([xz : XZ])
+            (set-member? set (cons (xz-x xz) (xz-z xz)))))))
 
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define all-bytes (file->bytes path))
@@ -419,8 +465,7 @@
   (define (put-column! [xz : XZ] [y-max : Integer])
     (for ([y (in-range y-min (+ 1 y-max))])
       (let ([p (make-point xz y)])
-        (or (stage-write! stage p block)
-            (error "TODO out of range" p)))))
+        (stage-write! stage p block))))
   (define bounds (area-bounds area))
   (define heights (ann (make-hash) (Mutable-HashTable XZ Integer)))
   (define (done? [xz : XZ])
@@ -593,4 +638,36 @@
       (let ([p (make-point xz y)])
         (when (= 0 (or (stage-read stage p) 1))
           (stage-write! stage p block)))))
+  (void))
+
+; Copying items can cause a CMNDAT-STGDAT mismatch.
+; So it's safer to copy everything, and then remove/overwrite what you don't want.
+; (I think the mismatch only happens when you add new storage. If you delete
+;  existing storage from the blockdata, it seems the orphaned CMNDAT data is
+;  automatically cleaned up. Should confirm this.)
+(define (copy-everything! #:from [from : (U 'B00 'B01 'B02)] #:to [to : (U 'B00 'B01 'B02)])
+  ; I'm probably missing some files here:
+  (define known-files '(AUTOCMNDAT.BIN
+                        AUTOSTGDAT.BIN
+                        CMNDAT.BIN
+                        SCSHDAT.BIN
+                        STGDAT01.BIN
+                        STGDAT02.BIN
+                        STGDAT03.BIN
+                        STGDAT04.BIN
+                        STGDAT05.BIN
+                        STGDAT09.BIN
+                        STGDAT10.BIN
+                        STGDAT12.BIN))
+  (define sd (or (save-dir)
+                 (error "You must parameterize `save-dir`")))
+  (define from-dir : Path
+    (build-path sd (~a from)))
+  (define to-dir : Path
+    (build-path sd (~a to)))
+  (for ([file known-files])
+    (define from-path (build-path from-dir (~a file)))
+    (when (file-exists? from-path)
+      (define to-path (build-path to-dir (~a file)))
+      (copy-file from-path to-path #:exists-ok? #t)))
   (void))
