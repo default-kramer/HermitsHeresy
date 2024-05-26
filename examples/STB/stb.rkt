@@ -13,7 +13,13 @@
 (check-true (area-contains? cs-plateau (xz 300 100)))
 (check-false (area-contains? cs-plateau (xz 10 10)))
 
+(define-syntax-rule (with-protected-areas [area ...] body ...)
+  (parameterize ([protected-areas (append (list area ...)
+                                          (protected-areas))])
+    body ...))
+
 {module+ main
+  (copy-everything! #:from 'B02 #:to 'B00)
   (define B00 (mark-writable (load-stage 'IoA 'B00)))
 
   (define manual-floor-block (block 'Seaside-Scene-Block))
@@ -29,14 +35,14 @@
 
   #;(TODO B00 manual-build manual-floor-block (block 'Old-Skool-Wall-Block))
 
-  #;(clear-area! B00 'all #:keep-items? #f)
-  #;(repair-sea! B00 'all)
+  ;(clear-area! B00 'all #:keep-items? #f)
+  ;(repair-sea! B00 'all)
 
-  #;(put-hill! B00 cs-plateau (block 'Ice) #:y-min 1 #:y-max 50)
-  #;(clear-area! B00 mountain #:y-min 50)
-  #;(put-hill! B00 mountain (block 'Basalt) #:y-min 1 #:y-max 94
-               #:step-start 50 #:step-height 4)
+  ; TODO - adjust protected area. Use Seaweed Style floor (or any new/unused block).
+  (with-protected-areas [manual-build]
+    (put-hill! B00 cs-plateau (block 'Ice) #:y-min 1 #:y-max 50)
+    (put-hill! B00 mountain (block 'Chert) #:y-min 1 #:y-max 94
+               #:step-start 50 #:step-height 4))
 
-  #;(fill! B00 (block 'Seaside-Scene-Block))
   ;(save-stage! B00)
   }
