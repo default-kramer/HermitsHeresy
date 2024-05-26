@@ -15,7 +15,7 @@
          clear-area!
          stage->pict
          TODO
-         fill!
+         create-golem-platforms!
          )
 
 (module+ for-testing
@@ -586,10 +586,10 @@
         (stage-write! stage (make-point xz y) fill-block))))
   (void))
 
-; TODO TEMP we already have fill-area! can this be combined?
-(define (fill! [stage : Stage] [area : Area] [block : Integer])
+; For me, probably irrelevant for the world at large:
+(define (create-golem-platforms! [stage : Stage] [area : Area] [block : Integer])
   (for/area ([xz area])
-    (for ([y (in-range 86)])
+    (for ([y '(30 40 50 60 70 80 90)])
       (let ([p (make-point xz y)])
         (when (= 0 (or (stage-read stage p) 1))
           (stage-write! stage p block)))))

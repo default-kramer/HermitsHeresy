@@ -18,6 +18,6 @@
 
 {module+ main
   (define B01 (mark-writable (load-stage 'IoA 'B01)))
-  (fill! B01 level-area (block 'Seaside-Scene-Block))
-  (save-stage! B01)
+  (create-golem-platforms! B01 level-area (block 'Seaside-Scene-Block))
+  ;(save-stage! B01)
   }
