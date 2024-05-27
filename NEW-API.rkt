@@ -11,6 +11,7 @@
          block
          fill-area!
          bitmap->area
+         bitmap->hill
          area-contains?
          xz
          put-hill!
@@ -79,6 +80,7 @@
 ; The p flag appears to indicate whether the block was created/placed by the game (0)
 ; or placed by the player (1). I think the huge pyramid the NPCs build also uses a 0 flag.
 ; And maybe all NPC-placed blocks do?
+; And when you use the trowel, the new blocks will have p=0 (confirmed with Seaweed-Styled on my IoA).
 ;
 ; Note that not every simple block can be chiseled.
 ; For example, shallow (top level) seawater is a simple block (stored as #x1A4 aka "A4 01")
@@ -380,6 +382,71 @@
           (lambda ([xz : XZ])
             (set-member? set (cons (xz-x xz) (xz-z xz)))))))
 
+(struct hill ([area : Area]
+              [elevations : (Mutable-HashTable (Pairof Integer Integer) Real)])
+  #:type-name Hill #:transparent)
+
+(: bitmap->hill (-> (U (Instance Bitmap%) Path-String) Hill))
+(define (bitmap->hill arg)
+  (define bmp (bitmap arg))
+  (define width : Integer
+    (let ([w (pict-width bmp)])
+      (or (and (integer? w) (cast w Integer))
+          (error "bad width" w))))
+  (define depth : Integer
+    (let ([h (pict-height bmp)])
+      (or (and (integer? h) (cast h Integer))
+          (error "bad height" h))))
+  (define pixels (pict->argb-pixels bmp))
+  ; Use Pairof here to make sure XZ and Point are handled correctly
+  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Real)))
+  (define all-empty? : Boolean #t)
+  (define all-full? : Boolean #t)
+  (define min-total : Integer 9999)
+  (define max-total : Integer 0)
+  (let ([index 0])
+    (for ([z (in-range depth)])
+      (for ([x (in-range width)])
+        (let* ([alpha (bytes-ref pixels index)]
+               [red (bytes-ref pixels (+ 1 index))]
+               [green (bytes-ref pixels (+ 2 index))]
+               [blue (bytes-ref pixels (+ 3 index))]
+               [total (+ red green blue)])
+          (set! index (+ 4 index)) ; 4 bytes per pixel
+          (cond
+            [(> alpha 0)
+             (set! all-empty? #f)
+             (set! min-total (min min-total total))
+             (set! max-total (max max-total total))
+             (hash-set! elevations (cons x z) total)]
+            [else
+             (set! all-full? #f)])))))
+  (when (or all-empty? all-full?)
+    (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
+                   (if all-empty? "all" "zero"))))
+  (define the-area
+    (area (rect (xz 0 0) (xz width depth))
+          (let ([set (list->set (hash-keys elevations))])
+            (lambda ([xz : XZ])
+              (set-member? set (cons (xz-x xz) (xz-z xz)))))))
+  (define total-range (- max-total min-total))
+  (for ([key (hash-keys elevations)])
+    (let* ([unscaled (hash-ref elevations key)]
+           [ratio (/ (- unscaled min-total) total-range)])
+      (hash-set! elevations key (- 1 ratio))))
+  (hill the-area elevations))
+
+(define (put-hill! [stage : Stage] [hill : Hill] [block : Integer]
+                   [get-y : (-> Real Real)])
+  (define area (hill-area hill))
+  (define elevations (hill-elevations hill))
+  (for/area ([xz area])
+    (let* ([elevation (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
+           [end-y : Integer (exact-truncate (get-y elevation))])
+      (for ([y (in-range 1 end-y)])
+        (stage-write! stage (make-point xz y) block))))
+  (void))
+
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define all-bytes (file->bytes path))
   (define header (subbytes all-bytes 0 header-length))
@@ -448,54 +515,6 @@
         (when (outskirts? xz)
           (set! result (cons xz result))))))
   result)
-
-(: put-hill! (->* (Stage Area Integer #:y-max Integer)
-                  (#:y-min Integer
-                   #:step-start Integer
-                   #:step-height Integer
-                   #:run-lengths (Vectorof Integer)
-                   #:run-heights (Vectorof Integer))
-                  Void))
-(define (put-hill! stage area block #:y-max y-max
-                   #:y-min [y-min 1]
-                   #:step-start [step-start y-min]
-                   #:step-height [step-height 5]
-                   #:run-lengths [run-lengths '#(1 2 2 3 3 4 5)]
-                   #:run-heights [run-heights '#(1 2 2 3 3 4 4 5)])
-  (define (put-column! [xz : XZ] [y-max : Integer])
-    (for ([y (in-range y-min (+ 1 y-max))])
-      (let ([p (make-point xz y)])
-        (stage-write! stage p block))))
-  (define bounds (area-bounds area))
-  (define heights (ann (make-hash) (Mutable-HashTable XZ Integer)))
-  (define (done? [xz : XZ])
-    (hash-ref heights xz (lambda () #f)))
-  (: gen-hill! (-> (Listof XZ) Integer Void))
-  (define (gen-hill! outskirts floor)
-    (cond
-      [(>= floor y-max)
-       (void)]
-      [(empty? outskirts)
-       (void)]
-      [else
-       (for ([xz outskirts])
-         (when (not (done? xz))
-           (define height (min (+ floor (rand run-heights))
-                               y-max))
-           (hash-set! heights xz height)
-           (put-column! xz height)))
-       (gen-hill! (shuffle (find-outskirts area done?))
-                  (+ step-height floor))]))
-  ; Fill in sides
-  (gen-hill! (find-outskirts area (lambda (xz) #f)) step-start)
-  ; Fill in top
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
-      (let ([xz (xz x z)])
-        (when (and (not (done? xz))
-                   (area-contains? area xz))
-          (put-column! xz y-max)))))
-  (void))
 
 (define (print-column [stage : Stage] [xz : XZ])
   (for ([y (in-range 96)])
