@@ -21,6 +21,7 @@
   (provide (rename-out [unsafe-fx+ ufx+]
                        [unsafe-fx- ufx-]
                        [unsafe-fx* ufx*]
+                       [unsafe-fxquotient ufxquotient]
                        [unsafe-fxnot ufxnot]
                        [unsafe-fxand ufxand]
                        [unsafe-fxxor ufxxor]
