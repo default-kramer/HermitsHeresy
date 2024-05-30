@@ -32,7 +32,11 @@
   (provide blocks-hash))
 
 (require (prefix-in zlib: "zlib.rkt")
+         "chunk.rkt"
+         "ufx.rkt"
          typed/pict
+         racket/fixnum
+         typed/racket/unsafe
          (only-in typed/racket/draw Bitmap%))
 
 (require/typed racket
@@ -68,8 +72,8 @@
 ;   cccc p0ii iiii iiii
 ; where
 ;   c - chisel status
-;   p - flag "placed by player?"
-;   0 - zero, indicates simple block (1 would be non-simple)
+;   p - flag (not really: "placed by player?" flag)
+;   0 - zero (not really: zero here indicates simple block)
 ;   i - block ID
 ; The 4-bit chisel status can be one of:
 ; * 0 - no chisel
@@ -135,6 +139,7 @@
   [Spoiled-Soil #x9C]
   [Umber #xD1]
   [Lumpy-Umber #xF1]
+  [Seaweed-Styled-Block #x2CC #:name "Seaweed-Styled Block"]
   [Seaside-Scene-Block #x2CE]
   [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
   )
@@ -166,7 +171,9 @@
 
 (struct stage ([loaded-from : Stgdat-File]
                [header : Bytes] ; mutable (but we probably won't)
-               [buffer : Bytes] ; mutable
+               [buffer : Bytes] ; mutable TODO remove this from core? (just use chunks)
+               ; Or maybe keep the buffer to know what the file had when it was loaded.
+               [chunks : (Immutable-Vectorof Chunk)]
                )
   #:type-name Stage)
 
@@ -179,7 +186,8 @@
 (define (mark-writable stage)
   (writable-stage (stage-loaded-from stage)
                   (stage-header stage)
-                  (stage-buffer stage)))
+                  (stage-buffer stage)
+                  (stage-chunks stage)))
 
 (define (stage-kind [stage : Stage])
   (stgdat-file-kind (stage-loaded-from stage)))
@@ -213,42 +221,38 @@
     [(IoA) IoA-chunk-layout]
     [else (error "Unexpected kind:" kind)]))
 
-(: get-addr (-> Stgdat-Kind Point (U #f Integer)))
-(define (get-addr kind point)
-  (define (get-address [chunk : Integer] [x : Integer] [y : Integer] [z : Integer])
-    (+ #x183FEF0
-       (* chunk #x30000)
-       (* y 32 32 2)
-       (* z 32 2)
-       (* x 2)))
-  (let*-values ([(x-offset x) (quotient/remainder (point-x point) 32)]
-                [(z-offset z) (quotient/remainder (point-z point) 32)])
-    (let* ([chunk-layout (get-chunk-layout kind)]
-           [row (vector-ref chunk-layout z-offset)]
+(: chunk-translate (-> Chunk-Layout XZ (U #f (Chunky XZ))))
+(define (chunk-translate chunk-layout xz)
+  (let*-values ([(x-offset x) (quotient/remainder (xz-x xz) 32)]
+                [(z-offset z) (quotient/remainder (xz-z xz) 32)])
+    (let* ([row (vector-ref chunk-layout z-offset)]
            [chunk-id (vector-ref row x-offset)])
       (and chunk-id
-           (get-address chunk-id x (point-y point) z)))))
+           (chunky chunk-id (make-xz x z))))))
 
 (: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
-  (let ([addr (get-addr (stage-kind stage) point)])
-    (and addr
-         (let* ([buffer (stage-buffer stage)]
-                [lo (bytes-ref buffer (+ 0 addr))]
-                [hi (bytes-ref buffer (+ 1 addr))])
-           (bitwise-ior lo (arithmetic-shift hi 8))))))
+  (let* ([chunk-layout (get-chunk-layout (stage-kind stage))]
+         [chunky (chunk-translate chunk-layout point)])
+    (and chunky
+         (let* ([chunks (stage-chunks stage)]
+                [chunk (vector-ref chunks (chunky-chunk-id chunky))]
+                [xz (chunky-val chunky)])
+           (chunk-ref chunk #:x (xz-x xz) #:z (xz-z xz) #:y (point-y point))))))
 
 (: stage-write! (-> Stage Point Integer (U #f Void)))
 (define (stage-write! stage point block)
   (define (protected? [area : Area])
     (area-contains? area point))
-  (define addr (get-addr (stage-kind stage) point))
+  (define chunk-layout (get-chunk-layout (stage-kind stage)))
+  (define chunky (chunk-translate chunk-layout point))
   (cond
-    [(not addr) #f]
+    [(not chunky) #f]
     [(ormap protected? (protected-areas)) #f]
-    [else (let ([buffer (stage-buffer stage)])
-            (bytes-set! buffer (+ 0 addr) (bitwise-bit-field block 0 8))
-            (bytes-set! buffer (+ 1 addr) (bitwise-bit-field block 8 16)))]))
+    [else (let* ([chunks (stage-chunks stage)]
+                 [chunk (vector-ref chunks (chunky-chunk-id chunky))]
+                 [xz (chunky-val chunky)])
+            (chunk-set! chunk #:x (xz-x xz) #:z (xz-z xz) #:y (point-y point) #:block block))]))
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.
@@ -256,16 +260,16 @@
                     [val : A])
   #:type-name Chunky #:transparent)
 
-(struct xz ([x : Integer]
-            [z : Integer])
-  #:type-name XZ #:transparent)
+(struct xz ([x : Fixnum]
+            [z : Fixnum])
+  #:type-name XZ #:transparent #:extra-constructor-name make-xz)
 
 ; OUCH - constructor is now x z y which is confusing!
 ; Should hide this... use a generic interface?
-(struct point xz ([y : Integer])
+(struct point xz ([y : Fixnum])
   #:type-name Point #:transparent)
 
-(define (make-point [xz : XZ] [y : Integer])
+(define (make-point [xz : XZ] [y : Fixnum])
   (point (xz-x xz) (xz-z xz) y))
 
 (define point-x xz-x)
@@ -274,21 +278,21 @@
 (define (neighbors [val : XZ])
   (let ([x (xz-x val)]
         [z (xz-z val)])
-    (list (xz (add1 x) z)
-          (xz (sub1 x) z)
-          (xz x (add1 z))
-          (xz x (sub1 z)))))
+    (list (xz (ufx+ 1 x) z)
+          (xz (ufx+ -1 x) z)
+          (xz x (ufx+ 1 z))
+          (xz x (ufx+ -1 z)))))
 
 (struct rect ([start : XZ]
               [end : XZ])
   #:type-name Rect #:transparent)
 
 (define-syntax-rule (in-rect/x rect)
-  (in-range (xz-x (rect-start rect))
-            (xz-x (rect-end rect))))
+  (ufx-in-range (xz-x (rect-start rect))
+                (xz-x (rect-end rect))))
 (define-syntax-rule (in-rect/z rect)
-  (in-range (xz-z (rect-start rect))
-            (xz-z (rect-end rect))))
+  (ufx-in-range (xz-z (rect-start rect))
+                (xz-z (rect-end rect))))
 
 (struct area ([bounds : Rect]
               [contains-func : (-> XZ Any)])
@@ -298,8 +302,8 @@
                       body ...)
   (let* ([area (ann area-expr Area)]
          [bounds (area-bounds area)])
-    (for ([z (in-rect/z bounds)])
-      (for ([x (in-rect/x bounds)])
+    (for ([z : Fixnum (in-rect/z bounds)])
+      (for ([x : Fixnum (in-rect/x bounds)])
         (let ([xz-id (xz x z)])
           (when (area-contains? area xz-id)
             body ...))))))
@@ -311,8 +315,8 @@
   (let* ([bounds (area-bounds area)]
          [start (rect-start bounds)]
          [end (rect-end bounds)])
-    (values (- (xz-x end) (xz-x start))
-            (- (xz-z end) (xz-z start)))))
+    (values (ufx- (xz-x end) (xz-x start))
+            (ufx- (xz-z end) (xz-z start)))))
 
 (define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])
@@ -350,13 +354,13 @@
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
 (define (bitmap->area arg)
   (define bmp (bitmap arg))
-  (define width : Integer
+  (define width : Fixnum
     (let ([w (pict-width bmp)])
-      (or (and (integer? w) (cast w Integer))
+      (or (and (fixnum? w) (cast w Fixnum))
           (error "bad width" w))))
-  (define depth : Integer
+  (define depth : Fixnum
     (let ([h (pict-height bmp)])
-      (or (and (integer? h) (cast h Integer))
+      (or (and (fixnum? h) (cast h Fixnum))
           (error "bad height" h))))
   (define pixels (pict->argb-pixels bmp))
   ; Use Pairof here to make sure XZ and Point are handled correctly
@@ -389,13 +393,13 @@
 (: bitmap->hill (-> (U (Instance Bitmap%) Path-String) Hill))
 (define (bitmap->hill arg)
   (define bmp (bitmap arg))
-  (define width : Integer
+  (define width : Fixnum
     (let ([w (pict-width bmp)])
-      (or (and (integer? w) (cast w Integer))
+      (or (and (fixnum? w) (cast w Fixnum))
           (error "bad width" w))))
-  (define depth : Integer
+  (define depth : Fixnum
     (let ([h (pict-height bmp)])
-      (or (and (integer? h) (cast h Integer))
+      (or (and (fixnum? h) (cast h Fixnum))
           (error "bad height" h))))
   (define pixels (pict->argb-pixels bmp))
   ; Use Pairof here to make sure XZ and Point are handled correctly
@@ -442,10 +446,14 @@
   (define elevations (hill-elevations hill))
   (for/area ([xz area])
     (let* ([elevation (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
-           [end-y : Integer (exact-truncate (get-y elevation))])
-      (for ([y (in-range 1 end-y)])
+           [end-y (cast (exact-truncate (get-y elevation)) Fixnum)])
+      (for ([y : Fixnum (ufx-in-range 1 end-y)])
         (stage-write! stage (make-point xz y) block))))
   (void))
+
+(define-syntax-rule (dqb2-chunk-start-addr i)
+  ; Returns the address of chunk i within the uncompressed buffer
+  (ufx+ #x183FEF0 (ufx* i #x30000)))
 
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define all-bytes (file->bytes path))
@@ -455,7 +463,17 @@
   ; and we'll just add some room to spare just in case
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
-  (stage (stgdat-file kind path) header buffer))
+
+  (define chunks
+    (build-vector
+     (case kind
+       [(IoA) 369]
+       [else (error "unexpected kind" kind)])
+     (lambda ([i : Index])
+       (define chunk (make-empty-chunk))
+       (load-chunk! chunk buffer (dqb2-chunk-start-addr i))
+       chunk)))
+  (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)))
 
 (: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path) Stage))
 (define (load-stage kind slot)
@@ -471,12 +489,12 @@
                  [else (ann slot Path)]))
   (open-stgdat kind path))
 
-(: fill-area! (->* (Stage Area Integer #:y-max Integer)
-                   (#:y-min Integer)
+(: fill-area! (->* (Stage Area Integer #:y-max Fixnum)
+                   (#:y-min Fixnum)
                    Void))
-(define (fill-area! stage area block #:y-max y-max #:y-min [y-min : Integer 1])
+(define (fill-area! stage area block #:y-max y-max #:y-min [y-min 1])
   (for/area ([xz area])
-    (for ([y (in-range y-min (+ 1 y-max))])
+    (for ([y : Fixnum (ufx-in-range y-min (ufx+ 1 y-max))])
       (let* ([p (make-point xz y)])
         (or (stage-write! stage p block)
             (error "TODO out of range:" p)))))
@@ -484,7 +502,12 @@
 
 (define (save-stage! [stage : Writable-Stage])
   (define header (stage-header stage))
-  (define compressed (zlib:compress (stage-buffer stage)))
+  (define buffer (stage-buffer stage))
+  (define chunks (stage-chunks stage))
+  (for ([i (in-range (vector-length chunks))])
+    (let ([chunk (vector-ref chunks i)])
+      (unload-chunk! chunk buffer (dqb2-chunk-start-addr i))))
+  (define compressed (zlib:compress buffer))
   (define orig-file (stgdat-file-path (stage-loaded-from stage)))
   (with-output-to-file orig-file #:exists 'truncate
     (lambda ()
@@ -509,8 +532,8 @@
          (ormap outside? (neighbors xz))))
   (define result (ann (list) (Listof XZ)))
   (define bounds (area-bounds area))
-  (for ([z (in-rect/z bounds)])
-    (for ([x (in-rect/x bounds)])
+  (for ([z : Fixnum (in-rect/z bounds)])
+    (for ([x : Fixnum (in-rect/x bounds)])
       (let* ([xz (xz x z)])
         (when (outskirts? xz)
           (set! result (cons xz result))))))
@@ -524,11 +547,11 @@
 
 (define (stage-full-area [kind : Stgdat-Kind])
   (let* ([chunk-layout (get-chunk-layout kind)]
-         [depth (* 32 (vector-length chunk-layout))]
-         [width (* 32 (vector-length (vector-ref chunk-layout 0)))]
+         [depth (ufx* 32 (vector-length chunk-layout))]
+         [width (ufx* 32 (vector-length (vector-ref chunk-layout 0)))]
          [bounds (rect (xz 0 0) (xz width depth))])
     (define (contains? [xz : XZ])
-      (get-addr kind (make-point xz 0)))
+      (chunk-translate chunk-layout xz))
     (area bounds contains?)))
 
 (define-syntax-rule (get-area x stage)
@@ -536,7 +559,7 @@
     [(all) (stage-full-area (stage-kind stage))]
     [else (ann x Area)]))
 
-(define (repair-sea! [stage : Stage] [where : (U 'all Area)] #:sea-level [sea-level : (U #f Integer) #f])
+(define (repair-sea! [stage : Stage] [where : (U 'all Area)] #:sea-level [sea-level : (U #f Fixnum) #f])
   ; Notes from IoA testing:
   ; Sea level is at y=31.
   ; This means that if you place a block such that the bottom sits in the sea
@@ -547,10 +570,10 @@
   ; But for now, too bad, the user would have to manually destroy those items
   ; before using this function and put them back afterwards.
   (define kind (stage-kind stage))
-  (define water-level : Integer (or sea-level
-                                    (case kind
-                                      [(IoA) 31]
-                                      [else (error "Unexpected kind" kind)])))
+  (define water-level : Fixnum (or sea-level
+                                   (case kind
+                                     [(IoA) 31]
+                                     [else (error "Unexpected kind" kind)])))
   ; The top-sea and full-sea values that follow are confirmed on IoA.
   ; Other islands might use other values, more investigation needed.
   (define top-sea #x1A4) ; The shallow sea, placed at y = sea level
@@ -564,16 +587,16 @@
 
   (define area (get-area where stage))
   (for/area ([xz area])
-    (for ([y (in-range (+ 1 water-level))])
+    (for ([y : Fixnum (ufx-in-range (ufx+ 1 water-level))])
       (let ([p (make-point xz y)])
         (when (vacant? p)
-          (stage-write! stage p (if (= y water-level)
+          (stage-write! stage p (if (ufx= y water-level)
                                     top-sea
                                     full-sea))))))
   (void))
 
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
-                     #:y-min [min-y : Integer 1]
+                     #:y-min [min-y : Fixnum 1]
                      #:keep-items? [keep-items? : Boolean #t])
   ; Reset count of 24-byte records to zero
   ; (this is probably a 4-byte number but 0xC8000 is the max)
@@ -622,9 +645,9 @@
                                 (set! i (+ 1 i))
                                 val))
   (define column (ann (make-vector 96) (Mutable-Vectorof Integer)))
-  (for ([z (in-range depth)])
-    (for ([x (in-range width)])
-      (for ([y (in-range 96)])
+  (for ([z : Fixnum (ufx-in-range depth)])
+    (for ([x : Fixnum (ufx-in-range width)])
+      (for ([y : Fixnum (ufx-in-range 96)])
         (let ([block (stage-read stage (make-point (xz x z) y))])
           (vector-set! column y (or block 0))))
       (let ([argb (argb-callback (xz x z) column)])
@@ -639,21 +662,21 @@
 ; with the `fill-block`.
 ; Is this proc too specific to my use case?
 ; Maybe I should (provide stage-read stage-write! for/area) and let user code do this:
-(define (TODO [stage : Stage] [area : Area] [peak-block : Integer] [fill-block : Integer])
+(define (TODO [stage : Stage] [area : Area] [peak-block : Fixnum] [fill-block : Integer])
   (for/area ([xz area])
-    (define peak : Integer -1)
-    (for ([y (in-range 95 -1 -1)])
-      (when (= peak-block (or (stage-read stage (make-point xz y)) 0))
+    (define peak : Fixnum -1)
+    (for ([y : Fixnum (ufx-in-range 95 -1 -1)])
+      (when (ufx= peak-block (or (stage-read stage (make-point xz y)) 0))
         (set! peak y)))
     (when peak
-      (for ([y (in-range 1 peak)])
+      (for ([y : Fixnum (ufx-in-range 1 peak)])
         (stage-write! stage (make-point xz y) fill-block))))
   (void))
 
 ; For me, probably irrelevant for the world at large:
 (define (create-golem-platforms! [stage : Stage] [area : Area] [block : Integer])
   (for/area ([xz area])
-    (for ([y '(30 40 50 60 70 80 90)])
+    (for ([y : Fixnum '(30 40 50 60 70 80 90)])
       (let ([p (make-point xz y)])
         (when (= 0 (or (stage-read stage p) 1))
           (stage-write! stage p block)))))
@@ -690,3 +713,42 @@
       (define to-path (build-path to-dir (~a file)))
       (copy-file from-path to-path #:exists-ok? #t)))
   (void))
+
+
+
+; SQLite is super fast (even without indexes!) once the data has been loaded,
+; but the following code takes about 3 minutes to load my IoA.
+; It loads almost 13M records, so that's ~67k inserts per second which seems
+; almost as fast as SQLite can go. So maybe not the silver bullet I expected.
+; (Ooh, or maybe I actually want a daemon to watch my save directory for
+;  changes and load the data. It could automatically create backups too.)
+; Anyway... if I want to use pattern matching from Racket I would have to bypass
+; SQLite anyway so let's hold off for now.
+#;{module+ sqlite
+    (provide stage->db)
+
+    (require typed/db)
+
+    (define (stage->db [stage : Stage])
+      (define conn (sqlite3-connect #:database 'memory))
+      (query-exec conn "pragma journal_mode = OFF")
+      (query-exec conn "PRAGMA synchronous = OFF")
+      (query-exec conn "create table cell (x int, y int, z int, masked_block int, block int)")
+      (define inserter (prepare conn "insert into cell(x,y,z,masked_block,block) values(?,?,?,?,?)"))
+      (query-exec conn "begin transaction")
+      (for/area ([xz (get-area 'all stage)])
+        (let ([x (xz-x xz)]
+              [z (xz-z xz)])
+          (when (= 400 x)
+            #;(query-exec conn "end transaction")
+            #;(query-exec conn "begin transaction")
+            (println (list "Z" z)))
+          (for ([y (in-range 96)])
+            (let ([block (or (stage-read stage (make-point xz y)) 0)])
+              (when (not (= block 0))
+                (let ([masked-block (bitwise-and block #x7FF)])
+                  (query-exec conn inserter ; "insert into cell(x,y,z,masked_block,block) values(?,?,?,?,?)"
+                              x y z masked-block block)))))))
+      (query-exec conn "end transaction")
+      conn)
+    }
