@@ -635,26 +635,72 @@
         (set! hash2 (bitwise-and #xFFFFFF (+ block (* hash2 17)))))))
   (list hash1 hash2))
 
-(define (stage->pict [stage : Stage]
-                     [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
+; TODO here is the faster iteration logic with chunk skipping.
+; Factor this out into a generic iteration mechanism.
+(define (stage->pict [stage : Stage] [colorizers : (HashTable Fixnum Integer)])
+  ; colorizers maps block IDs to argb values
+  (define all-block-ids : (Listof Fixnum)
+    (hash-keys colorizers))
+  (define (get-argb [block : Fixnum])
+    (hash-ref colorizers block (lambda () #f)))
   (define area (stage-full-area (stage-kind stage)))
   (define-values (width depth) (area-dimensions area))
-  (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
-  (define index : Integer 0)
-  (define-syntax-rule (++! i) (let ([val i])
-                                (set! i (+ 1 i))
-                                val))
-  (define column (ann (make-vector 96) (Mutable-Vectorof Integer)))
-  (for ([z : Fixnum (ufx-in-range depth)])
-    (for ([x : Fixnum (ufx-in-range width)])
-      (for ([y : Fixnum (ufx-in-range 96)])
-        (let ([block (stage-read stage (make-point (xz x z) y))])
-          (vector-set! column y (or block 0))))
-      (let ([argb (argb-callback (xz x z) column)])
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 24 32))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 16 24))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 08 16))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 00 08)))))
+  (define bytes-per-pixel 4)
+  (define pict-bytes (make-bytes (* bytes-per-pixel width depth)))
+  (define chunk-layout (get-chunk-layout (stage-kind stage)))
+  (define chunks-per-row (ufxquotient width 32))
+  (define row-of-chunks (ann (make-vector chunks-per-row #f)
+                             (Mutable-Vectorof (U #f Chunk))))
+  (let loop ([x : Fixnum 0]
+             [z : Fixnum 0])
+    (cond
+      [(ufx= x width)
+       (loop 0 (ufx+ 1 z))]
+      [(ufx= z depth)
+       (void "done")]
+      [else
+       (when (ufx= 0 (ufxmodulo z 32))
+         ; Load next row of chunks.
+         ; If the chunk doesn't contain at least one of the block IDs we are looking for,
+         ; replace it with #f so we can quickly skip it every time
+         (for ([offset : Fixnum (ufx-in-range chunks-per-row)])
+           (let* ([chunky (chunk-translate chunk-layout (xz (ufx* offset 32) z))]
+                  [chunk : (U #f Chunk)
+                         (and chunky
+                              (vector-ref (stage-chunks stage) (chunky-chunk-id chunky)))])
+             (when chunk
+               (define (has? [block : Fixnum])
+                 (ufx< 0 (chunk-countof (or chunk (error "assert fail")) block)))
+               (when (not (ormap has? all-block-ids))
+                 (set! chunk #f)))
+             (vector-set! row-of-chunks offset chunk))))
+       #;(println (list "xz" x z))
+       (let ([chunk (vector-ref row-of-chunks (ufxquotient x 32))])
+         (cond
+           [(not chunk)
+            ; advance x to next chunk
+            (loop (ufx+ 32 x) z)]
+           [else
+            (let* ([chunky (or (chunk-translate chunk-layout (xz x z))
+                               (error "assert fail - chunk-layout should prevent us from doing this"))]
+                   ; TODO I accidentally shadowed my global xz...
+                   ; Maybe chunk-ref should accept a (Chunky XZ) instead?
+                   #;[x (xz-x (chunky-val chunky))]
+                   #;[z (xz-z (chunky-val chunky))]
+                   [argb (ormap get-argb (for/list : (Listof Fixnum)
+                                           ([y : Fixnum (ufx-in-range 96)])
+                                           (chunk-ref chunk
+                                                      #:x (xz-x (chunky-val chunky))
+                                                      #:z (xz-z (chunky-val chunky))
+                                                      #:y y)))])
+              (when argb
+                (let ([index (ufx* bytes-per-pixel (ufx+ x (ufx* z width)))])
+                  (bytes-set! pict-bytes (ufx+ 0 index) (bitwise-bit-field argb 24 32))
+                  (bytes-set! pict-bytes (ufx+ 1 index) (bitwise-bit-field argb 16 24))
+                  (bytes-set! pict-bytes (ufx+ 2 index) (bitwise-bit-field argb 08 16))
+                  (bytes-set! pict-bytes (ufx+ 3 index) (bitwise-bit-field argb 00 08))))
+              (loop (ufx+ 1 x) z))]))]))
+  ; loop done, return
   (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
 
 

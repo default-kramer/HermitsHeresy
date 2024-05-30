@@ -35,13 +35,10 @@
 (define evil (bitmap->hill "evil.bmp"))
 (define manual-build (bitmap->area "manual-build.bmp"))
 
-(define (update-manual-build-pict stage blockids filename)
-  (define (matches? block) (member block blockids))
+(define (update-manual-build-pict stage filename)
   (define the-pict
-    (stage->pict stage (lambda (xz column)
-                         (if (ormap matches? (vector->list column))
-                             #xFF0000FF
-                             0))))
+    (stage->pict stage #hash((2764 . #xFF0000FF) ; seaweed (normal and troweled)
+                             (716 . #xFF0000FF))))
   (send (pict->bitmap the-pict) save-file filename 'bmp)
   (println (format "updated: ~a" filename))
   (void))
@@ -69,20 +66,20 @@
 #;{begin ;module+ main
     (copy-everything! #:from 'B02 #:to 'B00)
     (define B00 (mark-writable (load-stage 'IoA 'B00)))
-    ;(update-manual-build-pict B00 '(2764 716) "manual-build.bmp") ; seaweed, TODO this confirms trowel hunch!
+    (update-manual-build-pict B00 "manual-build.bmp")
     ;(define manual-build (bitmap->area "manual-build.bmp"))
 
     ;(clear-area! B00 'all #:keep-items? #f)
     ;(repair-sea! B00 'all)
 
-    (with-protected-areas [manual-build]
-      (put-hill! B00 evil 2065 ; peat
-                 (lambda (x) (+ 30 (* 21 x))))
-      (put-hill! B00 cs-plateau (block 'Ice)
-                 (lambda (x) (+ 38 (* 34 x))))
-      (put-hill! B00 mountain (block 'Chert)
-                 (lambda (x) (+ 33 (* 55 x))))
-      )
+    #;(with-protected-areas [manual-build]
+        (put-hill! B00 evil 2065 ; peat
+                   (lambda (x) (+ 30 (* 21 x))))
+        (put-hill! B00 cs-plateau (block 'Ice)
+                   (lambda (x) (+ 38 (* 34 x))))
+        (put-hill! B00 mountain (block 'Chert)
+                   (lambda (x) (+ 33 (* 55 x))))
+        )
 
     ;(save-stage! B00)
     }
