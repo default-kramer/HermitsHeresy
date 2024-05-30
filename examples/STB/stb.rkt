@@ -17,10 +17,23 @@
 ;  -- (TODO... this step might be too variable)
 ; Save as .bmp again.
 ; WARNING - Don't accidentally apply blur to transparency, as the edges will look wrong.
+;
+; == UPDATE ==
+; Using a single dark color and a Gaussian blur with radius 12 is simpler
+; and maybe even looks better...
+; TODO it would be much more convenient to have a separate "bumps" layer in which you
+; draw the hills for *all* the plateaus. Then exporting the plateaus is dead simple
+; (no elevation needed) and you only need to blur+crystallize the hills layer by itself.
+; Then I need something like `(hill-adjust the-hill the-bumps #:max 20)`
+; which would return a new hill:
+; * having the exact same area and xzs as `the-hill`
+; * having added anywhere from 0 to 20 based on the intersection with `the-bumps`
+; And that should simplify my workflow a lot.
 
 (define cs-plateau (bitmap->hill "cs-plateau.bmp"))
 (define mountain (bitmap->hill "mountain.bmp"))
 (define evil (bitmap->hill "evil.bmp"))
+(define manual-build (bitmap->area "manual-build.bmp"))
 
 (define (update-manual-build-pict stage blockids filename)
   (define (matches? block) (member block blockids))
@@ -59,17 +72,17 @@
     ;(update-manual-build-pict B00 '(2764 716) "manual-build.bmp") ; seaweed, TODO this confirms trowel hunch!
     ;(define manual-build (bitmap->area "manual-build.bmp"))
 
-    (clear-area! B00 'all #:keep-items? #f)
-    (repair-sea! B00 'all)
+    ;(clear-area! B00 'all #:keep-items? #f)
+    ;(repair-sea! B00 'all)
 
-    ;(with-protected-areas [manual-build]
-    (put-hill! B00 evil 2065 ; peat
-               (lambda (x) (+ 30 (* 21 x))))
-    (put-hill! B00 cs-plateau (block 'Ice)
-               (lambda (x) (+ 38 (* 34 x))))
-    (put-hill! B00 mountain (block 'Chert)
-               (lambda (x) (+ 33 (* 55 x))))
-    ;)
+    (with-protected-areas [manual-build]
+      (put-hill! B00 evil 2065 ; peat
+                 (lambda (x) (+ 30 (* 21 x))))
+      (put-hill! B00 cs-plateau (block 'Ice)
+                 (lambda (x) (+ 38 (* 34 x))))
+      (put-hill! B00 mountain (block 'Chert)
+                 (lambda (x) (+ 33 (* 55 x))))
+      )
 
     ;(save-stage! B00)
     }
