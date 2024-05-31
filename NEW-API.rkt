@@ -12,6 +12,7 @@
          fill-area!
          bitmap->area
          bitmap->hill
+         area->hill area->hill2
          area-contains?
          xz
          put-hill!
@@ -34,6 +35,7 @@
 (require (prefix-in zlib: "zlib.rkt")
          "chunk.rkt"
          "ufx.rkt"
+         racket/hash
          typed/pict
          racket/fixnum
          typed/racket/unsafe
@@ -287,6 +289,25 @@
               [end : XZ])
   #:type-name Rect #:transparent)
 
+(define (rect-intersection [rects : (Listof Rect)])
+  (when (empty? rects)
+    ; Maybe it would make sense to return a zero-sized rect...?
+    ; Wait until you have at least one motivating example.
+    (error "rects cannot be empty"))
+  (define-values (min-x max-x min-z max-z)
+    (for/fold : (Values Fixnum Fixnum Fixnum Fixnum)
+      ([min-x : Fixnum (xz-x (rect-start (first rects)))]
+       [max-x : Fixnum (xz-x (rect-end (first rects)))]
+       [min-z : Fixnum (xz-z (rect-start (first rects)))]
+       [max-z : Fixnum (xz-z (rect-end (first rects)))])
+      ([r (cdr rects)])
+      (values (max min-x (xz-x (rect-start r)))
+              (min max-x (xz-x (rect-end r)))
+              (max min-z (xz-z (rect-start r)))
+              (min max-z (xz-z (rect-end r))))))
+  (rect (xz min-x min-z)
+        (xz max-x max-z)))
+
 (define-syntax-rule (in-rect/x rect)
   (ufx-in-range (xz-x (rect-start rect))
                 (xz-x (rect-end rect))))
@@ -310,6 +331,19 @@
 
 (define (area-contains? [area : Area] [xz : XZ])
   ((area-contains-func area) xz))
+
+(define (area-intersection [areas : (Listof Area)])
+  (define bounds (rect-intersection (map area-bounds areas)))
+  ; Use Pairof here to make sure XZ and Point are handled correctly
+  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
+  (for ([z : Fixnum (in-rect/z bounds)])
+    (for ([x : Fixnum (in-rect/x bounds)])
+      (when (andmap (lambda ([a : Area]) (area-contains? a (xz x z)))
+                    areas)
+        (hash-set! xzs (cons x z) #t))))
+  (define (contains? [xz : XZ])
+    (hash-ref xzs (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
+  (area bounds contains?))
 
 (define (area-dimensions [area : Area])
   (let* ([bounds (area-bounds area)]
@@ -362,33 +396,57 @@
     (let ([h (pict-height bmp)])
       (or (and (fixnum? h) (cast h Fixnum))
           (error "bad height" h))))
+  (define min-x : Fixnum (ufx+ 1 width))
+  (define max-x : Fixnum -1)
+  (define min-z : Fixnum (ufx+ 1 depth))
+  (define max-z : Fixnum -1)
   (define pixels (pict->argb-pixels bmp))
   ; Use Pairof here to make sure XZ and Point are handled correctly
   (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
   (define all-empty? : Boolean #t)
   (define all-full? : Boolean #t)
   (let ([index 0])
-    (for ([z (in-range depth)])
-      (for ([x (in-range width)])
+    (for ([z : Fixnum (ufx-in-range depth)])
+      (for ([x : Fixnum (ufx-in-range width)])
         (let ([alpha (bytes-ref pixels index)])
           (set! index (+ 4 index)) ; 4 bytes per pixel
           (cond
             [(> alpha 0)
              (set! all-empty? #f)
+             (set! min-x (min min-x x))
+             (set! max-x (max max-x x))
+             (set! min-z (min min-z z))
+             (set! max-z (max max-z z))
              (hash-set! xzs (cons x z) #t)]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
     (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                    (if all-empty? "all" "zero"))))
-  (area (rect (xz 0 0) (xz width depth))
+  (area (rect (xz min-x min-z) (xz max-x max-z))
         (let ([set (list->set (hash-keys xzs))])
           (lambda ([xz : XZ])
             (set-member? set (cons (xz-x xz) (xz-z xz)))))))
 
 (struct hill ([area : Area]
-              [elevations : (Mutable-HashTable (Pairof Integer Integer) Real)])
+              [elevations : (Immutable-HashTable (Pairof Integer Integer) Real)])
   #:type-name Hill #:transparent)
+
+(define (area->hill [area : Area] [elevation-func : (-> XZ Real)])
+  (define elevations : (Immutable-HashTable (Pairof Integer Integer) Real)
+    (hash))
+  (for/area ([xz area])
+    (let ([elevation (elevation-func xz)])
+      (set! elevations (hash-set elevations (cons (xz-x xz) (xz-z xz)) elevation))))
+  (hill area
+        elevations))
+
+(define (area->hill2 [area : Area] [bumps : Hill])
+  (define (elevation-func [xz : XZ])
+    (hash-ref (hill-elevations bumps)
+              (cons (xz-x xz) (xz-z xz))
+              (lambda () 0)))
+  (area->hill area elevation-func))
 
 (: bitmap->hill (-> (U (Instance Bitmap%) Path-String) Hill))
 (define (bitmap->hill arg)
@@ -438,7 +496,7 @@
     (let* ([unscaled (hash-ref elevations key)]
            [ratio (/ (- unscaled min-total) total-range)])
       (hash-set! elevations key (- 1 ratio))))
-  (hill the-area elevations))
+  (hill the-area (make-immutable-hash (hash->list elevations))))
 
 (define (put-hill! [stage : Stage] [hill : Hill] [block : Integer]
                    [get-y : (-> Real Real)])
@@ -705,7 +763,7 @@
 
 ; Keeping this for the destroy-everything project. Passes the whole column back to the caller
 (define (stage->pictOLD [stage : Stage]
-                      [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
+                        [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
   (define area (stage-full-area (stage-kind stage)))
   (define-values (width depth) (area-dimensions area))
   (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
