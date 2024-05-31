@@ -18,7 +18,7 @@
          print-column
          repair-sea!
          clear-area!
-         stage->pict
+         stage->pict stage->pictOLD
          TODO
          create-golem-platforms!
          protected-areas ; WARNING this will probably be slow? And area combiner functions would be better anyway?
@@ -701,6 +701,29 @@
                   (bytes-set! pict-bytes (ufx+ 3 index) (bitwise-bit-field argb 00 08))))
               (loop (ufx+ 1 x) z))]))]))
   ; loop done, return
+  (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
+
+; Keeping this for the destroy-everything project. Passes the whole column back to the caller
+(define (stage->pictOLD [stage : Stage]
+                      [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
+  (define area (stage-full-area (stage-kind stage)))
+  (define-values (width depth) (area-dimensions area))
+  (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
+  (define index : Integer 0)
+  (define-syntax-rule (++! i) (let ([val i])
+                                (set! i (+ 1 i))
+                                val))
+  (define column (ann (make-vector 96) (Mutable-Vectorof Integer)))
+  (for ([z : Fixnum (ufx-in-range depth)])
+    (for ([x : Fixnum (ufx-in-range width)])
+      (for ([y : Fixnum (ufx-in-range 96)])
+        (let ([block (stage-read stage (make-point (xz x z) y))])
+          (vector-set! column y (or block 0))))
+      (let ([argb (argb-callback (xz x z) column)])
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 24 32))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 16 24))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 08 16))
+        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 00 08)))))
   (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
 
 
