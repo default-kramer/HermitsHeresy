@@ -30,10 +30,10 @@
 ; * having added anywhere from 0 to 20 based on the intersection with `the-bumps`
 ; And that should simplify my workflow a lot.
 
-(define cs-plateau (bitmap->hill "cs-plateau.bmp"))
-(define mountain (bitmap->hill "mountain.bmp"))
-(define evil (bitmap->hill "evil.bmp"))
-(define manual-build (bitmap->area "manual-build.bmp"))
+(define cs-plateau (bitmap->area "cs-plateau.bmp"))
+(define mountain (bitmap->area "mountain.bmp"))
+(define evil (bitmap->area "evil.bmp"))
+(define bumps (bitmap->hill "bumps.bmp"))
 
 (define (update-manual-build-pict stage filename)
   (define the-pict
@@ -66,20 +66,21 @@
 #;{begin ;module+ main
     (copy-everything! #:from 'B02 #:to 'B00)
     (define B00 (mark-writable (load-stage 'IoA 'B00)))
+    (println "loaded stage")
     (update-manual-build-pict B00 "manual-build.bmp")
-    ;(define manual-build (bitmap->area "manual-build.bmp"))
+    (define manual-build (bitmap->area "manual-build.bmp"))
 
     ;(clear-area! B00 'all #:keep-items? #f)
     ;(repair-sea! B00 'all)
 
-    #;(with-protected-areas [manual-build]
-        (put-hill! B00 evil 2065 ; peat
-                   (lambda (x) (+ 30 (* 21 x))))
-        (put-hill! B00 cs-plateau (block 'Ice)
-                   (lambda (x) (+ 38 (* 34 x))))
-        (put-hill! B00 mountain (block 'Chert)
-                   (lambda (x) (+ 33 (* 55 x))))
-        )
+    (with-protected-areas [manual-build]
+      (put-hill! B00 (area->hill2 evil bumps) 2065 ; peat
+                 (lambda (x) (+ 36 (* 21 x))))
+      (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Ice)
+                 (lambda (x) (+ 46 (* 30 x))))
+      (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert)
+                 (lambda (x) (+ 48 (* 40 x))))
+      )
 
     ;(save-stage! B00)
     }
