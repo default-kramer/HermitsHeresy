@@ -13,6 +13,7 @@
          bitmap->area
          bitmap->hill
          area->hill area->hill2
+         decorate-peaks! chisel simple?
          area-contains?
          xz
          put-hill!
@@ -162,6 +163,13 @@
   (check-false (simple? 2047))
   (check-true (simple? 0)) ; emptiness is simple
   }
+
+(define (chisel [block : Fixnum] [kind : Any])
+  (let ([block (ufxand #x7FF block)])
+    (case kind
+      [(flat-lo) (ufxior #xE000 block)]
+      [(flat-hi) (ufxior #xD000 block)]
+      [else (error "TODO more chisels..." kind)])))
 
 (define-type Stgdat-Kind (U 'IoA))
 
@@ -841,6 +849,25 @@
       (copy-file from-path to-path #:exists-ok? #t)))
   (void))
 
+(: decorate-peaks! (-> Stage Area (-> XZ Fixnum Fixnum) Void))
+(define (decorate-peaks! stage area callback)
+  (for/area ([xz area])
+    (let loop ([y : Fixnum 95])
+      (let* ([pt (make-point xz y)]
+             [existing (stage-read stage pt)]
+             [below (stage-read stage (make-point xz (ufx+ y -1)))])
+        (cond
+          [(or (not below) (not existing)) ; entire column is off the map
+           (void)]
+          [(not (ufx= 0 below))
+           (when (ufx= 0 existing)
+             (let* ([new (callback xz below)])
+               (stage-write! stage pt new)))]
+          [(= 1 y)
+           (void)]
+          [else
+           (loop (ufx+ y -1))]))))
+  (void))
 
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,
