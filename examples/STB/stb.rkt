@@ -7,33 +7,24 @@
 
 (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
 
-; How export hills from Paint.NET:
-; Disable opacity on all relevant layers, and hide irrelevant layers.
-; Save as .bmp, requires flattening.
-; Replace paint all transparent pixels white to avoid blurring.
-; Gaussian blur with radius=6.
-; Crystallize with cell size=3.
-; Use magic wand with tolerance ~15% to delete white pixels
-;  -- (TODO... this step might be too variable)
-; Save as .bmp again.
-; WARNING - Don't accidentally apply blur to transparency, as the edges will look wrong.
-;
-; == UPDATE ==
-; Using a single dark color and a Gaussian blur with radius 12 is simpler
-; and maybe even looks better...
-; TODO it would be much more convenient to have a separate "bumps" layer in which you
-; draw the hills for *all* the plateaus. Then exporting the plateaus is dead simple
-; (no elevation needed) and you only need to blur+crystallize the hills layer by itself.
-; Then I need something like `(hill-adjust the-hill the-bumps #:max 20)`
-; which would return a new hill:
-; * having the exact same area and xzs as `the-hill`
-; * having added anywhere from 0 to 20 based on the intersection with `the-bumps`
-; And that should simplify my workflow a lot.
-
 (define cs-plateau (bitmap->area "cs-plateau.bmp"))
 (define mountain (bitmap->area "mountain.bmp"))
 (define evil (bitmap->area "evil.bmp"))
+
+; bumps and bumps2 are basically the same thing, but with different randomness
+; courtesy of the Crystallize effect. Use one with Chunky Chert and the other
+; with Chert to get a nice blend. (Well, almost. Walls will be entirely
+; one block or the other, which doesn't look great with steep walls but would
+; probably look fine with more gradual slopes.)
+; I'm really enjoying this workflow. Here's how to do the Paint.NET part:
+; * Hide all layers except bumps. Increase bumps opacity to fully opaque.
+; * Save as bitmap file.
+; * Paint background white (to avoid opacity during blur)
+; * Gaussian Blur, radius=12
+; * Crystallize, cell size=3
+; * Use magic wand (tolerance about 40% seems good) to delete white background
 (define bumps (bitmap->hill "bumps.bmp"))
+(define bumps2 (bitmap->hill "bumps2.bmp"))
 
 (define (update-manual-build-pict stage filename)
   (define the-pict
@@ -63,6 +54,12 @@
                                           (protected-areas))])
     body ...))
 
+(define-syntax-rule (with-absolute-seed seed body ...)
+  (parameterize ([current-pseudo-random-generator
+                  (vector->pseudo-random-generator
+                   (vector 42 42 seed 42 42 42))])
+    body ...))
+
 #;{begin ;module+ main
     (copy-everything! #:from 'B02 #:to 'B00)
     (define B00 (mark-writable (load-stage 'IoA 'B00)))
@@ -76,10 +73,22 @@
     (with-protected-areas [manual-build]
       (put-hill! B00 (area->hill2 evil bumps) 2065 ; peat
                  (lambda (x) (+ 36 (* 21 x))))
-      (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Ice)
-                 (lambda (x) (+ 46 (* 30 x))))
+      (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow)
+                 (lambda (x) (+ 52 (* 24 x))))
+      (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert)
+                 (lambda (x) (+ 48 (* 40 x))))
       (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert)
                  (lambda (x) (+ 48 (* 40 x))))
+      (with-absolute-seed 223344
+        (decorate-peaks! B00 mountain
+                         (lambda (xz below)
+                           (if (not (simple? below))
+                               0
+                               (case (random 7)
+                                 [(0 1) 0] ; vacant
+                                 [(2 3) (chisel (block 'Snow) 'flat-lo)]
+                                 [(4 5) 18] ; snow cover
+                                 [(6) (block 'Snow)])))))
       )
 
     ;(save-stage! B00)
