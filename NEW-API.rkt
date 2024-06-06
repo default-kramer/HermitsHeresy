@@ -8,6 +8,7 @@
 (provide save-dir
          load-stage
          mark-writable
+         item-count
          block
          fill-area!
          bitmap->area
@@ -35,6 +36,7 @@
 
 (require (prefix-in zlib: "zlib.rkt")
          "chunk.rkt"
+         "basics.rkt"
          "ufx.rkt"
          racket/hash
          typed/pict
@@ -263,27 +265,6 @@
                  [chunk (vector-ref chunks (chunky-chunk-id chunky))]
                  [xz (chunky-val chunky)])
             (chunk-set! chunk #:x (xz-x xz) #:z (xz-z xz) #:y (point-y point) #:block block))]))
-
-; Indicates that the contained value (e.g. an XZ or a Point)
-; is relative to the chunk-id.
-(struct (A) chunky ([chunk-id : Integer]
-                    [val : A])
-  #:type-name Chunky #:transparent)
-
-(struct xz ([x : Fixnum]
-            [z : Fixnum])
-  #:type-name XZ #:transparent #:extra-constructor-name make-xz)
-
-; OUCH - constructor is now x z y which is confusing!
-; Should hide this... use a generic interface?
-(struct point xz ([y : Fixnum])
-  #:type-name Point #:transparent)
-
-(define (make-point [xz : XZ] [y : Fixnum])
-  (point (xz-x xz) (xz-z xz) y))
-
-(define point-x xz-x)
-(define point-z xz-z)
 
 (define (neighbors [val : XZ])
   (let ([x (xz-x val)]
@@ -661,6 +642,15 @@
                                     full-sea))))))
   (void))
 
+(define (item-count [stage : Stage])
+  (define buffer (stage-buffer stage))
+  (define a (bytes-ref buffer #x24E7CD))
+  (define b (bytes-ref buffer #x24E7CE))
+  (define c (bytes-ref buffer #x24E7CF))
+  (:ufxior (ufxlshift a 0)
+           (ufxlshift b 8)
+           (ufxlshift c 16)))
+
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
                      #:y-min [min-y : Fixnum 1]
                      #:keep-items? [keep-items? : Boolean #t])
@@ -673,7 +663,7 @@
     (bytes-set! buffer #x24E7CF 0))
   (define area (get-area where stage))
   (for/area ([xz area])
-    (for ([y (in-range 96)])
+    (for ([y : Fixnum (ufx-in-range min-y 96)])
       (let ([p (make-point xz y)])
         (when (and (>= y min-y)
                    (or (not keep-items?)
