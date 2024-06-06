@@ -31,6 +31,10 @@
          save-stage!
          )
 
+(module+ everything
+  (provide stage-buffer
+           add-chunk-ids!))
+
 (module+ for-testing
   (provide blocks-hash))
 
@@ -658,7 +662,7 @@
   ; (this is probably a 4-byte number but 0xC8000 is the max)
   (when (not keep-items?)
     (define buffer (stage-buffer stage))
-    (bytes-set! buffer #x24E7CD 0)
+    (bytes-set! buffer #x24E7CD 1) ; Setting to zero ruins the first item you place??
     (bytes-set! buffer #x24E7CE 0)
     (bytes-set! buffer #x24E7CF 0))
   (define area (get-area where stage))
@@ -859,6 +863,30 @@
            (loop (ufx+ y -1))]))))
   (void))
 
+(: add-chunk-ids! (-> Stage Void))
+; For hacking/investigation
+(define (add-chunk-ids! stage)
+  (define (getblock [chunk-id : Fixnum])
+    (case (ufxmodulo chunk-id 7)
+      [(0) (block 'Light-Dolomite)]
+      [(1) (block 'Dark-Dolomite)]
+      [(2) (block 'Stony-Soil)]
+      [(3) (block 'Seaside-Sand)]
+      [(4) (block 'Arid-Earth)]
+      [(5) (block 'Chert)]
+      [(6) (block 'Umber)]
+      [else (error "assert fail")]))
+  (define chunks (stage-chunks stage))
+  (define layout (get-chunk-layout (stage-kind stage)))
+  (for ([row layout])
+    (for ([chunk-id row])
+      (when (fixnum? chunk-id)
+        (let ([chunk (vector-ref chunks chunk-id)]
+              [y : Fixnum 50])
+          (for ([x : Fixnum (ufx-in-range 32)])
+            (for ([z : Fixnum (ufx-in-range 32)])
+              (chunk-set! chunk #:x x #:z z #:y y #:block (getblock chunk-id))))))))
+  (void))
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,
 ; but the following code takes about 3 minutes to load my IoA.
