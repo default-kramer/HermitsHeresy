@@ -14,4 +14,9 @@
     (clear-area! stage 'all #:keep-items? #f)
     (repair-sea! stage 'all)
     (check-equal? (blocks-hash stage) '(5119984 1574160)))
+
+  ; TODO write some diff tests once it's working...
+  #;(let ([stage (load 'IoA "saves/01/STGDAT01.bin")])
+      (with-output-to-file "saves/01/itemdump.txt" #:exists 'truncate
+        (lambda () (print-items stage #f))))
   }

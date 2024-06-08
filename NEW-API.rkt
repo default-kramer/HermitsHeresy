@@ -32,11 +32,12 @@
          )
 
 (module+ everything
-  (provide stage-buffer
+  (provide stage-buffer stage-chunks get-chunk-layout stage-kind stage-items
+           print-items (struct-out item)
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide blocks-hash))
+  (provide blocks-hash print-items))
 
 (require (prefix-in zlib: "zlib.rkt")
          "chunk.rkt"
@@ -65,6 +66,12 @@
       [(id) (bitwise-ior #x800 val)]
       ...
       [else (error "Unknown block:" a)])))
+
+(define (item-offset24 [i : Fixnum])
+  (ufx+ #x24E7D1 (ufx* i 24)))
+
+(define (item-offset4 [i : Fixnum])
+  (ufx+ #x150E7D1 (ufx* i 4)))
 
 
 ; == ERRATA ==
@@ -190,6 +197,7 @@
                [buffer : Bytes] ; mutable TODO remove this from core? (just use chunks)
                ; Or maybe keep the buffer to know what the file had when it was loaded.
                [chunks : (Immutable-Vectorof Chunk)]
+               [items : (U #f (Mutable-Vectorof (U #f Item)))] ; false means we couldn't load them
                )
   #:type-name Stage)
 
@@ -203,7 +211,13 @@
   (writable-stage (stage-loaded-from stage)
                   (stage-header stage)
                   (stage-buffer stage)
-                  (stage-chunks stage)))
+                  (stage-chunks stage)
+                  (stage-items stage)))
+
+(define (require-items [stage : Stage])
+  (let ([items (stage-items stage)])
+    (or items
+        (error "This function cannot be used; items were not loaded"))))
 
 (define (stage-kind [stage : Stage])
   (stgdat-file-kind (stage-loaded-from stage)))
@@ -506,6 +520,21 @@
   ; Returns the address of chunk i within the uncompressed buffer
   (ufx+ #x183FEF0 (ufx* i #x30000)))
 
+(define (item-count2 [buffer : Bytes])
+  ; This count holds the number of active 24-byte records.
+  ; So when the game loads the stage, I think it reads 24B records from the start
+  ; until it has collected this many active records, and then it stops and skips
+  ; the remainder of the records.
+  (define a (bytes-ref buffer #x24E7CD))
+  (define b (bytes-ref buffer #x24E7CE))
+  (define c (bytes-ref buffer #x24E7CF))
+  (:ufxior (ufxlshift a 0)
+           (ufxlshift b 8)
+           (ufxlshift c 16)))
+
+(define (item-count [stage : Stage])
+  (item-count2 (stage-buffer stage)))
+
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define all-bytes (file->bytes path))
   (define header (subbytes all-bytes 0 header-length))
@@ -514,6 +543,8 @@
   ; and we'll just add some room to spare just in case
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
+
+  (define orig-item-count (item-count2 buffer))
 
   (define chunks
     (build-vector
@@ -524,7 +555,24 @@
        (define chunk (make-empty-chunk))
        (load-chunk! chunk buffer (dqb2-chunk-start-addr i))
        chunk)))
-  (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)))
+
+  (define items : (Mutable-Vectorof (U #f Item))
+    (make-vector #xC8000 #f))
+  (define fragmented? : Boolean #f)
+  (for ([i : Fixnum (ufx-in-range #xC8000)])
+    (let ([item (buffer->item buffer i kind chunks)])
+      (when item
+        (let ([defrag-index (item-defrag-index item)])
+          (when (not (ufx= i defrag-index))
+            (set! fragmented? #t))
+          (vector-set! items defrag-index item)))))
+
+  (when fragmented?
+    ; You can use the game to defragment: load and immediately save without making any changes
+    (println "WARNING - Items are unavailable (load+save to defragment)"))
+  (stage (stgdat-file kind path) header buffer
+         (vector->immutable-vector chunks)
+         (and (not fragmented?) items)))
 
 (: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path) Stage))
 (define (load-stage kind slot)
@@ -551,13 +599,19 @@
             (error "TODO out of range:" p)))))
   (void))
 
-(define (save-stage! [stage : Writable-Stage])
+(define (save-stage! [stage : Writable-Stage] [update-items? : Any #f])
   (define header (stage-header stage))
   (define buffer (stage-buffer stage))
   (define chunks (stage-chunks stage))
+  (define items (stage-items stage))
   (for ([i (in-range (vector-length chunks))])
     (let ([chunk (vector-ref chunks i)])
       (unload-chunk! chunk buffer (dqb2-chunk-start-addr i))))
+  (when (and items update-items?)
+    (for ([i : Fixnum (ufx-in-range (vector-length items))])
+      (let ([item (vector-ref items i)])
+        (when item
+          (item->buffer stage item i)))))
   (define compressed (zlib:compress buffer))
   (define orig-file (stgdat-file-path (stage-loaded-from stage)))
   (with-output-to-file orig-file #:exists 'truncate
@@ -645,15 +699,6 @@
                                     top-sea
                                     full-sea))))))
   (void))
-
-(define (item-count [stage : Stage])
-  (define buffer (stage-buffer stage))
-  (define a (bytes-ref buffer #x24E7CD))
-  (define b (bytes-ref buffer #x24E7CE))
-  (define c (bytes-ref buffer #x24E7CF))
-  (:ufxior (ufxlshift a 0)
-           (ufxlshift b 8)
-           (ufxlshift c 16)))
 
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
                      #:y-min [min-y : Fixnum 1]
@@ -887,6 +932,154 @@
             (for ([z : Fixnum (ufx-in-range 32)])
               (chunk-set! chunk #:x x #:z z #:y y #:block (getblock chunk-id))))))))
   (void))
+
+(define (print-items [stage : Stage]
+                     [port_ : (U #f Output-Port) #f])
+  (define items (require-items stage))
+  (define port (or port_ (current-output-port)))
+  (for ([i (ufx-in-range (ufx+ 1 (item-count stage)))])
+    (let ([item (vector-ref items i)])
+      (when item
+        #;(fprintf port "~a ~a:~a ~a\n" i
+                   (item-block-id item)
+                   (item-item-id item)
+                   (item-point item))
+        (fprintf port "~a\n" item))))
+  (void))
+
+
+; struct item
+;;;; point
+; Will hold the "primary" point that the item occupies.
+; I think we need to use the item-id to look up the dimensions of the item
+; to know how many neighboring blocks are referencing this same item.
+;
+;;;; defrag-index
+; Appears to be used for defragmentation?
+; When you load a save file, the game will re-order the
+; records such that the array index matches this index.
+;
+; I hope we can load all the items, manipulate them,
+; and write them back from index 1-N with defrag-index 1-N.
+; (Inclusive ranges. Assumes index 0 is special/reserved.)
+; Should probably also fill (N+1) thru Last with the incrementing
+; defrag index and zeroes for the rest (chunk offset).
+;
+; But in case this turns out to be difficult, maybe we can require the user
+; to use the game to defrag before using this tool.
+(struct item ([block-id : Fixnum]
+              [item-id : Fixnum]
+              [point : Point]
+              [direction : (U 'N 'S 'E 'W)] ; TODO rename to "facing"
+              [array-index : Fixnum]
+              [defrag-index : Fixnum])
+  #:transparent #:type-name Item)
+
+(define-syntax-rule (define-directions dir->mask mask->dir [sym mask] ...)
+  (begin
+    (define-syntax-rule (dir->mask arg)
+      (case arg [(sym) mask] ...))
+    (define-syntax-rule (mask->dir arg)
+      (case arg
+        [(mask) (quote sym)]
+        ...
+        [else #f]))))
+
+; I think I have this set up such that it it shows the
+; direction the builder was facing when the item was placed:
+(define-directions dir->mask mask->dir [N #x00] [W #x40] [S #x80] [E #xC0])
+
+(: item->buffer (-> Stage Item Fixnum Void))
+(define (item->buffer stage item i)
+  (define layout (get-chunk-layout (stage-kind stage)))
+  (define pt (item-point item))
+  (define chunky (chunk-translate layout pt))
+  (when (not chunky)
+    (error "TODO assert fail??"))
+  (define addr (item-offset24 i))
+  (define buffer (stage-buffer stage))
+
+  ; Update the 24-byte record:
+  (let* ([item-id (item-item-id item)]
+         [dx (xz-x (chunky-val chunky))]
+         [dz (xz-z (chunky-val chunky))]
+         [y (point-y pt)]
+         [direction (dir->mask (item-direction item))])
+    (define (write [offset : Fixnum] [byte : Integer])
+      (bytes-set! buffer (ufx+ addr offset) byte))
+    (write 8 (ufxand item-id #xFF))
+    (write 9 (ufxior (ufxrshift (ufxand item-id #x1F00) 8)
+                     (ufxlshift (ufxand #b00000111 dx) 5)))
+    (write 10 (ufxior (ufxlshift (ufxand #b00111111 y) 2)
+                      (ufxrshift (ufxand #b00011000 dx) 3)))
+    (write 11 (:ufxior direction
+                       (ufxlshift (ufxand #b00011111 dz) 1)
+                       (ufxrshift (ufxand #b01000000 y) 6)))
+    )
+
+  ; TODO Update the 4-byte record:
+  (void))
+
+(: buffer->item (-> Bytes Fixnum Stgdat-Kind (Vectorof Chunk) (U #f Item)))
+(define (buffer->item buffer i kind chunks)
+  (define layout (get-chunk-layout kind))
+
+  (define (get-chunk-id [xidx : Fixnum] [zidx : Fixnum])
+    (let ([len (vector-length layout)])
+      (and (ufx> zidx -1)
+           (ufx> xidx -1)
+           (ufx< zidx (vector-length layout))
+           (let ([row (vector-ref layout zidx)])
+             (and (ufx< xidx (vector-length row))
+                  (vector-ref row xidx))))))
+
+  (define addr (item-offset24 i))
+  (define b8 (bytes-ref buffer (fx+ 8 addr)))
+  (define b9 (bytes-ref buffer (fx+ 9 addr)))
+  (define (parseit)
+    (let* ([temp b8]
+           [item-id temp]
+           [temp b9]
+           [item-id (ufx+ item-id (ufx* 256 (ufxand #x1F temp)))]
+           [dx (ufxrshift temp 5)]
+           [temp (bytes-ref buffer (ufx+ 10 addr))]
+           [dx (ufx+ dx (ufxlshift (ufxand temp 3) 3))] ; 0 <= dx <= 31
+           [y (ufxrshift temp 2)]
+           [temp (bytes-ref buffer (ufx+ 11 addr))]
+           [dir (or (mask->dir (ufxand temp #xC0))
+                    (error "assert fail"))]
+           [y (fx+ y (fxlshift (fxand temp 1) 6))]
+           [dz (fxrshift (fxand #b00111110 temp) 1)] ; 0 <= dz <= 31
+           ; chunk ID comes from a different record:
+           [chunk-addr (item-offset4 i)]
+           [loc (bytes-ref buffer (fx+ 0 chunk-addr))]
+           [temp (bytes-ref buffer (fx+ 1 chunk-addr))]
+           [loc (fx+ loc (fx* 256 (fxand temp #x0F)))]
+           [defrag-index (fxrshift (fxand temp #xF0) 4)]
+           ; Okay, this -18 and -23 seems to work on the IoA
+           ; but it probably indicates that I am missing something...
+           ; Anyway, these give the x and z offsets of the chunk within
+           ; the 27x19 chunk layout map (see `parse-map`)
+           [xidx (fx+ -18 (fxmodulo loc 64))]
+           [zidx (fx+ -23 (fxquotient loc 64))]
+           [chunk-id (get-chunk-id xidx zidx)]
+           [block-id (and chunk-id
+                          (let ([chunk (vector-ref chunks chunk-id)])
+                            (chunk-ref chunk #:x dx #:z dz #:y y)))]
+           [temp (bytes-ref buffer (fx+ 2 chunk-addr))]
+           [defrag-index (fxior defrag-index (fxlshift temp 4))]
+           [temp (bytes-ref buffer (fx+ 3 chunk-addr))]
+           [defrag-index (fxior defrag-index (fxlshift temp 12))])
+      (and block-id
+           (item block-id item-id
+                 (make-point (xz (ufx+ dx (ufx* 32 xidx))
+                                 (ufx+ dz (ufx* 32 zidx)))
+                             y)
+                 dir
+                 i defrag-index))))
+  (cond
+    ;[(and (fx= 0 b8) (fx= 0 b9)) #f]
+    [else (parseit)]))
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,
 ; but the following code takes about 3 minutes to load my IoA.
