@@ -1,4 +1,5 @@
 using HH.Core;
+using System.Text;
 
 namespace TestProject1
 {
@@ -66,26 +67,11 @@ namespace TestProject1
 			var tuples = stgdat.ComputeItemDimensions().ToList();
 			Assert.AreEqual(5151, tuples.Count);
 
-			var groups = tuples.GroupBy(x => (x.Item.BlockVal, x.Item.ItemVal))
-				.Select(group => group.ToList())
-				.OrderBy(lst => lst.Count)
-				.ToList();
+			var hammer = tuples.Single(x => x.Item.BlockVal == 2047 && x.Item.ItemVal == 1410);
+			var greenTablet = tuples.Single(x => x.Item.BlockVal == 2047 && x.Item.ItemVal == 2565);
+			var blueTablet = tuples.Single(x => x.Item.BlockVal == 2047 && x.Item.ItemVal == 2569);
 
-			foreach (var group in groups)
-			{
-				var dimensions = group.Select(g => g.Dimensions).Distinct().ToList();
-				if (dimensions.Count != 1)
-				{
-					var break1 = 123;
-				}
-				else
-				{
-					foreach (var tuple in group)
-					{
-						stgdat.RemoveItem(tuple.Item, tuple.Extent);
-					}
-				}
-			}
+			stgdat.RemoveAllItemsExcept(hammer, greenTablet, blueTablet);
 
 			var output = stgdat.Export();
 			File.WriteAllBytes(@"C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD\B00\STGDAT01.BIN", output);

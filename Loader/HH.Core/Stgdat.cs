@@ -31,7 +31,11 @@ public sealed class Stgdat
 
 	public Offset ChunkToOffset(int chunk) => helper.ChunkToOffset(chunk);
 
-	public record struct Item(Point Anchor, int BlockVal, int ItemVal, int Facing, int DefragIndex);
+	/// <param name="WhichChunk">
+	/// WARNING: This is a function of the Anchor, but I've denormalized to avoid having to reverse the calculation.
+	/// This is not a good long-term idea.
+	/// </param>
+	public record struct Item(Point Anchor, int BlockVal, int ItemVal, int Facing, int DefragIndex, int WhichChunk);
 
 	// DAMN this won't work! Because two items might be back-to-back and you wouldn't be
 	// able to tell the difference between (1x2x1, 1x2x1) vs (1x1x1, 1x3x1)
@@ -66,6 +70,32 @@ public sealed class Stgdat
 		WriteNumber(addr4 + 2, 2, defragIndex >> 4);
 	}
 
+	private void WriteItem(int i, Item item)
+	{
+		item = item with { DefragIndex = i };
+
+		int addr24 = 0x24E7D1 + 24 * i;
+		int addr4 = 0x150E7D1 + 4 * i;
+
+		WriteNumber(addr24 + 8, 1, item.ItemVal);
+		WriteNumberOR(addr24 + 9, 1,
+			0b1110_0000 & (item.Anchor.X << 5),
+			0b0001_1111 & (item.ItemVal >> 8));
+		WriteNumberOR(addr24 + 10, 1,
+			0b1111_1100 & (item.Anchor.Y << 2),
+			0b0000_0011 & (item.Anchor.X >> 3));
+		WriteNumberOR(addr24 + 11, 1,
+			0b1100_0000 & (item.Facing << 6),
+			0b0011_1110 & (item.Anchor.Z << 1),
+			0b0000_0001 & (item.Anchor.Y >> 6));
+
+		WriteNumber(addr4 + 0, 1, item.WhichChunk);
+		WriteNumberOR(addr4 + 1, 1,
+			0b1111_0000 & (item.DefragIndex << 4),
+			0b0000_1111 & (item.WhichChunk >> 8));
+		WriteNumber(addr4 + 2, 2, item.DefragIndex >> 4);
+	}
+
 	private Item ReadItem(int i)
 	{
 		int addr24 = 0x24E7D1 + 24 * i;
@@ -98,6 +128,7 @@ public sealed class Stgdat
 			ItemVal = itemVal,
 			Facing = facing,
 			DefragIndex = defragIndex,
+			WhichChunk = whichChunk,
 		};
 	}
 
@@ -225,6 +256,16 @@ public sealed class Stgdat
 		}
 	}
 
+	private void WriteNumberOR(int address, int size, params int[] values)
+	{
+		int val = 0;
+		foreach (var value in values)
+		{
+			val |= value;
+		}
+		WriteNumber(address, size, val);
+	}
+
 	public int ReadBlock(Point point)
 	{
 		var address = BlockAddress(point);
@@ -240,11 +281,24 @@ public sealed class Stgdat
 
 	private void ClearItem(Item deleteItem)
 	{
-		var lastIdx = ItemCount - 1;
-		SetDefragIndex(deleteItem.DefragIndex, lastIdx);
-		SetDefragIndex(lastIdx, deleteItem.DefragIndex);
-		ItemCount = lastIdx;
-		// When DQB2 starts up, I expect it to skip over the deleteItem because its DefragIndex >= ItemCount.
+		var count = ItemCount;
+		if (deleteItem.DefragIndex >= count)
+		{
+			return; // already out of range
+		}
+
+		count--;
+		var moveItem = ReadItem(count);
+
+		WriteItem(deleteItem.DefragIndex, moveItem);
+		var TEMP = ReadItem(deleteItem.DefragIndex);
+		if (!TEMP.Equals(moveItem with { DefragIndex = deleteItem.DefragIndex }))
+		{
+			throw new Exception("TODO");
+		}
+
+		WriteItem(count, deleteItem);
+		ItemCount = count;
 	}
 
 	public IEnumerable<(Item Item, Point Dimensions, IReadOnlySet<Point> Extent)> ComputeItemDimensions()
@@ -295,6 +349,53 @@ public sealed class Stgdat
 			ClearBlock(point);
 		}
 		ClearItem(item);
+	}
+
+	public void RemoveAllItemsExcept(params (Item, Point, IReadOnlySet<Point>)[] keep)
+	{
+		if (!ParseItems(out var items))
+		{
+			throw new Exception("TODO");
+		}
+
+		var pointsToSave = keep.SelectMany(x => x.Item3).ToHashSet();
+		var blockVals = items.Select(i => i.BlockVal).Distinct().ToHashSet();
+		var keepDefrags = keep.Select(i => i.Item1.DefragIndex).ToArray();
+
+		foreach (var item in items)
+		{
+			if (!keepDefrags.Contains(item.DefragIndex))
+			{
+				ClearItem(item);
+			}
+		}
+
+		for (int chunk = 0; chunk < helper.NumChunks; chunk++)
+		{
+			var offset = helper.ChunkToOffset(chunk);
+			var addr = BlockAddress(chunk);
+
+			for (int y = 0; y < 96; y++)
+			{
+				for (int z = 0; z < 32; z++)
+				{
+					for (int x = 0; x < 32; x++)
+					{
+						int block = ReadNumber(addr, 2);
+						if (block != 0 && blockVals.Contains(block))
+						{
+							var p = new Point(offset.StartX + x, offset.StartZ + z, y);
+							if (!pointsToSave.Contains(p))
+							{
+								WriteNumber(addr, 2, 0);
+							}
+						}
+
+						addr += 2;
+					}
+				}
+			}
+		}
 	}
 
 	public Byte[] Export()

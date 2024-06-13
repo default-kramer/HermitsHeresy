@@ -6,8 +6,13 @@ using System.Threading.Tasks;
 
 namespace HH.Core;
 
-static class Util
+public static class Util
 {
+	public static bool IsOneOf<T>(this T value, params T[] values)
+	{
+		return values.Contains(value);
+	}
+
 	public static IReadOnlyList<Offset> OffsetsIoA = BuildOffsets(
 // exported from Racket:
 (0, 7, 0),
