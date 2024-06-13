@@ -40,7 +40,7 @@ public abstract class StgdatHelper
 
 	public abstract Offset SillyOffsetMath(int whichChunk);
 
-	internal byte[] Decompress()
+	internal (byte[] header, byte[] buffer) Decompress()
 	{
 		Byte[] check = { 0x61, 0x65, 0x72, 0x43, };
 		for (int i = 0; i < check.Length; i++)
@@ -52,7 +52,7 @@ public abstract class StgdatHelper
 		var compressed = new Byte[rawContent.Length - header.Length];
 		Array.Copy(rawContent, header.Length, compressed, 0, compressed.Length);
 		Array.Copy(rawContent, header, header.Length);
-		return Decomp(compressed);
+		return (header, Decomp(compressed));
 	}
 
 	private static Byte[] Decomp(Byte[] data)
