@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace HH.Core;
@@ -27,6 +28,14 @@ public sealed class Stgdat
 	{
 		var addr = BlockAddress(chunk);
 		return buffer.AsSpan().Slice(addr, 0x30000);
+	}
+
+	public string GetChunkSHA1(int chunk)
+	{
+		var addr = BlockAddress(chunk);
+		using var sha = SHA1.Create();
+		var hash = sha.ComputeHash(buffer, addr, 0x30000);
+		return Encoding.UTF8.GetString(hash);
 	}
 
 	public Offset ChunkToOffset(int chunk) => helper.ChunkToOffset(chunk);

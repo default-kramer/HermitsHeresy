@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceProcess;
@@ -9,16 +10,21 @@ namespace ServiceApp;
 
 class WatcherService : ServiceBase
 {
-	private Dispatcher? dispatcher = null;
+	private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+	private readonly SDWatcher watcher;
+
+	public WatcherService(DirectoryInfo sd)
+	{
+		watcher = new SDWatcher(sd);
+	}
 
 	protected override void OnStart(string[] args)
 	{
-		dispatcher = new Dispatcher();
-		dispatcher.StartWatchers();
+		logger.Info("OnStart called, ignoring: {0}", string.Join(" ", args));
 	}
 
 	protected override void Dispose(bool disposing)
 	{
-		dispatcher?.Dispose();
+		watcher.Dispose();
 	}
 }

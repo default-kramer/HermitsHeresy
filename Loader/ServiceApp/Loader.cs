@@ -1,5 +1,6 @@
 ﻿using HH.Core;
 using System.Data.SQLite;
+using System.Security.Cryptography;
 using static HH.Core.Stgdat;
 
 namespace ServiceApp;
@@ -91,9 +92,12 @@ sealed class Loader
 
 		for (int chunk = 0; chunk < stgdat.NumChunks; chunk++)
 		{
+			var offset = stgdat.ChunkToOffset(chunk);
+			var sha1 = stgdat.GetChunkSHA1(chunk);
+			// TODO check whether chunk already exists...
+
 			var buffer = stgdat.GetChunkBytes(chunk);
 			int address = 0;
-			var offset = stgdat.ChunkToOffset(chunk);
 
 			for (int y = 0; y < 96; y++)
 			{
