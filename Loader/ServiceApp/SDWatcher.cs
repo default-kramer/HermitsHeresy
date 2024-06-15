@@ -16,9 +16,7 @@ namespace ServiceApp;
 sealed class SDWatcher : IDisposable
 {
 	private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-	private readonly DirectoryInfo sd;
 	private readonly FileSystemWatcher watcher;
-	private readonly FileInfo configFile;
 	private readonly FileInfo dbFile;
 	private readonly DirectoryInfo archiveRoot;
 	private readonly SQLiteConnection conn;
@@ -27,7 +25,6 @@ sealed class SDWatcher : IDisposable
 
 	public SDWatcher(DirectoryInfo sd)
 	{
-		this.sd = sd;
 		this.watcher = new FileSystemWatcher(sd.FullName);
 		watcher.IncludeSubdirectories = true;
 		watcher.EnableRaisingEvents = true;
@@ -37,7 +34,6 @@ sealed class SDWatcher : IDisposable
 		watcher.Created += Watcher_Changed;
 
 		var hh = sd.CreateSubdirectory(".hermits-heresy");
-		configFile = new FileInfo(Path.Combine(hh.FullName, "hermits-heresy-config.json"));
 		dbFile = new FileInfo(Path.Combine(hh.FullName, "hermits-heresy.db"));
 
 		archiveRoot = hh.CreateSubdirectory("archive");
@@ -69,8 +65,6 @@ sealed class SDWatcher : IDisposable
 			return false;
 		}
 	}
-
-	private readonly ConcurrentDictionary<FileVersion, bool> capturedStgdats = new();
 
 	private void Watcher_Changed(object sender, FileSystemEventArgs e)
 	{
