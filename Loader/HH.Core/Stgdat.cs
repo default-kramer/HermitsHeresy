@@ -20,7 +20,7 @@ public sealed class Stgdat
 		this.parseItems = new Lazy<(bool, IReadOnlyList<Item>)>(ParseItems);
 	}
 
-	public bool IsFragmented => !ParseItems(out _);
+	public bool IsFragmented => !parseItems.Value.Item1;
 
 	public int NumChunks => helper.NumChunks;
 

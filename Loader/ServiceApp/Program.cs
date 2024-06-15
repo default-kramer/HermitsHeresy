@@ -22,7 +22,7 @@ class Program
 			// NLog probably isn't available
 			try
 			{
-				File.WriteAllText("./_CRASH.txt", ex.ToString());
+				File.WriteAllText("./_HH-CRASH.txt", ex.ToString());
 			}
 			catch { }
 			throw;

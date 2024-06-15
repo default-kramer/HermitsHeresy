@@ -128,12 +128,3 @@ sealed class Loader
 	}
 }
 
-static class Util
-{
-	public static SQLiteParameter AddParam(this SQLiteCommand command)
-	{
-		var param = command.CreateParameter();
-		command.Parameters.Add(param);
-		return param;
-	}
-}
