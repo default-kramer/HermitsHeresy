@@ -51,21 +51,29 @@ namespace TestProject1
 		}
 
 		[TestMethod]
-		public void DeleteSomeItems()
+		public void test003()
 		{
-			Assert.Inconclusive("WARNING: This test saves to B00");
-
-			// ... the same file as 001, but I loaded and immediately saved it in DQB2.
-			// I'm still not sure whether DQB2 *always* performs this defragmentation,
-			// but let this serve as proof that it happens at least *some* of the time.
-			var stgdat = LoadStgdat("testfiles/002-STGDAT01.BIN");
+			// Just another defragmented file but now I've learned to always save the CMNDAT too.
+			var stgdat = LoadStgdat("testfiles/003/STGDAT01.BIN");
 
 			Assert.IsFalse(stgdat.IsFragmented);
 			Assert.IsTrue(stgdat.ParseItems(out var items));
-			Assert.AreEqual(15829, items.Count);
+			Assert.AreEqual(15856, items.Count);
+		}
+
+		[TestMethod]
+		public void DeleteSomeItems()
+		{
+			Assert.Inconclusive("WARNING: This test saves to B00, uncomment this line if you want to run it");
+
+			var stgdat = LoadStgdat("testfiles/003/STGDAT01.BIN");
+
+			Assert.IsFalse(stgdat.IsFragmented);
+			Assert.IsTrue(stgdat.ParseItems(out var items));
+			Assert.AreEqual(15856, items.Count);
 
 			var tuples = stgdat.ComputeItemDimensions().ToList();
-			Assert.AreEqual(5151, tuples.Count);
+			Assert.AreEqual(5146, tuples.Count);
 
 			var hammer = tuples.Single(x => x.Item.BlockVal == 2047 && x.Item.ItemVal == 1410);
 			var greenTablet = tuples.Single(x => x.Item.BlockVal == 2047 && x.Item.ItemVal == 2565);
