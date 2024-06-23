@@ -1,0 +1,6 @@
+Path: C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD\B02\STGDAT01.BIN
+LastModified: 2024-06-14 18:38:51.805
+       * UTC: 2024-06-14 23:38:51.805
+
+LoadCompleted: 2024-06-14 18:38:52.845
+        * UTC: 2024-06-14 23:38:52.845

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ServiceApp;
 
-static class ConnectionFactory
+public static class ConnectionFactory
 {
 	private static readonly ConcurrentDictionary<string, bool> openFiles = new();
 
@@ -28,6 +28,14 @@ static class ConnectionFactory
 			DataSource = path.FullName
 		};
 		var conn = new SQLiteConnection(connectionString.ConnectionString);
+		conn.Open();
+		RunMigrations(conn);
+		return conn;
+	}
+
+	public static SQLiteConnection OpenMemoryDatabase()
+	{
+		var conn = new SQLiteConnection("Data Source=:memory:");
 		conn.Open();
 		RunMigrations(conn);
 		return conn;

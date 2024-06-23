@@ -24,6 +24,8 @@ public sealed class Stgdat
 
 	public int NumChunks => helper.NumChunks;
 
+	public IEnumerable<int> IterateChunks => Enumerable.Range(0, NumChunks);
+
 	public ReadOnlySpan<byte> GetChunkBytes(int chunk)
 	{
 		var addr = BlockAddress(chunk);
@@ -35,7 +37,7 @@ public sealed class Stgdat
 		var addr = BlockAddress(chunk);
 		using var sha = SHA1.Create();
 		var hash = sha.ComputeHash(buffer, addr, 0x30000);
-		return Encoding.UTF8.GetString(hash);
+		return Convert.ToBase64String(hash);
 	}
 
 	public Offset ChunkToOffset(int chunk) => helper.ChunkToOffset(chunk);

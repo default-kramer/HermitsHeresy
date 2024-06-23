@@ -1,4 +1,6 @@
 using HH.Core;
+using ServiceApp;
+using System.Data.SQLite;
 using System.Text;
 
 namespace TestProject1
@@ -83,6 +85,57 @@ namespace TestProject1
 
 			var output = stgdat.Export();
 			File.WriteAllBytes(@"C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD\B00\STGDAT01.BIN", output);
+		}
+
+		private static Loader LoadBlocks(SQLiteConnection conn, Stgdat stgdat)
+		{
+			var loader = new Loader(stgdat, conn);
+			using var command = conn.CreateCommand();
+			command.CommandText = "insert into Stage default values; select last_insert_rowid();";
+			object result = command.ExecuteScalar();
+			int StageId = Convert.ToInt32(result);
+
+			loader.LoadBlocks(StageId);
+			return loader;
+		}
+
+		//[TestMethod]
+		public void find_defragged_files()
+		{
+			List<string> paths = new();
+
+			var archiveDir = new DirectoryInfo(@"C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD\.hermits-heresy\archive");
+			foreach (var subdir in archiveDir.EnumerateDirectories())
+			{
+				var path = Path.Combine(subdir.FullName, "STGDAT01.BIN");
+				var rawContent = System.IO.File.ReadAllBytes(path);
+				var helper = new StgdatHelper.IoA(rawContent);
+				var stgdat = new Stgdat(helper);
+				if (!stgdat.IsFragmented)
+				{
+					paths.Add(path);
+				}
+			}
+
+			Assert.AreEqual("", string.Join(" \n", paths));
+		}
+
+		[TestMethod]
+		public void chunk_reuse_test()
+		{
+			using var conn = ConnectionFactory.OpenMemoryDatabase();
+
+			var loader = LoadBlocks(conn, LoadStgdat("testfiles/004/STGDAT01.BIN"));
+			Assert.AreEqual(369, loader.NewChunks);
+			Assert.AreEqual(0, loader.ReusedChunks);
+
+			loader = LoadBlocks(conn, LoadStgdat("testfiles/005/STGDAT01.BIN"));
+			Assert.AreEqual(14, loader.NewChunks);
+			Assert.AreEqual(369 - 14, loader.ReusedChunks);
+
+			loader = LoadBlocks(conn, LoadStgdat("testfiles/006/STGDAT01.BIN"));
+			Assert.AreEqual(12, loader.NewChunks);
+			Assert.AreEqual(369 - 12, loader.ReusedChunks);
 		}
 	}
 }
