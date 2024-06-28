@@ -15,6 +15,7 @@
 
   ; The flat 3x3 hammer decorating the ground on the hermit's mountain.
   ; Indestructible.
+  ; Block = 2047, Item = 1410
   (define-special-locs hermits-hammer
     (list (xz 414 284) 74 2047)
     (list (xz 415 284) 74 2047)
@@ -42,6 +43,7 @@
     (list (xz 373 110) 56 2047))
 
   ; Indestructible.
+  ; Block = 2047, Item = 2565
   (define-special-locs green-tablet
     (list (xz 519 114) 44 2047)
     (list (xz 519 114) 45 2047)
@@ -57,6 +59,7 @@
     (list (xz 521 114) 47 2047))
 
   ; Indestructible.
+  ; Block = 2047, Item = 2569
   (define-special-locs red-tablet
     (list (xz 553 287) 43 2047)
     (list (xz 553 287) 44 2047)
