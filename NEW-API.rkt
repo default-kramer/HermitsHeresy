@@ -422,11 +422,11 @@
             (set-member? set (cons (xz-x xz) (xz-z xz)))))))
 
 (struct hill ([area : Area]
-              [elevations : (Immutable-HashTable (Pairof Integer Integer) Real)])
+              [elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)])
   #:type-name Hill #:transparent)
 
-(define (area->hill [area : Area] [elevation-func : (-> XZ Real)])
-  (define elevations : (Immutable-HashTable (Pairof Integer Integer) Real)
+(define (area->hill [area : Area] [elevation-func : (-> XZ Fixnum)])
+  (define elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)
     (hash))
   (for/area ([xz area])
     (let ([elevation (elevation-func xz)])
@@ -454,11 +454,9 @@
           (error "bad height" h))))
   (define pixels (pict->argb-pixels bmp))
   ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Real)))
+  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
   (define all-empty? : Boolean #t)
   (define all-full? : Boolean #t)
-  (define min-total : Integer 9999)
-  (define max-total : Integer 0)
   (let ([index 0])
     (for ([z (in-range depth)])
       (for ([x (in-range width)])
@@ -471,9 +469,8 @@
           (cond
             [(> alpha 0)
              (set! all-empty? #f)
-             (set! min-total (min min-total total))
-             (set! max-total (max max-total total))
-             (hash-set! elevations (cons x z) total)]
+             (hash-set! elevations (cons x z)
+                        (- 95 (quotient (max red green blue) 2)))]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
@@ -481,23 +478,15 @@
                    (if all-empty? "all" "zero"))))
   (define the-area
     (area (rect (xz 0 0) (xz width depth))
-          (let ([set (list->set (hash-keys elevations))])
-            (lambda ([xz : XZ])
-              (set-member? set (cons (xz-x xz) (xz-z xz)))))))
-  (define total-range (- max-total min-total))
-  (for ([key (hash-keys elevations)])
-    (let* ([unscaled (hash-ref elevations key)]
-           [ratio (/ (- unscaled min-total) total-range)])
-      (hash-set! elevations key (- 1 ratio))))
+          (lambda ([xz : XZ])
+            (hash-ref elevations (cons (xz-x xz) (xz-x xz)) (lambda () #f)))))
   (hill the-area (make-immutable-hash (hash->list elevations))))
 
-(define (put-hill! [stage : Stage] [hill : Hill] [block : Integer]
-                   [get-y : (-> Real Real)])
+(define (put-hill! [stage : Stage] [hill : Hill] [block : Integer])
   (define area (hill-area hill))
   (define elevations (hill-elevations hill))
   (for/area ([xz area])
-    (let* ([elevation (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
-           [end-y (cast (exact-truncate (get-y elevation)) Fixnum)])
+    (let ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))])
       (for ([y : Fixnum (ufx-in-range 1 end-y)])
         (stage-write! stage (make-point xz y) block))))
   (void))
