@@ -1,0 +1,1 @@
+This directory is intentionally excluded from the Racket package.
