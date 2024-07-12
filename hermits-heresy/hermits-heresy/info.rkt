@@ -1,0 +1,9 @@
+#lang info
+(define collection "hermits-heresy")
+(define deps '("base"))
+(define implies '())
+(define build-deps '())
+;(define scribblings '(("scribblings/plisqin.scrbl" (multi-page))))
+(define pkg-desc "Power Tools for DQB2")
+(define version "0.1")
+(define pkg-authors '(|Ryan Kramer|))
