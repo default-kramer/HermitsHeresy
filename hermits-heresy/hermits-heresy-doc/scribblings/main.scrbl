@@ -7,15 +7,18 @@ Unauthorized utilities for scheming up scenes. Move mountains, carve canyons, or
 
 (Power Tools for Dragon Quest Builders 2)
 
+WORK IN PROGRESS.
+For now this is placeholder documentation.
+I want to verify that I can create tutorials and examples on an external site
+but have them link to this reference documentation using Scribble.
+
 @section{Disclaimers}
 TODO explain:
 Use at your own risk.
 Not authorized by Square Enix or Valve (Steam).
 How to avoid catastrophic data loss.
 
-@section{TODO}
-TODO link to webpage/blog containing tutorials and examples.
-This documentation should be a minimal reference.
+@section{WIP}
 
 @(racketblock
   (define test (put-hill! a b c)))
