@@ -1,8 +1,8 @@
 #lang racket
 
 {module+ test
-  (require "../NEW-API.rkt"
-           (submod "../NEW-API.rkt" for-testing)
+  (require "../hermits-heresy/NEW-API.rkt"
+           (submod "../hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 
   (define-syntax-rule (load kind path)

@@ -1,7 +1,6 @@
 #lang racket
 
-(require "../../NEW-API.rkt"
-         ;(submod "../../NEW-API.rkt" sqlite)
+(require hermits-heresy
          pict
          rackunit)
 
