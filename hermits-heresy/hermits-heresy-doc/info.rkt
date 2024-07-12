@@ -11,3 +11,4 @@
 (define scribblings '(("scribblings/main.scrbl" (multi-page))))
 (define pkg-desc "documentation for Hermit's Heresy")
 (define pkg-authors '(|Ryan Kramer|))
+(define license 'GPL-3.0)

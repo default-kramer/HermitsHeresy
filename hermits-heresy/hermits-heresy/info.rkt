@@ -7,3 +7,4 @@
 (define pkg-desc "Power Tools for DQB2")
 (define version "0.1")
 (define pkg-authors '(|Ryan Kramer|))
+(define license 'GPL-3.0)
