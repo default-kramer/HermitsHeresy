@@ -9,4 +9,7 @@
 (define collection 'multi)
 (define deps '("base"))
 (define build-deps '("scribble-lib"))
-(define license 'GPL-3.0)
+
+; I just copied turtle-insect's license because maybe I would copy some code too.
+; I think GPL-3.0-or-later would be fine but I don't know.
+(define license 'GPL-3.0-only)
