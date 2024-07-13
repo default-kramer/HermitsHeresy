@@ -34,13 +34,15 @@
 (define-ffi-definer define-zlib
   (case (system-type 'os)
     ; Looks like zlib1 gets bundled with Racket on Windows.
-    ; Is the name "zlib1" for Windows only?
+    ; I think the name "zlib1" is Windows only.
+    ; I think I want to fail fast on Windows.
     [(windows) (ffi-lib "zlib1")]
     ; I think "zlib" might work on Linux...?
-    ; Even if the name is correct, it might simply not be installed by default.
+    ; But even if the name is correct, it might simply not be installed by default.
     ; This would mostly just be so the tests can run in a Linux build pipeline.
     ; I don't think anyone is trying to run DQB2 on Linux.
-    [else (ffi-lib "zlib")]))
+    [else (ffi-lib "zlib" #:fail (lambda () #f))])
+  #:default-make-fail make-not-available)
 
 (define-zlib zlibVersion (_fun -> _string))
 
