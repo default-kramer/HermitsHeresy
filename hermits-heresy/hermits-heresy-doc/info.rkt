@@ -8,7 +8,7 @@
 (define collection "hermits-heresy-doc")
 (define deps '("base"))
 (define build-deps '("hermits-heresy" "scribble-lib" "racket-doc" "rackunit-lib" "sandbox-lib" "doc-coverage"))
-(define scribblings '(("scribblings/main.scrbl" ())))
+(define scribblings '(("scribblings/hermits-heresy.scrbl" ())))
 (define pkg-desc "documentation for Hermit's Heresy")
 (define pkg-authors '(|Ryan Kramer|))
 
