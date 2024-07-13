@@ -9,9 +9,6 @@
 ;
 ;
 ; = Notes to self =
-; Looks like zlib1 gets bundled with Racket.
-; (Is the name "zlib1" for Windows only?)
-;
 ; Looks like System.IO.CompressionLevel.Optimal corresponds to zlib's default compression and memory options.
 ; Here https://github.com/dotnet/runtime/blob/main/src/libraries/System.IO.Compression/src/System/IO/Compression/DeflateZLib/Deflater.cs#L37
 ;                 case CompressionLevel.Optimal:
@@ -34,7 +31,16 @@
 (require ffi/unsafe
          ffi/unsafe/define)
 
-(define-ffi-definer define-zlib (ffi-lib "zlib1"))
+(define-ffi-definer define-zlib
+  (case (system-type 'os)
+    ; Looks like zlib1 gets bundled with Racket on Windows.
+    ; Is the name "zlib1" for Windows only?
+    [(windows) (ffi-lib "zlib1")]
+    ; I think "zlib" might work on Linux...?
+    ; Even if the name is correct, it might simply not be installed by default.
+    ; This would mostly just be so the tests can run in a Linux build pipeline.
+    ; I don't think anyone is trying to run DQB2 on Linux.
+    [else (ffi-lib "zlib")]))
 
 (define-zlib zlibVersion (_fun -> _string))
 
