@@ -7,8 +7,19 @@
 ; and https://docs.racket-lang.org/pkg/index.html
 
 (define collection 'multi)
-(define deps '("base"))
-(define build-deps '("scribble-lib" "doc-coverage"))
+
+(define deps '("base"
+               "db-lib"
+               "pict-lib"
+               "typed-racket-lib"
+               "typed-racket-more"
+               ))
+
+(define build-deps '("doc-coverage"
+                     "racket-doc"
+                     "rackunit-typed"
+                     "scribble-lib"
+                     ))
 
 ; I just copied turtle-insect's license because maybe I would copy some code too.
 ; I think GPL-3.0-or-later would be fine but I don't know.
