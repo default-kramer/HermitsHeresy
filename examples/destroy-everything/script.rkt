@@ -16,15 +16,35 @@
 ; ? <= y <= 45 has the boat near (xz 446 513)
 ;  (note: y=45 has just one spot I think: the tip of the mast)
 ; 6:10 PM Thursday - finished OUT40.bmp
+;
+; Resuming work starting with the out40/pass40 file.
+; Ran this to remove all sea assuming all sea can be removed:
+#;(begin
+    (remove-blocks!
+     B00 'all
+     (let ([top-sea #x1A4] ; The shallow sea, placed at y = sea level
+           [full-sea #x155]) ; Full sea, placed at y < sea level
+       ; Looks like underwater/falling water is also a block?
+       ; I don't really understand what's going on here...
+       ; This probably is not the complete list, but it works well enough
+       ; for the destroy-everything project:
+       (list top-sea
+             #x14D #x14E #x14F
+             #x150 #x151 #x152 #x153 #x154 full-sea #x15D)))
+    ; 1736811 blocks were removed
+    (save-stage! B00))
+; And I don't think there's any need to create platforms anymore.
+
 {module+ main
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
-  (define B01 (load-stage 'IoA 'B01))
+  (define B00 (load-stage 'IoA 'B00))
   (define platform-block (block 'Seaside-Scene-Block))
+
   (define the-pict
     (stage->pictOLD
-     B01 (lambda (xz column)
+     B00 (lambda (xz column)
            (define anything? #f)
-           (for ([y '(41 42 43 44 45 46 47 48 49 50)])
+           (for ([y '(31 32 33 34 35 36 37 38 39 40)])
              (let ([block (vector-ref column y)])
                (when (and (not (= block 0))
                           (not (= block platform-block)))

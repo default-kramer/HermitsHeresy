@@ -18,6 +18,7 @@
          xz
          put-hill!
          print-column
+         remove-blocks!
          repair-sea!
          clear-area!
          stage->pict stage->pictOLD
@@ -680,6 +681,19 @@
                        (simple-block? (or (stage-read stage p) 0))))
           (stage-write! stage p 0)))))
   (void))
+
+(define (remove-blocks! [stage : Stage] [where : (U 'all Area)] [blocks : (Listof Fixnum)])
+  (define area (get-area where stage))
+  (define count 0)
+  (for/area ([xz area])
+    (for ([y (in-range 96)])
+      (let* ([p (make-point xz y)]
+             [block (stage-read stage p)])
+        (when (and block
+                   (member (ufxand block #x7FF) blocks))
+          (stage-write! stage p 0)
+          (set! count (add1 count))))))
+  count)
 
 (define (blocks-hash [stage : Stage]
                      #:where [where : (U 'all Area) 'all])
