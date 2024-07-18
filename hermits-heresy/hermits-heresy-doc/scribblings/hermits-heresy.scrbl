@@ -1,17 +1,14 @@
 #lang scribble/manual
 
 @(require (for-label hermits-heresy
-                     racket))
+                     racket)
+          scribble/example)
 
 @title{Hermit's Heresy}
-Unauthorized utilities for scheming up scenes. Move mountains, carve canyons, or summon superstructures!
+Unauthorized utilities for scheming up scenes.
+Move mountains, carve canyons, or summon superstructures!
 
 (Power Tools for Dragon Quest Builders 2)
-
-WORK IN PROGRESS.
-For now this is placeholder documentation.
-I want to verify that I can create tutorials and examples on an external site
-but have them link to this reference documentation using Scribble.
 
 @section{Disclaimers}
 TODO explain:
@@ -19,50 +16,60 @@ Use at your own risk.
 Not authorized by Square Enix or Valve (Steam).
 How to avoid catastrophic data loss.
 
-@section{WIP}
-@(racketblock
-  (define test (put-hill! a b c)))
+@section{Avoiding Catastrophic Data Loss}
+The Steam version of Dragon Quest Builders 2 saves data in a "SD" directory.
+By default, this directory will be something like this:
+@para{@tt{C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD}}
 
-Blah.
+If you are using all 3 save slots, you will see 3 subdirectories:
 
-Blah.
+TODO
+Recommend backing up the entire dir.
+At the very least, CMNDAT and STGDAT belong together.
+Recommend multiple immutable archive locations.
 
-Blah.
 
-Blah.
+@section{Getting Started}
+@subsection{Installation}
+In its current form, Hermit's Heresy requires you to understand a little bit
+about programming using Racket.
+If you've never used Racket before, you should work through the
+@hyperlink["https://docs.racket-lang.org/quick/index.html"]{Quick Introduction to Racket}
+up to at least section 4 (Definitions).
 
-Blah.
+Once you've installed Racket, you still need to install Hermit's Heresy.
+If you are comfortable using command prompt, just type
+@(racketblock raco pkg install hermits-heresy)
+Or you can install Hermit's Heresy from DrRacket.
+Navigate to @tt{File -> Package Manager -> Available from Catalog}.
+Wait for it to refresh, then use the Filter to find the package named @bold{hermits-heresy}.
+Select it and click Install.
 
-Blah.
+Once you have everything installed, the following program
+(which does basically nothing) should run without errors:
+@(examples
+  #:lang racket
+  (require hermits-heresy)
+  (block 'Chert))
 
-Blah.
+@subsection{Configuring Writable Slots}
+Hermit's Heresy protects you from accidentally overwriting your hard work.
+It will never write to a save slot unless you have configured that directory as writable.
+Personally, I use Save Slot 1 (B00) as my ephemeral save slot, and I always
+assume that I might intentionally or accidentally delete or overwrite it at any time.
+Any real, long-term work I am doing belongs in slots 2 or 3.
 
-Blah.
+To configure a save slot to be writable, first ensure that it does not contain anything
+you don't mind losing. Then create a file named
+@tt{hermits-heresy.config.json} in that directory with the following content:
+@verbatim{
+ {"writable": true}
+}
 
-Blah.
+TODO Wait! The filename should be something like hermits-heresy.config.B00.json
+to avoid the problem where you accidentally copy the B01 config file into B00.
 
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
-Blah.
-
+@section{Reference}
 @(defmodule hermits-heresy)
 
 @subsection{Loading and Saving}
