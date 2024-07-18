@@ -60,8 +60,8 @@
     body ...))
 
 #;{begin ;module+ main
-    (copy-everything! #:from 'B02 #:to 'B00)
-    (define B00 (mark-writable (load-stage 'IoA 'B00)))
+    (copy-all-save-files! #:from 'B02 #:to 'B00)
+    (define B00 (load-stage 'IoA 'B00))
     (println "loaded stage")
     (update-manual-build-pict B00 "manual-build.bmp")
     (define manual-build (bitmap->area "manual-build.bmp"))

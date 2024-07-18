@@ -6,12 +6,10 @@
          bitmap->area
          area->hill2
          put-hill!
-         ; rethink
-         mark-writable
          load-stage
          protected-areas
          block
-         copy-everything!
+         copy-all-save-files!
          decorate-peaks!
          simple?
          chisel

@@ -7,7 +7,6 @@
 
 (provide save-dir
          load-stage
-         mark-writable
          item-count
          block
          fill-area!
@@ -25,9 +24,7 @@
          TODO
          create-golem-platforms!
          protected-areas ; WARNING this will probably be slow? And area combiner functions would be better anyway?
-
-         ; WARNING these should make backups probably:
-         copy-everything!
+         copy-all-save-files!
          save-stage!
          )
 
@@ -42,6 +39,7 @@
          "chunk.rkt"
          "basics.rkt"
          "ufx.rkt"
+         "config-util.rkt"
          racket/hash
          typed/pict
          racket/fixnum
@@ -192,18 +190,6 @@
                [chunks : (Immutable-Vectorof Chunk)]
                )
   #:type-name Stage)
-
-; We actually allow mutations to a writable-stage, we just cannot
-; allow those changes to be saved and overwrite the original file.
-(struct writable-stage stage ()
-  #:transparent #:type-name Writable-Stage)
-
-(: mark-writable (-> Stage Writable-Stage))
-(define (mark-writable stage)
-  (writable-stage (stage-loaded-from stage)
-                  (stage-header stage)
-                  (stage-buffer stage)
-                  (stage-chunks stage)))
 
 (define (stage-kind [stage : Stage])
   (stgdat-file-kind (stage-loaded-from stage)))
@@ -540,7 +526,12 @@
             (error "TODO out of range:" p)))))
   (void))
 
-(define (save-stage! [stage : Writable-Stage])
+(define (save-stage! [stage : Stage])
+  (define orig-file (stgdat-file-path (stage-loaded-from stage)))
+  (define orig-dir (or (path-only orig-file)
+                       (error "assert fail: path-only failed for:" orig-file)))
+  (assert-directory-writable orig-dir)
+  ; == Now it is safe to write ==
   (define header (stage-header stage))
   (define buffer (stage-buffer stage))
   (define chunks (stage-chunks stage))
@@ -548,13 +539,11 @@
     (let ([chunk (vector-ref chunks i)])
       (unload-chunk! chunk buffer (dqb2-chunk-start-addr i))))
   (define compressed (zlib:compress buffer))
-  (define orig-file (stgdat-file-path (stage-loaded-from stage)))
   (with-output-to-file orig-file #:exists 'truncate
     (lambda ()
       (write-bytes header)
       (write-bytes compressed)))
-  (println (format "WROTE TO: ~a" orig-file))
-  (void))
+  (format "WROTE TO: ~a" orig-file))
 
 (: rand (All (A) (-> (Vectorof A) A)))
 (define (rand vec)
@@ -805,8 +794,16 @@
 ; (I think the mismatch only happens when you add new storage. If you delete
 ;  existing storage from the blockdata, it seems the orphaned CMNDAT data is
 ;  automatically cleaned up. Should confirm this.)
-(define (copy-everything! #:from [from : (U 'B00 'B01 'B02)] #:to [to : (U 'B00 'B01 'B02)])
-  ; I'm probably missing some files here:
+(define (copy-all-save-files! #:from [from : (U 'B00 'B01 'B02)] #:to [to : (U 'B00 'B01 'B02)])
+  (define sd (or (save-dir)
+                 (error "You must parameterize `save-dir`")))
+  (define to-dir : Path
+    (build-path sd (~a to)))
+  (assert-directory-writable to-dir)
+  ; == Now it is safe to write ==
+  ; We definitely don't want to copy *every* file.
+  ; For example, copying the config file would be a disaster!
+  ; I might be missing some files here:
   (define known-files '(AUTOCMNDAT.BIN
                         AUTOSTGDAT.BIN
                         CMNDAT.BIN
@@ -816,21 +813,27 @@
                         STGDAT03.BIN
                         STGDAT04.BIN
                         STGDAT05.BIN
+                        STGDAT06.BIN
+                        STGDAT07.BIN
+                        STGDAT08.BIN
                         STGDAT09.BIN
                         STGDAT10.BIN
-                        STGDAT12.BIN))
-  (define sd (or (save-dir)
-                 (error "You must parameterize `save-dir`")))
+                        STGDAT11.BIN
+                        STGDAT12.BIN
+                        STGDAT13.BIN
+                        STGDAT14.BIN
+                        STGDAT15.BIN
+                        STGDAT16.BIN))
   (define from-dir : Path
     (build-path sd (~a from)))
-  (define to-dir : Path
-    (build-path sd (~a to)))
+  (define count 0)
   (for ([file known-files])
     (define from-path (build-path from-dir (~a file)))
     (when (file-exists? from-path)
       (define to-path (build-path to-dir (~a file)))
-      (copy-file from-path to-path #:exists-ok? #t)))
-  (void))
+      (copy-file from-path to-path #:exists-ok? #t)
+      (set! count (add1 count))))
+  (format "Copied ~a files from ~a to ~a" count from-dir to-dir))
 
 (: decorate-peaks! (-> Stage Area (-> XZ Fixnum Fixnum) Void))
 (define (decorate-peaks! stage area callback)
