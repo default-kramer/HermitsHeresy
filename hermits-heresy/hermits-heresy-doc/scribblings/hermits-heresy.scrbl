@@ -4,7 +4,7 @@
                      racket)
           scribble/example)
 
-@title{Hermit's Heresy}
+@title{Hermit's Heresy: DQB2 Power Tools}
 Unauthorized utilities for scheming up scenes.
 Move mountains, carve canyons, or summon superstructures!
 
