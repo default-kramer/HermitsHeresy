@@ -55,9 +55,6 @@ For now, this is a minor annoyance.
 But you can imagine if you did this with a large amount of data, it might
 raise some red flags on your Steam account.
 
-Recommendation: Don't add any extra .BIN files to any of your save slots.
-(Other file extensions like .json are ignored by the autocloud.)
-
 @section{Getting Started}
 @subsection{Installation}
 In its current form, Hermit's Heresy requires you to understand a little bit
