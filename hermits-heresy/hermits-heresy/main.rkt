@@ -1,22 +1,25 @@
 #lang racket
 
 (provide save-dir
-         stage->pict
          bitmap->hill
-         bitmap->area
-         area->hill2
          put-hill!
          load-stage
-         protected-areas
-         block
          copy-all-save-files!
-         decorate-peaks!
-         simple?
-         chisel
          save-stage!
+         block
          get-template-image
          save-template-image
          )
+
+(module+ undocumented
+  (provide area->hill2
+           bitmap->area
+           chisel
+           decorate-peaks!
+           protected-areas
+           simple?
+           stage->pict
+           ))
 
 (require "NEW-API.rkt"
          "images.rkt")

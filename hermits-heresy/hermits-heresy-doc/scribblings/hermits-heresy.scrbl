@@ -198,3 +198,8 @@ TODO add links here.
  Probably a parameter that would apply to all block manipulation procs.
  Values could be @(racket 'no 'yes 'yes-even-indestructible).
 }
+
+@defproc[(block [id : symbol?])
+         block?]{
+ TODO
+}
