@@ -146,10 +146,55 @@ TODO add links here.
  The meaning of B00/B01/B02 is explained at @(racket load-stage).
 }
 
+@subsection{Image Utilities}
+
+@defproc[(get-template-image [id symbol?])
+         pict?]{
+ Returns a prebuilt template image.
+ Probably only useful from the @italic{interactions area} of DrRacket.
+ The current list of template images is as follows:
+ @(racketblock
+   'IoA-background
+   'IoA-mask)
+ @(examples
+   (require pict hermits-heresy)
+   (scale (get-template-image 'IoA-background) 0.5))
+}
+
+@defproc[(save-template-image [id symbol?])
+         any/c]{
+ Like @(racket get-template-image) except it saves the image to your
+ filesystem in the same directory as the script you are running.
+ This allows you to import the images into paint.net or a similar program
+ and use them as a guide for drawing your own custom geographical features.
+}
+
+@defproc[(bitmap->hill [path path-string?])
+         hill?]{
+ Converts the given bitmap to a hill.
+ Each pixel corresponds to a 1x1 column of blockspace.
+ Transparent pixels (alpha = 0) are ignored.
+ For all other pixels, the height of that column will be the max height (95) minus
+ 2x whichever of R,G,B has the largest value at that pixel.
+ I recommend defining hills using grayscale (R=G=B) to avoid confusion.
+
+ This means that darker colors are taller. For example
+ @(itemlist
+   @item{A totally black pixel (R=G=B=0) indicates max height.}
+   @item{A pixel having R=G=B=16 indicates 16/2=8 blocks short of max height.}
+   @item{A pixel having R=G=B=40 indicates 40/2=20 blocks short of max height.})
+
+ TODO add tests to lock in this behavior.
+}
+
 @subsection{Block Manipulation}
 @defproc[(put-hill! [stage stage?]
                     [hill hill?]
                     [block block?])
          any/c]{
- TODO
+ TODO this proc overwrites items incorrectly! Need to fix!
+
+ Assuming that someday I will learn how to safely overwrite items, what is the best design?
+ Probably a parameter that would apply to all block manipulation procs.
+ Values could be @(racket 'no 'yes 'yes-even-indestructible).
 }
