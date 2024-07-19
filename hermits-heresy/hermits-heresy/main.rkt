@@ -14,6 +14,9 @@
          simple?
          chisel
          save-stage!
+         get-template-image
+         save-template-image
          )
 
-(require "NEW-API.rkt")
+(require "NEW-API.rkt"
+         "images.rkt")

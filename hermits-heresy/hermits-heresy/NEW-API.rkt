@@ -465,7 +465,7 @@
   (define the-area
     (area (rect (xz 0 0) (xz width depth))
           (lambda ([xz : XZ])
-            (hash-ref elevations (cons (xz-x xz) (xz-x xz)) (lambda () #f)))))
+            (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))))
   (hill the-area (make-immutable-hash (hash->list elevations))))
 
 (define (put-hill! [stage : Stage] [hill : Hill] [block : Integer])
