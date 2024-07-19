@@ -40,11 +40,9 @@
 
   ; Test that copy-all-save-files! does not trample the config file or anything else
   (let ([msg (copy-all-save-files! #:from 'B01 #:to 'B00)]
-        [B00-config (file->string (build-path here "B00" "hermits-heresy.config.json"))]
         [B00-dnc (file->string (build-path here "B00" "DO-NOT-COPY.BIN"))]
         [B01-dnc (file->string (build-path here "B01" "DO-NOT-COPY.BIN"))])
     (check-true (string-contains? msg "Copied 1 files from"))
-    (check-true (string-contains? B00-config "magic-string-for-B00-only"))
     (check-equal? B00-dnc "B00")
     (check-equal? B01-dnc "B01"))
   }

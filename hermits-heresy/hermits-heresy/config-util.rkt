@@ -6,7 +6,13 @@
 
 (: assert-directory-writable (-> Path-String #t))
 (define (assert-directory-writable dir)
-  (define config-file (build-path dir "hermits-heresy.config.json"))
+  (define dir-name
+    (let-values ([(a name b) (split-path (simplify-path dir))])
+      (and (path? name)
+           name)))
+  (when (not dir-name)
+    (error "Assert fail? Could not get dir-name from:" dir))
+  (define config-file (build-path dir (format "hermits-heresy.config.~a.json" dir-name)))
   (when (not (file-exists? config-file))
     (error "Directory is not writable, config file is missing:" config-file))
   (define json (file->string config-file))
