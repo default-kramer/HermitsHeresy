@@ -1,6 +1,7 @@
 #lang racket
 
 (require hermits-heresy
+         (submod hermits-heresy undocumented)
          pict
          rackunit)
 
