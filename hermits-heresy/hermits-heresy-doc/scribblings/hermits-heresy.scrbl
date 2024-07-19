@@ -11,10 +11,11 @@ Move mountains, carve canyons, or summon superstructures!
 (Power Tools for Dragon Quest Builders 2)
 
 @section{Disclaimers}
-TODO explain:
-Use at your own risk.
 Not authorized by Square Enix or Valve (Steam).
-How to avoid catastrophic data loss.
+Use at your own risk.
+
+This tool and this documentation assumes that you are using Steam.
+It might work with Switch also, but I have never tested this.
 
 @section{Avoiding Catastrophic Data Loss}
 The Steam version of Dragon Quest Builders 2 saves data in a "SD" directory.
@@ -22,12 +23,40 @@ By default, this directory will be something like this:
 @para{@tt{C:\Users\kramer\Documents\My Games\DRAGON QUEST BUILDERS II\Steam\76561198073553084\SD}}
 
 If you are using all 3 save slots, you will see 3 subdirectories:
+@(itemlist
+  @item{@(racket 'B00) -- Save Slot 1}
+  @item{@(racket 'B01) -- Save Slot 2}
+  @item{@(racket 'B02) -- Save Slot 3}
+  )
 
-TODO
-Recommend backing up the entire dir.
-At the very least, CMNDAT and STGDAT belong together.
-Recommend multiple immutable archive locations.
+@bold{It is your responsibility to understand how to back up and restore this data.
+ It is your responsibility to make frequent backups of any important work.}
 
+Copying the entire directory is the safest way to create a backup.
+You can prove this to yourself by doing something like this:
+@(itemlist
+  @item{Using Windows Explorer, copy one of the directories (e.g. B00) to create a backup.}
+  @item{Start DQB2, load that slot, place a single test block, and save your game.}
+  @item{Exit DQB2.}
+  @item{Confirm that the Modified Date has changed on one of your STGDAT files.}
+  @item{Using Windows Explorer, restore the files from the backup you just created.}
+  @item{Start DQB2, load that slot, and confirm that the test block is gone.})
+
+Either Google Drive or OneDrive (or maybe both?) has reported issues
+where an extremely small percentage of files were corrupted or lost.
+For this reason, I copy my backups to 2 different cloud storage providers.
+
+@subsection{Beware Steam Autocloud}
+One time I accidentally copied a STGDAT file into the same directory,
+resulting in a file named @tt{STGDAT01 - Copy.BIN}.
+Because of the way Steam Autocloud is configured, I am now unable to remove this file.
+I can delete it, but Steam will restore it whenever I run DQB2.
+For now, this is a minor annoyance.
+But you can imagine if you did this with a large amount of data, it might
+raise some red flags on your Steam account.
+
+Recommendation: Don't add any extra .BIN files to any of your save slots.
+(Other file extensions like .json are ignored by the autocloud.)
 
 @section{Getting Started}
 @subsection{Installation}
@@ -36,6 +65,9 @@ about programming using Racket.
 If you've never used Racket before, you should work through the
 @hyperlink["https://docs.racket-lang.org/quick/index.html"]{Quick Introduction to Racket}
 up to at least section 4 (Definitions).
+Don't worry if you don't understand everything; if you are following
+a tutorial or an example you won't need deep programming knowledge.
+You just need to be familiar with how DrRacket works.
 
 Once you've installed Racket, you still need to install Hermit's Heresy.
 If you are comfortable using command prompt, just type
@@ -60,18 +92,23 @@ assume that I might intentionally or accidentally delete or overwrite it at any 
 Any real, long-term work I am doing belongs in slots 2 or 3.
 
 To configure a save slot to be writable, first ensure that it does not contain anything
-you don't mind losing. Then create a file named
-@tt{hermits-heresy.config.json} in that directory with the following content:
+you don't mind losing.
+Let's assume you follow my convention and use B00 as your ephemeral slot.
+Create a file named @tt{hermits-heresy.config.B00.json} in your B00 directory with the following content:
 @verbatim{
  {"writable": true}
 }
 
-TODO Wait! The filename should be something like hermits-heresy.config.B00.json
-to avoid the problem where you accidentally copy the B01 config file into B00.
+In general, the file must be named @tt{hermits-heresy.config.<<DIR>>.json}.
+Including the directory name in this filename protects against mistakes.
+For example, if you accidentally copy your B00 config file into the B01 directory,
+you will not accidentally make B01 writable because the B00 config file will be ignored.
+
+@subsection{Tutorials and Examples}
+TODO add links here.
 
 @section{Reference}
 @(defmodule hermits-heresy)
-
 @subsection{Loading and Saving}
 
 @defparam[save-dir dir (or/c #f path-string?)]{
@@ -117,5 +154,5 @@ to avoid the problem where you accidentally copy the B01 config file into B00.
                     [hill hill?]
                     [block block?])
          any/c]{
- TODO testing if I can link here from an external site
+ TODO
 }
