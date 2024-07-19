@@ -39,7 +39,8 @@
                (lambda () (save-stage! stage))))
 
   ; Test that copy-all-save-files! does not trample the config file or anything else
-  (let ([msg (copy-all-save-files! #:from 'B01 #:to 'B00)]
+  (let ([msg (with-output-to-string
+               (lambda () (copy-all-save-files! #:from 'B01 #:to 'B00)))]
         [B00-dnc (file->string (build-path here "B00" "DO-NOT-COPY.BIN"))]
         [B01-dnc (file->string (build-path here "B01" "DO-NOT-COPY.BIN"))])
     (check-true (string-contains? msg "Copied 1 files from"))
