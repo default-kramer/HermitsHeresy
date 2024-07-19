@@ -188,15 +188,27 @@ TODO add links here.
 }
 
 @subsection{Block Manipulation}
+An @deftech{item} is a special kind of block, such as a tree or a door or a fountain.
+A good rule of thumb is that anything capable of facing north/east/south/west is an item.
+By contrast, @deftech{simple} blocks like Sand or Chert cannot face a cardinal direction;
+rotating them with your gloves has no effect.
+
+Unfortunately, this version of Hermit's Heresy is not capable of manipulating items.
+For example, @(racket put-hill!) cannot overwrite items, meaning you may end up with items
+hidden inside your hill unless you manually destroy them first.
+I hope to solve this problem soon.
+
+Note to Self:
+Assuming that someday I will learn how to safely overwrite items, what is the best design?
+Probably a parameter that would apply to all block manipulation procs.
+Values could be @(racket 'no 'yes 'yes-even-indestructible).
+
 @defproc[(put-hill! [stage stage?]
                     [hill hill?]
                     [block block?])
          any/c]{
- TODO this proc overwrites items incorrectly! Need to fix!
-
- Assuming that someday I will learn how to safely overwrite items, what is the best design?
- Probably a parameter that would apply to all block manipulation procs.
- Values could be @(racket 'no 'yes 'yes-even-indestructible).
+ Fills the space defined by the given @(racket hill) with the given @(racket block).
+ Leaves @tech[#:key "item"]{items} intact.
 }
 
 @defproc[(block [id : symbol?])
