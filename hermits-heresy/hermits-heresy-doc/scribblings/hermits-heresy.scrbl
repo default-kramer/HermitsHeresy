@@ -183,9 +183,10 @@ TODO add links here.
    @item{A totally black pixel (R=G=B=0) indicates max height.}
    @item{A pixel having R=G=B=16 indicates 16/2=8 blocks short of max height.}
    @item{A pixel having R=G=B=40 indicates 40/2=20 blocks short of max height.})
-
- TODO add tests to lock in this behavior.
 }
+
+This version discards the remainder of the division by 2.
+A future version may decide to respect it via the flat chisel.
 
 @subsection{Block Manipulation}
 An @deftech{item} is a special kind of block, such as a tree or a door or a fountain.

@@ -33,7 +33,12 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide blocks-hash))
+  (provide blocks-hash hill-ref)
+
+  (define (hill-ref [hill : Hill] [loc : (Pairof Fixnum Fixnum)])
+    (define locxz (xz (car loc) (cdr loc)))
+    (and (area-contains? (hill-area hill) locxz)
+         (hash-ref (hill-elevations hill) loc))))
 
 (require (prefix-in zlib: "zlib.rkt")
          "chunk.rkt"
@@ -461,7 +466,7 @@
             [(> alpha 0)
              (set! all-empty? #f)
              (hash-set! elevations (cons x z)
-                        (- 95 (quotient (max red green blue) 2)))]
+                        (max 0 (- 95 (quotient (max red green blue) 2))))]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
