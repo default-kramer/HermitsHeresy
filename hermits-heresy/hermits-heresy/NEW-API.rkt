@@ -54,6 +54,11 @@
 (module+ test
   (require typed/rackunit))
 
+(define-syntax-rule (show-msg arg ...)
+  (let ()
+    (displayln (format arg ...))
+    (void)))
+
 (define-syntax-rule (define-blocks f [id val IGNORE ...] ...)
   (define (f a)
     (case a
@@ -471,11 +476,16 @@
 (define (put-hill! [stage : Stage] [hill : Hill] [block : Integer])
   (define area (hill-area hill))
   (define elevations (hill-elevations hill))
+  (define item-count : Fixnum 0)
   (for/area ([xz area])
     (let ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))])
       (for ([y : Fixnum (ufx-in-range 1 end-y)])
-        (stage-write! stage (make-point xz y) block))))
-  (void))
+        (let* ([p (make-point xz y)]
+               [cur (stage-read stage p)])
+          (if (simple? (or cur 0))
+              (stage-write! stage p block)
+              (set! item-count (ufx+ 1 item-count)))))))
+  (show-msg "put-hill! left ~a items intact" item-count))
 
 (define-syntax-rule (dqb2-chunk-start-addr i)
   ; Returns the address of chunk i within the uncompressed buffer
@@ -543,7 +553,7 @@
     (lambda ()
       (write-bytes header)
       (write-bytes compressed)))
-  (format "WROTE TO: ~a" orig-file))
+  (show-msg "Saved STGDAT file: ~a" orig-file))
 
 (: rand (All (A) (-> (Vectorof A) A)))
 (define (rand vec)
@@ -833,7 +843,7 @@
       (define to-path (build-path to-dir (~a file)))
       (copy-file from-path to-path #:exists-ok? #t)
       (set! count (add1 count))))
-  (format "Copied ~a files from ~a to ~a" count from-dir to-dir))
+  (show-msg "Copied ~a files from ~a to ~a" count from-dir to-dir))
 
 (: decorate-peaks! (-> Stage Area (-> XZ Fixnum Fixnum) Void))
 (define (decorate-peaks! stage area callback)
