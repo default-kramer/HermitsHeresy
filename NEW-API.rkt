@@ -682,9 +682,10 @@
           (stage-write! stage p 0)))))
   (void))
 
-(define (remove-blocks! [stage : Stage] [where : (U 'all Area)] [blocks : (Listof Fixnum)])
+(define (remove-blocks! [stage : Stage] [where : (U 'all Area)] [unmasked-blocks : (Listof Fixnum)])
   (define area (get-area where stage))
   (define count 0)
+  (define blocks (map (lambda ([b : Fixnum]) (ufxand b #x7FF)) unmasked-blocks))
   (for/area ([xz area])
     (for ([y (in-range 96)])
       (let* ([p (make-point xz y)]
