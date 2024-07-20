@@ -81,7 +81,8 @@ Once you have everything installed, the following program
   (require hermits-heresy)
   (block 'Chert))
 
-@subsection{Configuring Writable Slots}
+@(define make-slot-writable-tag "make-slot-writable")
+@subsection[#:tag make-slot-writable-tag]{Configuring Writable Slots}
 Hermit's Heresy protects you from accidentally overwriting your hard work.
 It will never write to a save slot unless you have configured that directory as writable.
 Personally, I use Save Slot 1 (B00) as my ephemeral save slot, and I always
@@ -102,7 +103,16 @@ For example, if you accidentally copy your B00 config file into the B01 director
 you will not accidentally make B01 writable because the B00 config file will be ignored.
 
 @subsection{Tutorials and Examples}
-TODO add links here.
+Congratulations on making it this far!
+Now go to @hyperlink["https://dqb-forever.com/hermits-heresy/"]{DQB Forever}
+for tutorials/examples that you can copy and modify to suit your needs.
+
+@section{Acknowledgments}
+Thanks to the team who made DQB2 so excellent.
+
+Thanks to all contributors who made Racket so excellent.
+
+Thanks to turtle-insect, who paved the way in save-file-editing.
 
 @section{Reference}
 @(defmodule hermits-heresy)
@@ -136,7 +146,8 @@ TODO add links here.
 @defproc[(save-stage! [stage stage?])
          any/c]{
  Writes the given @(racket stage) to the STGDAT file it was originally loaded from.
- TODO link to explanation of how to mark a directory writable.
+
+ Will produce an error if the destination directory has not been @seclink[make-slot-writable-tag]{made writable}.
 }
 
 @defproc[(copy-all-save-files! [#:from from-slot (or/c 'B00 'B01 'B02)]
@@ -144,6 +155,8 @@ TODO add links here.
          any/c]{
  Copies all DQB2 save files, leaving other files (such config files) untouched.
  The meaning of B00/B01/B02 is explained at @(racket load-stage).
+
+ Will produce an error if the destination directory has not been @seclink[make-slot-writable-tag]{made writable}.
 }
 
 @subsection{Image Utilities}
@@ -209,7 +222,7 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
                     [block block?])
          any/c]{
  Fills the space defined by the given @(racket hill) with the given @(racket block).
- Leaves @tech[#:key "item"]{items} intact.
+ @tech{Simple} blocks are overwritten, but @tech[#:key "item"]{items} are left intact.
 }
 
 @defproc[(block [id : symbol?])
