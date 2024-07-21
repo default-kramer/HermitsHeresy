@@ -252,4 +252,7 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
 
  Might find what you want even if you have a typo:
  @(examples #:eval default-eval (find-block-name "posion"))
+
+ If you still can't find what you want, you can check the complete list in the
+ @hyperlink["https://github.com/default-kramer/HermitsHeresy/blob/main/hermits-heresy/hermits-heresy/blockdata/blockdef-raw.rkt"]{source code here}.
 }
