@@ -26,6 +26,8 @@
 
 (define (jblock->symbol jb)
   (let* ([name (jblock-name jb)]
+         [name (string-replace name "(" "")]
+         [name (string-replace name ")" "")]
          [name (string-replace name " " "-")]
          [name (string-replace name "*" "")])
     (string->symbol name)))

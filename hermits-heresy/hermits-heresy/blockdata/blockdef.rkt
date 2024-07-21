@@ -5,6 +5,8 @@
          find-block
          symbol->ambiguities)
 
+(module+ for-tests (provide all-symbols))
+
 (require "blockdef-raw.rkt"
          "../ufx.rkt")
 
