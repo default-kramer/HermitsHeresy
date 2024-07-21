@@ -481,6 +481,7 @@
 (define (put-hill! [stage : Stage] [hill : Hill] [block : Integer])
   (define area (hill-area hill))
   (define elevations (hill-elevations hill))
+  (define block-count : Fixnum 0)
   (define item-count : Fixnum 0)
   (for/area ([xz area])
     (let ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))])
@@ -488,9 +489,10 @@
         (let* ([p (make-point xz y)]
                [cur (stage-read stage p)])
           (if (simple? (or cur 0))
-              (stage-write! stage p block)
+              (begin (stage-write! stage p block)
+                     (set! block-count (ufx+ 1 block-count)))
               (set! item-count (ufx+ 1 item-count)))))))
-  (show-msg "put-hill! left ~a items intact" item-count))
+  (show-msg "put-hill! placed ~a blocks, left ~a items intact" block-count item-count))
 
 (define-syntax-rule (dqb2-chunk-start-addr i)
   ; Returns the address of chunk i within the uncompressed buffer
