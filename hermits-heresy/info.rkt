@@ -13,6 +13,7 @@
                "pict-lib"
                "typed-racket-lib"
                "typed-racket-more"
+               "levenshtein"
                ))
 
 (define build-deps '("doc-coverage"
