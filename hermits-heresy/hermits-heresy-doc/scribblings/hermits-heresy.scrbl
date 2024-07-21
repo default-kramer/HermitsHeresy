@@ -4,6 +4,11 @@
                      racket)
           scribble/example)
 
+@(begin
+   (define default-eval (make-base-eval))
+   (default-eval '(require hermits-heresy))
+   )
+
 @title{Hermit's Heresy: DQB2 Power Tools}
 Unauthorized utilities for scheming up scenes.
 Move mountains, carve canyons, or summon superstructures!
@@ -225,7 +230,26 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
  @tech{Simple} blocks are overwritten, but @tech[#:key "item"]{items} are left intact.
 }
 
-@defproc[(block [id : symbol?])
+@defproc[(block [id symbol?])
          block?]{
- TODO
+ @tech{Simple} blocks in DQB2 are represented as integers.
+ Any procedure that wants a block probably also accepts an integer.
+ But using this procedure will make your code more readable:
+ @(examples #:eval default-eval (block 'Chunky-Chert))
+
+ Sometimes there is more than one integer that represents the same block.
+ This probably doesn't matter, but it will write an informational message anyway.
+ If the block doesn't appear in-game the way you expected, perhaps one of these alternate
+ integers will work. (If any alternate does behave differently, let me know.)
+ @(examples #:eval default-eval (block 'Chert))
+}
+
+@defproc[(find-block-name [name string?])
+         any/c]{
+ For use from the @italic{interactions area} of DrRacket to help you find the symbolic name
+ to be used with the @(racket block) procedure:
+ @(examples #:eval default-eval (find-block-name "snow"))
+
+ Might find what you want even if you have a typo:
+ @(examples #:eval default-eval (find-block-name "posion"))
 }

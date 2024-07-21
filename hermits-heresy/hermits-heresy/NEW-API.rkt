@@ -26,6 +26,7 @@
          protected-areas ; WARNING this will probably be slow? And area combiner functions would be better anyway?
          copy-all-save-files!
          save-stage!
+         find-block-name
          )
 
 (module+ everything
@@ -910,6 +911,24 @@
           (for ([x : Fixnum (ufx-in-range 32)])
             (for ([z : Fixnum (ufx-in-range 32)])
               (chunk-set! chunk #:x x #:z z #:y y #:block (getblock chunk-id))))))))
+  (void))
+
+(: find-block-name (-> (U String Symbol) Void))
+(define (find-block-name name)
+  (define results (find-block (~a name) 'auto))
+  (define exact (first results))
+  (define others (second results))
+  (cond
+    [(pair? exact)
+     (displayln "Exact Matches:")
+     (for ([sym exact])
+       (displayln (format "  (block '~a)" sym)))]
+    [(pair? others)
+     (displayln "Possible Matches:")
+     (for ([item others])
+       (displayln (format "  (block '~a)" (first item))))]
+    [else
+     (displayln (format "No matches found for ~a" name))])
   (void))
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,

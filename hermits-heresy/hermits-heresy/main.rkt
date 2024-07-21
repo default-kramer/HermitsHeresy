@@ -7,6 +7,7 @@
          copy-all-save-files!
          save-stage!
          block
+         find-block-name
          get-template-image
          save-template-image
          )

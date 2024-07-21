@@ -2,6 +2,7 @@
 
 (provide Dye Blockdef symbol->blockdef fixnum->blockdef
          (struct-out blockdef)
+         find-block
          symbol->ambiguities)
 
 (require "blockdef-raw.rkt"
