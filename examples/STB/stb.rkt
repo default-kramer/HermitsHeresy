@@ -60,41 +60,41 @@
                    (vector 42 42 seed 42 42 42))])
     body ...))
 
-#;{begin ;module+ main
-    (copy-all-save-files! #:from 'B02 #:to 'B00)
-    (define B00 (load-stage 'IoA 'B00))
-    (println "loaded stage")
-    (update-manual-build-pict B00 "manual-build.bmp")
-    (define manual-build (bitmap->area "manual-build.bmp"))
+{begin ;module+ main
+  (copy-all-save-files! #:from 'B02 #:to 'B00)
+  (define B00 (load-stage 'IoA 'B00))
+  (println "loaded stage")
+  (update-manual-build-pict B00 "manual-build.bmp")
+  (define manual-build (bitmap->area "manual-build.bmp"))
 
-    ;(clear-area! B00 'all #:keep-items? #f)
-    ;(repair-sea! B00 'all)
+  ;(clear-area! B00 'all #:keep-items? #f)
+  ;(repair-sea! B00 'all)
 
-    ; It seems better *not* to allow the user to customize the (-> ARGB y-elevation) function...
-    ; Instead the implementation uses this convention:
-    #;(let ([y (- 95 (quotient (max r g b) 2))]) (blah ...))
-    ; Doing it this way pushes the work to the image editor, which is the best place to handle it.
-    ; So if you want to raise some plateau by N blocks, you just decrease (darken) the color by N*2.
-    (with-protected-areas [manual-build]
-      (put-hill! B00 (area->hill2 evil bumps) 2065 ; peat
-                 #;(lambda (x) (+ 36 (* 21 x))))
-      (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow)
-                 #;(lambda (x) (+ 52 (* 24 x))))
-      (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert)
-                 #;(lambda (x) (+ 48 (* 40 x))))
-      (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert)
-                 #;(lambda (x) (+ 48 (* 40 x))))
-      (with-absolute-seed 223344
-        (decorate-peaks! B00 mountain
-                         (lambda (xz below)
-                           (if (not (simple? below))
-                               0
-                               (case (random 7)
-                                 [(0 1) 0] ; vacant
-                                 [(2 3) (chisel (block 'Snow) 'flat-lo)]
-                                 [(4 5) 18] ; snow cover
-                                 [(6) (block 'Snow)])))))
-      )
+  ; It seems better *not* to allow the user to customize the (-> ARGB y-elevation) function...
+  ; Instead the implementation uses this convention:
+  #;(let ([y (- 95 (quotient (max r g b) 2))]) (blah ...))
+  ; Doing it this way pushes the work to the image editor, which is the best place to handle it.
+  ; So if you want to raise some plateau by N blocks, you just decrease (darken) the color by N*2.
+  (with-protected-areas [manual-build]
+    (put-hill! B00 (area->hill2 evil bumps) 2065 ; peat
+               #;(lambda (x) (+ 36 (* 21 x))))
+    (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow)
+               #;(lambda (x) (+ 52 (* 24 x))))
+    (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert)
+               #;(lambda (x) (+ 48 (* 40 x))))
+    (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert)
+               #;(lambda (x) (+ 48 (* 40 x))))
+    (with-absolute-seed 223344
+      (decorate-peaks! B00 mountain
+                       (lambda (xz below)
+                         (if (not (simple? below))
+                             0
+                             (case (random 7)
+                               [(0 1) 0] ; vacant
+                               [(2 3) (chisel (block 'Snow) 'flat-lo)]
+                               [(4 5) 18] ; snow cover
+                               [(6) (block 'Snow)])))))
+    )
 
-    ;(save-stage! B00)
-    }
+  ;(save-stage! B00)
+  }
