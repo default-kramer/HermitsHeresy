@@ -76,14 +76,10 @@
   ; Doing it this way pushes the work to the image editor, which is the best place to handle it.
   ; So if you want to raise some plateau by N blocks, you just decrease (darken) the color by N*2.
   (with-protected-areas [manual-build]
-    (put-hill! B00 (area->hill2 evil bumps) 2065 ; peat
-               #;(lambda (x) (+ 36 (* 21 x))))
-    (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow)
-               #;(lambda (x) (+ 52 (* 24 x))))
-    (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert)
-               #;(lambda (x) (+ 48 (* 40 x))))
-    (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert)
-               #;(lambda (x) (+ 48 (* 40 x))))
+    (put-hill! B00 (area->hill2 evil bumps) (block 'Poisonous-Peat) #:adjust-y -4)
+    (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow))
+    (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert))
+    (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert))
     (with-absolute-seed 223344
       (decorate-peaks! B00 mountain
                        (lambda (xz below)

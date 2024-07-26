@@ -499,13 +499,15 @@
             (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))))
   (hill the-area (make-immutable-hash (hash->list elevations))))
 
-(define (put-hill! [stage : Stage] [hill : Hill] [block : Integer])
+; adjust-y is undocumented, not sure if it belongs here
+(define (put-hill! [stage : Stage] [hill : Hill] [block : Integer] #:adjust-y [adjust-y : Fixnum 0])
   (define area (hill-area hill))
   (define elevations (hill-elevations hill))
   (define block-count : Fixnum 0)
   (define item-count : Fixnum 0)
   (for/area ([xz area])
-    (let ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))])
+    (let* ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
+           [end-y (ufx+ end-y adjust-y)])
       (for ([y : Fixnum (ufx-in-range 1 end-y)])
         (let* ([p (make-point xz y)]
                [cur (stage-read stage p)])
