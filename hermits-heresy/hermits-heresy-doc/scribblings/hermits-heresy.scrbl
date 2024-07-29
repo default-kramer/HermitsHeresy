@@ -88,6 +88,16 @@ Once you have everything installed, the following program
 
 @(define make-slot-writable-tag "make-slot-writable")
 @subsection[#:tag make-slot-writable-tag]{Configuring Writable Slots}
+An @italic{ongoing project} is one in which you maintain and evolve your Hermit's Heresy
+project (scripts and images) alongside the save file that you play conventionally,
+possibly for months or even years.
+You can read more about this workflow @hyperlink["https://dqb-forever.com/stb/perimeter.html"]{here}.
+
+A simpler workflow is a @italic{one-off script}, in which you just run the script once
+and then play conventionally going forward, allowing you to discard the script as soon as you
+are satisfied with the results.
+
+@subsubsection[#:tag "ongoing-project"]{For Ongoing Projects}
 Hermit's Heresy protects you from accidentally overwriting your hard work.
 It will never write to a save slot unless you have configured that directory as writable.
 Personally, I use Save Slot 1 (B00) as my ephemeral save slot, and I always
@@ -106,6 +116,19 @@ In general, the file must be named @tt{hermits-heresy.config.<<DIR>>.json}.
 Including the directory name in this filename protects against mistakes.
 For example, if you accidentally copy your B00 config file into the B01 directory,
 you will not accidentally make B01 writable because the B00 config file will be ignored.
+
+@subsubsection{For One-Off Scripts}
+In this workflow, you create an "artificial save slot" and mark it writable.
+You will have to
+@(itemlist
+  #:style 'ordered
+  @item{manually copy your STGDAT file into this directory,}
+  @item{pass its full path into @(racket load-stage), and}
+  @item{copy the updated STGDAT file back to a real slot when you are done.})
+
+For example, you could create a directory named @tt{oneoff} with a corresponding
+config file @tt{hermits-heresy.config.oneoff.json}.
+The config file behaves the same way as in @secref["ongoing-project"].
 
 @subsection{Tutorials and Examples}
 Congratulations on making it this far!
