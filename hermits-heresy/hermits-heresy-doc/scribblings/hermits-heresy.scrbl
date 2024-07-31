@@ -154,7 +154,7 @@ Thanks to turtle-insect, who paved the way in save-file-editing.
 }
 
 @defproc[(load-stage [kind (or/c 'IoA)]
-                     [slot (or/c 'B00 'B01 'B02 path?)])
+                     [slot (or/c 'B00 'B01 'B02 path-string?)])
          stage?]{
  Loads a STGDAT file.
 
@@ -167,7 +167,7 @@ Thanks to turtle-insect, who paved the way in save-file-editing.
    @item{@(racket 'B00) -- Save Slot 1, relative to @(racket save-dir)}
    @item{@(racket 'B01) -- Save Slot 2, relative to @(racket save-dir)}
    @item{@(racket 'B02) -- Save Slot 3, relative to @(racket save-dir)}
-   @item{A @(racket path?) -- The full path to any STGDAT file, ignores @(racket save-dir)}
+   @item{A @(racket path-string?) -- The full path to any STGDAT file, ignores @(racket save-dir)}
    )
 }
 

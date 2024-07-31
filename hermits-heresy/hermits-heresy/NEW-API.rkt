@@ -541,7 +541,7 @@
        chunk)))
   (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)))
 
-(: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path) Stage))
+(: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path-String) Stage))
 (define (load-stage kind slot)
   (define path (case slot
                  [(B00 B01 B02)
@@ -552,7 +552,9 @@
                     (if sd
                         (build-path sd (~a slot) filename)
                         (error "You must parameterize `save-dir` to load:" slot)))]
-                 [else (ann slot Path)]))
+                 [else (if (string? slot)
+                           (string->path slot)
+                           (ann slot Path))]))
   (open-stgdat kind path))
 
 (: fill-area! (->* (Stage Area Integer #:y-max Fixnum)
