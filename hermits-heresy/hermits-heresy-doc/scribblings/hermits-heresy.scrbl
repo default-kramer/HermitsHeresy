@@ -216,7 +216,7 @@ Thanks to turtle-insect, who paved the way in save-file-editing.
  Each pixel corresponds to a 1x1 column of blockspace.
  Transparent pixels (alpha = 0) are ignored.
  For all other pixels, the height of that column will be the max height (95) minus
- 2x whichever of R,G,B has the largest value at that pixel.
+ half of whichever of R,G,B has the largest value at that pixel.
  I recommend defining hills using grayscale (R=G=B) to avoid confusion.
 
  This means that darker colors are taller. For example
