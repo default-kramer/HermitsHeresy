@@ -42,6 +42,8 @@
          (hash-ref (hill-elevations hill) loc))))
 
 (require (prefix-in zlib: "zlib.rkt")
+         (prefix-in layout: "layouts.rkt")
+         (only-in "layouts.rkt" Chunk-Layout)
          "chunk.rkt"
          "basics.rkt"
          "ufx.rkt"
@@ -243,15 +245,10 @@
 
 (define protected-areas (make-parameter (ann (list) (Listof Area))))
 
-; Each inner vector is one row, holding chunk IDs from east to west.
-; The outer vector contains all rows from north to south.
-; A chunk ID of false indicates out-of-bounds.
-(define-type Chunk-Layout (Vectorof (Vectorof (U #f Integer))))
-
 (: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
 (define (get-chunk-layout kind)
   (case kind
-    [(IoA) IoA-chunk-layout]
+    [(IoA) layout:IoA]
     [else (error "Unexpected kind:" kind)]))
 
 (: chunk-translate (-> Chunk-Layout XZ (U #f (Chunky XZ))))
@@ -361,39 +358,6 @@
          [end (rect-end bounds)])
     (values (ufx- (xz-x end) (xz-x start))
             (ufx- (xz-z end) (xz-z start)))))
-
-(define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
-  (let ([chunk-id -1])
-    (for/vector : (Vectorof (Vectorof (U #f Integer)))
-      ([row rows])
-      (for/vector : (Vectorof (U #f Integer))
-        ([cell row])
-        (case cell
-          [(_) #f]
-          [(X) (begin (set! chunk-id (+ 1 chunk-id))
-                      chunk-id)]
-          [else (error "assert fail")])))))
-
-(define IoA-chunk-layout : Chunk-Layout
-  (parse-map '((_ _ _ _ _ _ _ X X X X X X X X _ _ _ X X X _ _ _ _ _ _)
-               (_ _ _ _ _ _ X X X X X X X X X X X X X X X X X _ _ _ _)
-               (_ _ _ _ X X X X X X X X X X X X X X X X X X X _ _ _ _)
-               (_ _ _ X X X X X X X X X X X X X X X X X X X X _ _ _ _)
-               (_ _ X X X X X X X X X X X X X X X X X X X X X X X X _)
-               (_ X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (_ X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (X X X X X X X X X X X X X X X X X X X X X X X X X X X)
-               (X X X X X X X X X X X X X X X X X X X X X X X X X X _)
-               (_ X X X X X X X X X X X X X X X X X X X X X X X _ _ _)
-               (_ _ X X X X X X X X X X X X X X X X X X X X X _ _ _ _)
-               (_ _ X X X X X X X X X X X X X X X X X X X _ _ _ _ _ _)
-               (_ _ _ _ X X X X X X X X X X X X X X X _ _ _ _ _ _ _ _)
-               (_ _ _ _ _ _ _ _ _ X X X X X X _ _ _ _ _ _ _ _ _ _ _ _)
-               (_ _ _ _ _ _ _ _ _ X X X X X _ _ _ _ _ _ _ _ _ _ _ _ _)
-               (_ _ _ _ _ _ _ _ _ _ X X X _ _ _ _ _ _ _ _ _ _ _ _ _ _))))
 
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
 (define (bitmap->area arg)
@@ -850,7 +814,7 @@
                         AUTOSTGDAT.BIN
                         CMNDAT.BIN
                         SCSHDAT.BIN
-                        STGDAT01.BIN
+                        STGDAT01.BIN ; IoA
                         STGDAT02.BIN
                         STGDAT03.BIN
                         STGDAT04.BIN
@@ -861,11 +825,12 @@
                         STGDAT09.BIN
                         STGDAT10.BIN
                         STGDAT11.BIN
-                        STGDAT12.BIN
-                        STGDAT13.BIN
+                        STGDAT12.BIN ; BT1
+                        STGDAT13.BIN ; BT2
                         STGDAT14.BIN
                         STGDAT15.BIN
-                        STGDAT16.BIN))
+                        STGDAT16.BIN ; BT3
+                        ))
   (define from-dir : Path
     (build-path sd (~a from)))
   (define count 0)
