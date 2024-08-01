@@ -2,12 +2,18 @@
 
 (provide Chunk-Layout
          IoA
-         small-soggy-skerry
-         med-soggy-skerry
-         large-soggy-skerry
-         small-coral-cay
-         med-coral-cay
-         large-coral-cay)
+         ; Oh no, my fears were true...
+         ; Buildertopia layouts are not fixed!
+         ; Well, at least this means it must be saved in the file somewhere...
+         ; but do I stand a chance of figuring *that* out??
+
+         ;small-soggy-skerry
+         ;med-soggy-skerry
+         ;large-soggy-skerry
+         ;small-coral-cay
+         ;med-coral-cay
+         ;large-coral-cay
+         )
 
 ; Each inner vector is one row, holding chunk IDs from east to west.
 ; The outer vector contains all rows from north to south.
@@ -111,6 +117,23 @@
                (X X X X X X X X X X X X X)
                (X X X X X X X X X X X X X)
                (X X X X X X X X X X X X X)
+               (_ X X _ _ _ _ _ _ _ _ _ _)
+               (_ X X _ _ _ _ _ _ _ _ _ _))))
+
+(define large-soggy-skerry2 : Chunk-Layout
+  (parse-map '((X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (X X X X X X X X X X X X X)
+               (_ _ _ X X X X X X X X X X)
                (_ X X _ _ _ _ _ _ _ _ _ _)
                (_ X X _ _ _ _ _ _ _ _ _ _))))
 
