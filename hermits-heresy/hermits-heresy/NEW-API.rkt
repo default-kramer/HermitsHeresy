@@ -485,6 +485,29 @@
   ; Returns the address of chunk i within the uncompressed buffer
   (ufx+ #x183FEF0 (ufx* i #x30000)))
 
+(define (SAVE! [path : Path-String] [header : Bytes] [buffer : Bytes])
+  (define orig-file path)
+  (define orig-dir (or (path-only orig-file)
+                       (error "assert fail: path-only failed for:" orig-file)))
+  (assert-directory-writable orig-dir)
+  ; == Now it is safe to write ==
+  (define compressed (zlib:compress buffer))
+  (with-output-to-file orig-file #:exists 'truncate
+    (lambda ()
+      (write-bytes header)
+      (write-bytes compressed)))
+  (show-msg "Saved STGDAT file: ~a" orig-file))
+
+(define (LOAD [path : Path-String])
+  (define all-bytes (file->bytes path))
+  (define header (subbytes all-bytes 0 header-length))
+  (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
+  ; I'm guessing IoA probably always uncompresses to exactly 163,053,024 bytes (including the header),
+  ; and we'll just add some room to spare just in case
+  (define buffer-size #xA000000)
+  (define buffer (zlib:uncompress compressed buffer-size))
+  (values header buffer))
+
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define all-bytes (file->bytes path))
   (define header (subbytes all-bytes 0 header-length))
@@ -941,3 +964,77 @@
       (query-exec conn "end transaction")
       conn)
     }
+
+{begin ; module+ main
+  ;(save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD")
+  (define-values (bt1-path bt2-path bt3-path)
+    (values "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT12.BIN"
+            "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT13.BIN"
+            "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/B00/STGDAT16.BIN"))
+  (define-values (bt1-header bt1-buffer)
+    (LOAD bt1-path))
+  (define-values (bt2-header bt2-buffer)
+    (LOAD bt2-path))
+  (define-values (bt3-header bt3-buffer)
+    (LOAD bt3-path))
+
+  (define (chunk-empty? [buffer : Bytes] [chunk : Integer])
+    (define start (+ #x183FEF0 (* chunk #x30000)))
+    (define end (+ start #x30000))
+    (let loop : Any ([i start])
+      (if (= i end)
+          #t
+          (and (= 0 (bytes-ref buffer i))
+               (loop (+ 1 i))))))
+
+  (define-syntax-rule (set-block! data offset block)
+    (begin (bytes-set! data (ufx+ 0 offset) (ufxand #xFF block))
+           (bytes-set! data (ufx+ 1 offset) (ufxand #xFF (ufxrshift block 8)))))
+
+  (define (update-chunks! [y : Integer] [buffer : Bytes] [chunk-count : Integer] [blocks : (Listof Fixnum)])
+    (define block-iter blocks)
+    (for ([i (in-range chunk-count)])
+      (define start (+ #x183FEF0 (* i #x30000)))
+      (for ([x (in-range 32)])
+        (for ([z (in-range 32)])
+          (let ([addr (:ufx+ start
+                             (:ufx* y 32 32 2)
+                             (:ufx* z 32 2)
+                             (:ufx* x 2))])
+            (set-block! buffer addr (car block-iter)))))
+      (set! block-iter (if (empty? (cdr block-iter))
+                           blocks
+                           (cdr block-iter)))))
+
+  (define (build-pattern! [y : Integer] [buffer : Bytes] [chunk-count : Integer] [block-count : Integer])
+    (define platform-blocks (take (list (block 'Chert)
+                                        (block 'Sand)
+                                        (block 'Snow)
+                                        (block 'Ice)
+                                        (block 'Flagstone)
+                                        (block 'Retro-Roof)
+                                        (block 'Navy-Block)
+                                        (block 'Green-Block)
+                                        (block 'Cyan-Block)
+                                        (block 'Purple-Block)
+                                        (block 'Grassy-Earth)
+                                        ;(block 'Humus)
+                                        (block 'Gold-Vein)) block-count))
+    (update-chunks! y buffer chunk-count platform-blocks))
+
+  (define (do-it! [y : Integer])
+    (build-pattern! y bt1-buffer 53 6)
+    (build-pattern! y bt2-buffer 104 9)
+    (build-pattern! y bt3-buffer 171 12)
+    (SAVE! bt1-path bt1-header bt1-buffer)
+    (SAVE! bt2-path bt2-header bt2-buffer)
+    (SAVE! bt3-path bt3-header bt3-buffer))
+
+  ; BT1 empty starting at 53
+  ; BT2 empty starting at 104
+  ; BT3 empty starting at 171
+  ; For all files, chunks 171-184 (inclusive) are always empty, while 185 throws out-of-range
+  ; Note that all 3 files have the same uncompressed length:
+  #;(begin (bytes-length bt1-buffer)
+           61996512)
+  }
