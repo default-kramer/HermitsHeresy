@@ -34,22 +34,28 @@
     ; 1736811 blocks were removed
     (save-stage! B00))
 ; And I don't think there's any need to create platforms anymore.
+;
+; Starting with OUT30.bmp, the water is going to leak in and I don't have a good way to deal with that.
+; So I'm just going to proceed, and I think when I reach the end I'll be able to easily exclude the
+; outskirts using image editing and assume that all the outskirts are destructible (using the
+; trowel-to-Shifting-Sands trick).
+; So anything else will be considered indestructible.
 
 {module+ main
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
-  (define B00 (load-stage 'IoA 'B00))
+  (define stage (load-stage 'IoA 'B01))
   (define platform-block (block 'Seaside-Scene-Block))
 
   (define the-pict
     (stage->pictOLD
-     B00 (lambda (xz column)
-           (define anything? #f)
-           (for ([y '(31 32 33 34 35 36 37 38 39 40)])
-             (let ([block (vector-ref column y)])
-               (when (and (not (= block 0))
-                          (not (= block platform-block)))
-                 ;(println (list xz y block))
-                 (set! anything? #t))))
-           (if anything? #xFFFF0000 0))))
+     stage (lambda (xz column)
+             (define anything? #f)
+             (for ([y '(31 32 33 34 35 36 37 38 39 40)])
+               (let ([block (vector-ref column y)])
+                 (when (and (not (= block 0))
+                            (not (= block platform-block)))
+                   ;(println (list xz y block))
+                   (set! anything? #t))))
+             (if anything? #xFFFF0000 0))))
   (send (pict->bitmap the-pict) save-file "OUT.bmp" 'bmp)
   }
