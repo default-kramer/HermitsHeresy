@@ -142,6 +142,8 @@ Thanks to all contributors who made Racket so excellent.
 
 Thanks to turtle-insect, who paved the way in save-file-editing.
 
+Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
+
 @section{Reference}
 @(defmodule hermits-heresy)
 @subsection{Loading and Saving}
