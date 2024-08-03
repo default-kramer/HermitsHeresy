@@ -34,7 +34,7 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide blocks-hash hill-ref)
+  (provide blocks-hash hill-ref bitmap->area rect area-bounds area-contains? xz)
 
   (define (hill-ref [hill : Hill] [loc : (Pairof Fixnum Fixnum)])
     (define locxz (xz (car loc) (cdr loc)))
@@ -43,8 +43,8 @@
 
 (require (prefix-in zlib: "zlib.rkt")
          (prefix-in layout: "layouts.rkt")
-         (only-in "layouts.rkt" Chunk-Layout)
          "chunk.rkt"
+         "chunky-area.rkt"
          "basics.rkt"
          "ufx.rkt"
          "config-util.rkt"
@@ -251,15 +251,6 @@
     [(IoA) layout:IoA]
     [else (error "Unexpected kind:" kind)]))
 
-(: chunk-translate (-> Chunk-Layout XZ (U #f (Chunky XZ))))
-(define (chunk-translate chunk-layout xz)
-  (let*-values ([(x-offset x) (quotient/remainder (xz-x xz) 32)]
-                [(z-offset z) (quotient/remainder (xz-z xz) 32)])
-    (let* ([row (vector-ref chunk-layout z-offset)]
-           [chunk-id (vector-ref row x-offset)])
-      (and chunk-id
-           (chunky chunk-id (make-xz x z))))))
-
 (: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
   (let* ([chunk-layout (get-chunk-layout (stage-kind stage))]
@@ -291,10 +282,6 @@
           (xz (ufx+ -1 x) z)
           (xz x (ufx+ 1 z))
           (xz x (ufx+ -1 z)))))
-
-(struct rect ([start : XZ]
-              [end : XZ])
-  #:type-name Rect #:transparent)
 
 (define (rect-intersection [rects : (Listof Rect)])
   (when (empty? rects)
@@ -339,19 +326,6 @@
 (define (area-contains? [area : Area] [xz : XZ])
   ((area-contains-func area) xz))
 
-(define (area-intersection [areas : (Listof Area)])
-  (define bounds (rect-intersection (map area-bounds areas)))
-  ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
-  (for ([z : Fixnum (in-rect/z bounds)])
-    (for ([x : Fixnum (in-rect/x bounds)])
-      (when (andmap (lambda ([a : Area]) (area-contains? a (xz x z)))
-                    areas)
-        (hash-set! xzs (cons x z) #t))))
-  (define (contains? [xz : XZ])
-    (hash-ref xzs (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
-  (area bounds contains?))
-
 (define (area-dimensions [area : Area])
   (let* ([bounds (area-bounds area)]
          [start (rect-start bounds)]
@@ -361,46 +335,10 @@
 
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
 (define (bitmap->area arg)
-  (define bmp (bitmap arg))
-  (define width : Fixnum
-    (let ([w (pict-width bmp)])
-      (or (and (fixnum? w) (cast w Fixnum))
-          (error "bad width" w))))
-  (define depth : Fixnum
-    (let ([h (pict-height bmp)])
-      (or (and (fixnum? h) (cast h Fixnum))
-          (error "bad height" h))))
-  (define min-x : Fixnum (ufx+ 1 width))
-  (define max-x : Fixnum -1)
-  (define min-z : Fixnum (ufx+ 1 depth))
-  (define max-z : Fixnum -1)
-  (define pixels (pict->argb-pixels bmp))
-  ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
-  (define all-empty? : Boolean #t)
-  (define all-full? : Boolean #t)
-  (let ([index 0])
-    (for ([z : Fixnum (ufx-in-range depth)])
-      (for ([x : Fixnum (ufx-in-range width)])
-        (let ([alpha (bytes-ref pixels index)])
-          (set! index (+ 4 index)) ; 4 bytes per pixel
-          (cond
-            [(> alpha 0)
-             (set! all-empty? #f)
-             (set! min-x (min min-x x))
-             (set! max-x (max max-x x))
-             (set! min-z (min min-z z))
-             (set! max-z (max max-z z))
-             (hash-set! xzs (cons x z) #t)]
-            [else
-             (set! all-full? #f)])))))
-  (when (or all-empty? all-full?)
-    (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
-                   (if all-empty? "all" "zero"))))
-  (area (rect (xz min-x min-z) (xz max-x max-z))
-        (let ([set (list->set (hash-keys xzs))])
-          (lambda ([xz : XZ])
-            (set-member? set (cons (xz-x xz) (xz-z xz)))))))
+  (define ca (bitmap->chunky-area arg))
+  (area (chunky-area-bounds ca)
+        (lambda ([xz : XZ])
+          (chunky-area-contains? ca xz))))
 
 (struct hill ([area : Area]
               [elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)])
