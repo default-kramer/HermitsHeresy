@@ -42,7 +42,7 @@
 ; So anything else will be considered indestructible.
 
 {module+ main
-  (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
+  (save-dir "C:/Users/defau/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
   (define stage (load-stage 'IoA 'B01))
   (define platform-block (block 'Seaside-Scene-Block))
 
@@ -50,7 +50,7 @@
     (stage->pictOLD
      stage (lambda (xz column)
              (define anything? #f)
-             (for ([y '(31 32 33 34 35 36 37 38 39 40)])
+             (for ([y '(21 22 23 24 25 26 27 28 29 30)])
                (let ([block (vector-ref column y)])
                  (when (and (not (= block 0))
                             (not (= block platform-block)))
