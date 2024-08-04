@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Chunky-Area
+(provide Chunky-Area chunky-area?
          bitmap->chunky-area
          chunky-area-contains?
          chunky-area-bounds

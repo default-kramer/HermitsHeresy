@@ -226,8 +226,10 @@
   #:type-name Stage)
 
 (define (protect-stage! [stage : Stage] [area : Area])
-  (define chunky-area (or (area-chunky-area area)
-                          (error "TODO need to convert to chunky area here...")))
+  (define chunky-area
+    (cond
+      [(chunky-area? area) area]
+      [else (error "TODO need to convert to chunky area here...")]))
   (define previous (unbox (stage-protected-area stage)))
   (when (not (eq? previous empty-chunky-area))
     (error "TODO need to do intersection here"))
@@ -323,23 +325,43 @@
   (ufx-in-range (xz-z (rect-start rect))
                 (xz-z (rect-end rect))))
 
-(struct area ([bounds : Rect]
+; WARNING - Legacy code. Should migrate everything to the Chunky-Area eventually...
+(struct area ([bounds2 : Rect]
               [contains-func : (-> XZ Any)]
               [chunky-area : (U #f Chunky-Area)])
-  #:transparent #:type-name Area)
+  #:transparent #:type-name Func-Area)
+
+(define-type Area (U Chunky-Area Func-Area))
+
+(define (area-bounds [area : Area])
+  (cond
+    [(area? area) (area-bounds2 area)]
+    [else (chunky-area-bounds area)]))
+
+(: area->contains-func (-> Area (-> XZ Any)))
+(define (area->contains-func area)
+  (cond
+    [(area? area) (area-contains-func area)]
+    [else (lambda ([xz : XZ]) (chunky-area-contains? area xz))]))
+
+(: area-contains? (-> Area XZ Any))
+(define (area-contains? area xz)
+  ((area->contains-func area) xz))
 
 (define-syntax-rule (for/area ([xz-id area-expr])
                       body ...)
   (let* ([area (ann area-expr Area)]
-         [bounds (area-bounds area)])
+         [bounds (area-bounds area)]
+         [contains? (cond
+                      [(area? area)
+                       (lambda ([xz : XZ]) ((area-contains-func area) xz))]
+                      [else
+                       (lambda ([xz : XZ]) (chunky-area-contains? area xz))])])
     (for ([z : Fixnum (in-rect/z bounds)])
       (for ([x : Fixnum (in-rect/x bounds)])
         (let ([xz-id (xz x z)])
-          (when (area-contains? area xz-id)
+          (when (contains? xz-id)
             body ...))))))
-
-(define (area-contains? [area : Area] [xz : XZ])
-  ((area-contains-func area) xz))
 
 (define (area-dimensions [area : Area])
   (let* ([bounds (area-bounds area)]
@@ -348,13 +370,9 @@
     (values (ufx- (xz-x end) (xz-x start))
             (ufx- (xz-z end) (xz-z start)))))
 
-(: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
+(: bitmap->area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->area arg)
-  (define ca (bitmap->chunky-area arg))
-  (area (chunky-area-bounds ca)
-        (lambda ([xz : XZ])
-          (chunky-area-contains? ca xz))
-        ca))
+  (bitmap->chunky-area arg))
 
 (struct hill ([area : Area]
               [elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)])
@@ -519,8 +537,9 @@
 
 (: find-outskirts (-> Area (-> XZ Any) (Listof XZ)))
 (define (find-outskirts area extra-outside?)
+  (define contains? (area->contains-func area))
   (define (outside? [xz : XZ])
-    (or (not (area-contains? area xz))
+    (or (not (contains? xz))
         (extra-outside? xz)))
   (define (inside? [xz : XZ])
     (not (outside? xz)))
