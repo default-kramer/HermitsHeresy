@@ -23,10 +23,10 @@
          stage->pict stage->pictOLD
          TODO
          create-golem-platforms!
-         protected-areas ; WARNING this will probably be slow? And area combiner functions would be better anyway?
          copy-all-save-files!
          save-stage!
          find-block-name
+         protect-area!
          )
 
 (module+ everything
@@ -34,7 +34,7 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide blocks-hash hill-ref)
+  (provide blocks-hash hill-ref rect area-bounds xz)
 
   (define (hill-ref [hill : Hill] [loc : (Pairof Fixnum Fixnum)])
     (define locxz (xz (car loc) (cdr loc)))
@@ -43,8 +43,8 @@
 
 (require (prefix-in zlib: "zlib.rkt")
          (prefix-in layout: "layouts.rkt")
-         (only-in "layouts.rkt" Chunk-Layout)
          "chunk.rkt"
+         "chunky-area.rkt"
          "basics.rkt"
          "ufx.rkt"
          "config-util.rkt"
@@ -221,8 +221,21 @@
                [buffer : Bytes] ; mutable TODO remove this from core? (just use chunks)
                ; Or maybe keep the buffer to know what the file had when it was loaded.
                [chunks : (Immutable-Vectorof Chunk)]
+               [protected-area : (Boxof Chunky-Area)]
                )
   #:type-name Stage)
+
+(: protect-area! (-> Stage Area Area))
+(define (protect-area! stage area)
+  (define chunky-area
+    (cond
+      [(chunky-area? area) area]
+      [else (error "TODO need to remove legacy area code, or convert to chunky area here...")]))
+  (define previous (unbox (stage-protected-area stage)))
+  (when (not (eq? previous empty-chunky-area))
+    (error "TODO I need to do an area-union here..."))
+  (set-box! (stage-protected-area stage) chunky-area)
+  previous)
 
 (define (stage-kind [stage : Stage])
   (stgdat-file-kind (stage-loaded-from stage)))
@@ -243,22 +256,11 @@
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
 
-(define protected-areas (make-parameter (ann (list) (Listof Area))))
-
 (: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
 (define (get-chunk-layout kind)
   (case kind
     [(IoA) layout:IoA]
     [else (error "Unexpected kind:" kind)]))
-
-(: chunk-translate (-> Chunk-Layout XZ (U #f (Chunky XZ))))
-(define (chunk-translate chunk-layout xz)
-  (let*-values ([(x-offset x) (quotient/remainder (xz-x xz) 32)]
-                [(z-offset z) (quotient/remainder (xz-z xz) 32)])
-    (let* ([row (vector-ref chunk-layout z-offset)]
-           [chunk-id (vector-ref row x-offset)])
-      (and chunk-id
-           (chunky chunk-id (make-xz x z))))))
 
 (: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
@@ -270,15 +272,21 @@
                 [xz (chunky-val chunky)])
            (chunk-ref chunk #:x (xz-x xz) #:z (xz-z xz) #:y (point-y point))))))
 
-(: stage-write! (-> Stage Point Integer (U #f Void)))
-(define (stage-write! stage point block)
-  (define (protected? [area : Area])
-    (area-contains? area point))
+; Get the compiler to help me remember to check the XZ coordinate against
+; the stage's protected area.
+(define-type Unprotected-Proof 'Unprotected-Proof)
+
+(: unprotected? (-> Chunky-Area XZ (U #f Unprotected-Proof)))
+(define (unprotected? area xz)
+  (and (not (chunky-area-contains? area xz))
+       'Unprotected-Proof))
+
+(: stage-write! (-> Stage Unprotected-Proof Point Integer (U #f Void)))
+(define (stage-write! stage proof point block)
   (define chunk-layout (get-chunk-layout (stage-kind stage)))
   (define chunky (chunk-translate chunk-layout point))
   (cond
     [(not chunky) #f]
-    [(ormap protected? (protected-areas)) #f]
     [else (let* ([chunks (stage-chunks stage)]
                  [chunk (vector-ref chunks (chunky-chunk-id chunky))]
                  [xz (chunky-val chunky)])
@@ -291,10 +299,6 @@
           (xz (ufx+ -1 x) z)
           (xz x (ufx+ 1 z))
           (xz x (ufx+ -1 z)))))
-
-(struct rect ([start : XZ]
-              [end : XZ])
-  #:type-name Rect #:transparent)
 
 (define (rect-intersection [rects : (Listof Rect)])
   (when (empty? rects)
@@ -322,35 +326,43 @@
   (ufx-in-range (xz-z (rect-start rect))
                 (xz-z (rect-end rect))))
 
-(struct area ([bounds : Rect]
-              [contains-func : (-> XZ Any)])
-  #:transparent #:type-name Area)
+; WARNING - Legacy code. Should migrate everything to the Chunky-Area eventually...
+(struct area ([bounds2 : Rect]
+              [contains-func : (-> XZ Any)]
+              [chunky-area : (U #f Chunky-Area)])
+  #:transparent #:type-name Func-Area)
+
+(define-type Area (U Chunky-Area Func-Area))
+
+(define (area-bounds [area : Area])
+  (cond
+    [(area? area) (area-bounds2 area)]
+    [else (chunky-area-bounds area)]))
+
+(: area->contains-func (-> Area (-> XZ Any)))
+(define (area->contains-func area)
+  (cond
+    [(area? area) (area-contains-func area)]
+    [else (lambda ([xz : XZ]) (chunky-area-contains? area xz))]))
+
+(: area-contains? (-> Area XZ Any))
+(define (area-contains? area xz)
+  ((area->contains-func area) xz))
 
 (define-syntax-rule (for/area ([xz-id area-expr])
                       body ...)
   (let* ([area (ann area-expr Area)]
-         [bounds (area-bounds area)])
+         [bounds (area-bounds area)]
+         [contains? (cond
+                      [(area? area)
+                       (lambda ([xz : XZ]) ((area-contains-func area) xz))]
+                      [else
+                       (lambda ([xz : XZ]) (chunky-area-contains? area xz))])])
     (for ([z : Fixnum (in-rect/z bounds)])
       (for ([x : Fixnum (in-rect/x bounds)])
         (let ([xz-id (xz x z)])
-          (when (area-contains? area xz-id)
+          (when (contains? xz-id)
             body ...))))))
-
-(define (area-contains? [area : Area] [xz : XZ])
-  ((area-contains-func area) xz))
-
-(define (area-intersection [areas : (Listof Area)])
-  (define bounds (rect-intersection (map area-bounds areas)))
-  ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
-  (for ([z : Fixnum (in-rect/z bounds)])
-    (for ([x : Fixnum (in-rect/x bounds)])
-      (when (andmap (lambda ([a : Area]) (area-contains? a (xz x z)))
-                    areas)
-        (hash-set! xzs (cons x z) #t))))
-  (define (contains? [xz : XZ])
-    (hash-ref xzs (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
-  (area bounds contains?))
 
 (define (area-dimensions [area : Area])
   (let* ([bounds (area-bounds area)]
@@ -359,48 +371,9 @@
     (values (ufx- (xz-x end) (xz-x start))
             (ufx- (xz-z end) (xz-z start)))))
 
-(: bitmap->area (-> (U (Instance Bitmap%) Path-String) Area))
+(: bitmap->area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->area arg)
-  (define bmp (bitmap arg))
-  (define width : Fixnum
-    (let ([w (pict-width bmp)])
-      (or (and (fixnum? w) (cast w Fixnum))
-          (error "bad width" w))))
-  (define depth : Fixnum
-    (let ([h (pict-height bmp)])
-      (or (and (fixnum? h) (cast h Fixnum))
-          (error "bad height" h))))
-  (define min-x : Fixnum (ufx+ 1 width))
-  (define max-x : Fixnum -1)
-  (define min-z : Fixnum (ufx+ 1 depth))
-  (define max-z : Fixnum -1)
-  (define pixels (pict->argb-pixels bmp))
-  ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define xzs (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) #t)))
-  (define all-empty? : Boolean #t)
-  (define all-full? : Boolean #t)
-  (let ([index 0])
-    (for ([z : Fixnum (ufx-in-range depth)])
-      (for ([x : Fixnum (ufx-in-range width)])
-        (let ([alpha (bytes-ref pixels index)])
-          (set! index (+ 4 index)) ; 4 bytes per pixel
-          (cond
-            [(> alpha 0)
-             (set! all-empty? #f)
-             (set! min-x (min min-x x))
-             (set! max-x (max max-x x))
-             (set! min-z (min min-z z))
-             (set! max-z (max max-z z))
-             (hash-set! xzs (cons x z) #t)]
-            [else
-             (set! all-full? #f)])))))
-  (when (or all-empty? all-full?)
-    (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
-                   (if all-empty? "all" "zero"))))
-  (area (rect (xz min-x min-z) (xz max-x max-z))
-        (let ([set (list->set (hash-keys xzs))])
-          (lambda ([xz : XZ])
-            (set-member? set (cons (xz-x xz) (xz-z xz)))))))
+  (bitmap->chunky-area arg))
 
 (struct hill ([area : Area]
               [elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)])
@@ -460,7 +433,8 @@
   (define the-area
     (area (rect (xz 0 0) (xz width depth))
           (lambda ([xz : XZ])
-            (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))))
+            (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
+          #f))
   (hill the-area (make-immutable-hash (hash->list elevations))))
 
 ; adjust-y is undocumented, not sure if it belongs here
@@ -469,16 +443,19 @@
   (define elevations (hill-elevations hill))
   (define block-count : Fixnum 0)
   (define item-count : Fixnum 0)
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (let* ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
-           [end-y (ufx+ end-y adjust-y)])
-      (for ([y : Fixnum (ufx-in-range 1 end-y)])
-        (let* ([p (make-point xz y)]
-               [cur (stage-read stage p)])
-          (if (simple? (or cur 0))
-              (begin (stage-write! stage p block)
-                     (set! block-count (ufx+ 1 block-count)))
-              (set! item-count (ufx+ 1 item-count)))))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (let* ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
+             [end-y (ufx+ end-y adjust-y)])
+        (for ([y : Fixnum (ufx-in-range 1 end-y)])
+          (let* ([p (make-point xz y)]
+                 [cur (stage-read stage p)])
+            (if (simple? (or cur 0))
+                (begin (stage-write! stage proof p block)
+                       (set! block-count (ufx+ 1 block-count)))
+                (set! item-count (ufx+ 1 item-count))))))))
   (show-msg "put-hill! placed ~a blocks, left ~a items intact" block-count item-count))
 
 (define-syntax-rule (dqb2-chunk-start-addr i)
@@ -503,7 +480,8 @@
        (define chunk (make-empty-chunk))
        (load-chunk! chunk buffer (dqb2-chunk-start-addr i))
        chunk)))
-  (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)))
+  (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)
+         (box empty-chunky-area)))
 
 (: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path-String) Stage))
 (define (load-stage kind slot)
@@ -525,11 +503,14 @@
                    (#:y-min Fixnum)
                    Void))
 (define (fill-area! stage area block #:y-max y-max #:y-min [y-min 1])
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (for ([y : Fixnum (ufx-in-range y-min (ufx+ 1 y-max))])
-      (let* ([p (make-point xz y)])
-        (or (stage-write! stage p block)
-            (error "TODO out of range:" p)))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (for ([y : Fixnum (ufx-in-range y-min (ufx+ 1 y-max))])
+        (let* ([p (make-point xz y)])
+          (or (stage-write! stage proof p block)
+              (error "TODO out of range:" p))))))
   (void))
 
 (define (save-stage! [stage : Stage])
@@ -557,8 +538,9 @@
 
 (: find-outskirts (-> Area (-> XZ Any) (Listof XZ)))
 (define (find-outskirts area extra-outside?)
+  (define contains? (area->contains-func area))
   (define (outside? [xz : XZ])
-    (or (not (area-contains? area xz))
+    (or (not (contains? xz))
         (extra-outside? xz)))
   (define (inside? [xz : XZ])
     (not (outside? xz)))
@@ -587,7 +569,7 @@
          [bounds (rect (xz 0 0) (xz width depth))])
     (define (contains? [xz : XZ])
       (chunk-translate chunk-layout xz))
-    (area bounds contains?)))
+    (area bounds contains? #f)))
 
 (define-syntax-rule (get-area x stage)
   (case x
@@ -621,13 +603,16 @@
       [else #f]))
 
   (define area (get-area where stage))
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (for ([y : Fixnum (ufx-in-range (ufx+ 1 water-level))])
-      (let ([p (make-point xz y)])
-        (when (vacant? p)
-          (stage-write! stage p (if (ufx= y water-level)
-                                    top-sea
-                                    full-sea))))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (for ([y : Fixnum (ufx-in-range (ufx+ 1 water-level))])
+        (let ([p (make-point xz y)])
+          (when (vacant? p)
+            (stage-write! stage proof p (if (ufx= y water-level)
+                                            top-sea
+                                            full-sea)))))))
   (void))
 
 (define (item-count [stage : Stage])
@@ -650,13 +635,16 @@
     (bytes-set! buffer #x24E7CE 0)
     (bytes-set! buffer #x24E7CF 0))
   (define area (get-area where stage))
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (for ([y : Fixnum (ufx-in-range min-y 96)])
-      (let ([p (make-point xz y)])
-        (when (and (>= y min-y)
-                   (or (not keep-items?)
-                       (simple-block? (or (stage-read stage p) 0))))
-          (stage-write! stage p 0)))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (for ([y : Fixnum (ufx-in-range min-y 96)])
+        (let ([p (make-point xz y)])
+          (when (and (>= y min-y)
+                     (or (not keep-items?)
+                         (simple-block? (or (stage-read stage p) 0))))
+            (stage-write! stage proof p 0))))))
   (void))
 
 (define (blocks-hash [stage : Stage]
@@ -776,23 +764,29 @@
 ; Is this proc too specific to my use case?
 ; Maybe I should (provide stage-read stage-write! for/area) and let user code do this:
 (define (TODO [stage : Stage] [area : Area] [peak-block : Fixnum] [fill-block : Integer])
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (define peak : Fixnum -1)
-    (for ([y : Fixnum (ufx-in-range 95 -1 -1)])
-      (when (ufx= peak-block (or (stage-read stage (make-point xz y)) 0))
-        (set! peak y)))
-    (when peak
-      (for ([y : Fixnum (ufx-in-range 1 peak)])
-        (stage-write! stage (make-point xz y) fill-block))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (define peak : Fixnum -1)
+      (for ([y : Fixnum (ufx-in-range 95 -1 -1)])
+        (when (ufx= peak-block (or (stage-read stage (make-point xz y)) 0))
+          (set! peak y)))
+      (when peak
+        (for ([y : Fixnum (ufx-in-range 1 peak)])
+          (stage-write! stage proof (make-point xz y) fill-block)))))
   (void))
 
 ; For me, probably irrelevant for the world at large:
 (define (create-golem-platforms! [stage : Stage] [area : Area] [block : Integer])
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (for ([y : Fixnum '(30 40 50 60 70 80 90)])
-      (let ([p (make-point xz y)])
-        (when (= 0 (or (stage-read stage p) 1))
-          (stage-write! stage p block)))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (for ([y : Fixnum '(30 40 50 60 70 80 90)])
+        (let ([p (make-point xz y)])
+          (when (= 0 (or (stage-read stage p) 1))
+            (stage-write! stage proof p block))))))
   (void))
 
 ; Copying items can cause a CMNDAT-STGDAT mismatch.
@@ -844,22 +838,25 @@
 
 (: decorate-peaks! (-> Stage Area (-> XZ Fixnum Fixnum) Void))
 (define (decorate-peaks! stage area callback)
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (let loop ([y : Fixnum 95])
-      (let* ([pt (make-point xz y)]
-             [existing (stage-read stage pt)]
-             [below (stage-read stage (make-point xz (ufx+ y -1)))])
-        (cond
-          [(or (not below) (not existing)) ; entire column is off the map
-           (void)]
-          [(not (ufx= 0 below))
-           (when (ufx= 0 existing)
-             (let* ([new (callback xz below)])
-               (stage-write! stage pt new)))]
-          [(= 1 y)
-           (void)]
-          [else
-           (loop (ufx+ y -1))]))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (let loop ([y : Fixnum 95])
+        (let* ([pt (make-point xz y)]
+               [existing (stage-read stage pt)]
+               [below (stage-read stage (make-point xz (ufx+ y -1)))])
+          (cond
+            [(or (not below) (not existing)) ; entire column is off the map
+             (void)]
+            [(not (ufx= 0 below))
+             (when (ufx= 0 existing)
+               (let* ([new (callback xz below)])
+                 (stage-write! stage proof pt new)))]
+            [(= 1 y)
+             (void)]
+            [else
+             (loop (ufx+ y -1))])))))
   (void))
 
 (: add-chunk-ids! (-> Stage Void))

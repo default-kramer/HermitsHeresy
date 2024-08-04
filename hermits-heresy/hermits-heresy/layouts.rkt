@@ -1,7 +1,6 @@
 #lang typed/racket
 
-(provide Chunk-Layout
-         IoA
+(provide IoA
          ; Oh no, my fears were true...
          ; Buildertopia layouts are not fixed!
          ; Well, at least this means it must be saved in the file somewhere...
@@ -15,10 +14,7 @@
          ;large-coral-cay
          )
 
-; Each inner vector is one row, holding chunk IDs from east to west.
-; The outer vector contains all rows from north to south.
-; A chunk ID of false indicates out-of-bounds.
-(define-type Chunk-Layout (Vectorof (Vectorof (U #f Integer))))
+(require "basics.rkt")
 
 (define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])

@@ -2,6 +2,7 @@
 
 {module+ test
   (require hermits-heresy
+           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" bitmap->area area-contains?)
            (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 
@@ -32,4 +33,20 @@
       (let ([loc (car kvp)]
             [elevation (cdr kvp)])
         (check-equal? (hill-ref hill loc) elevation))))
+
+  (let ([area (bitmap->area "images/STB-manual-build.bmp")])
+    (check-equal? (area-bounds area)
+                  (rect (xz 329 30) (xz 419 127)))
+    (check-true (area-contains? area (xz 329 30)))
+    (check-true (area-contains? area (xz 387 30)))
+    (check-false (area-contains? area (xz 388 30)))
+    (check-true (area-contains? area (xz 329 33)))
+    (check-true (area-contains? area (xz 387 33)))
+    (check-false (area-contains? area (xz 388 33)))
+    (check-false (area-contains? area (xz 388 37)))
+    (check-true (area-contains? area (xz 388 38)))
+    (check-true (area-contains? area (xz 405 93)))
+    (check-true (area-contains? area (xz 405 94)))
+    (check-true (area-contains? area (xz 406 93)))
+    (check-false (area-contains? area (xz 406 94))))
   }

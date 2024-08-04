@@ -231,6 +231,14 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
 This version discards the remainder of the division by 2.
 A future version may decide to respect it via the flat chisel.
 
+@defproc[(bitmap->area [path path-string?])
+         area?]{
+ Converts the given bitmap to an area.
+ Each pixel corresponds to a 1x1 column of blockspace.
+ Fully transparent pixels (alpha = 0) are considered outside of the area;
+ all other pixels are considered inside the area.
+}
+
 @subsection{Block Manipulation}
 An @deftech{item} is a special kind of block, such as a tree or a door or a fountain.
 A good rule of thumb is that anything capable of facing north/east/south/west is an item.
@@ -280,4 +288,18 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
 
  If you still can't find what you want, you can check the complete list in the
  @hyperlink["https://github.com/default-kramer/HermitsHeresy/blob/main/hermits-heresy/hermits-heresy/blockdata/blockdef-raw.rkt"]{source code here}.
+}
+
+@defproc[(protect-area! [stage stage?] [area area?])
+         area?]{
+ Marks all coordinates inside the given @(racket area) as protected.
+ The protected area will silently ignore all attempted future block manipulations (for example, by @(racket put-hill!)).
+
+ This function is supposed to perform a union with any previously protected area,
+ but right now it will throw a "not implemented" error if the previously protected area is not empty.
+ Sorry about that, let me know if you need it.
+ (Consider performing the union using your image editing software if possible.)
+
+ This function returns the previously protected area intended for use with a future hypothetical
+ function like @(racket revert-protected-area!).
 }
