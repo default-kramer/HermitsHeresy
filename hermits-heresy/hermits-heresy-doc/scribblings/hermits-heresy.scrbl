@@ -292,7 +292,7 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
 
 @defproc[(protect-area! [stage stage?] [area area?])
          area?]{
- Marks all XZ coordinates inside the given @(racket area) as protected.
+ Marks all coordinates inside the given @(racket area) as protected.
  The protected area will silently ignore all attempted future block manipulations (for example, by @(racket put-hill!)).
 
  This function is supposed to perform a union with any previously protected area,
