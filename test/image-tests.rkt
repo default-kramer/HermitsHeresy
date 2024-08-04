@@ -2,6 +2,7 @@
 
 {module+ test
   (require hermits-heresy
+           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" bitmap->area area-contains?)
            (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 

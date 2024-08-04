@@ -4,6 +4,7 @@
          bitmap->chunky-area
          chunky-area-contains?
          chunky-area-bounds
+         empty-chunky-area
          )
 
 (require typed/pict
@@ -19,6 +20,11 @@
 ; Note: This is agnostic of any stage's Chunk-Layout; it simply borrows
 ; the concept of 32x32 chunks which will have similar performance benefits.
 ; But don't assume that any chunk-id will match a chunk-id relative to a "real" Chunk-Layout.
+;
+; Note: This might be a questionable optimization. I measured that it performed better
+; than a HashTable. Then after some more time I realized that most call sites should only test
+; the XZ coordinate once, not 96 times for each Y, duh!
+; But faster is better so I'm keeping it.
 (struct chunky-area ([bytevec : (Immutable-Vectorof Bytes)]
                      [W32 : Fixnum] ; number of chunks wide
                      [bounds : Rect])
@@ -35,6 +41,10 @@
 
 (define empty-bytes (make-bytes bytes-per-chunk 0))
 (define full-bytes (make-bytes bytes-per-chunk 255))
+
+(define empty-chunky-area (chunky-area (vector->immutable-vector (make-vector 0 empty-bytes))
+                                       0
+                                       (rect (xz 0 0) (xz 0 0))))
 
 (define (deduplicate [bytes : Bytes])
   ; save some memory

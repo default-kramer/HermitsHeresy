@@ -10,6 +10,7 @@
          find-block-name
          get-template-image
          save-template-image
+         protect-stage!
          )
 
 (module+ undocumented
@@ -17,7 +18,6 @@
            bitmap->area
            chisel
            decorate-peaks!
-           protected-areas
            simple?
            stage->pict
            ))
