@@ -10,12 +10,12 @@
          find-block-name
          get-template-image
          save-template-image
-         protect-stage!
+         bitmap->area
+         protect-area!
          )
 
 (module+ undocumented
   (provide area->hill2
-           bitmap->area
            chisel
            decorate-peaks!
            simple?

@@ -26,7 +26,7 @@
          copy-all-save-files!
          save-stage!
          find-block-name
-         protect-stage!
+         protect-area!
          )
 
 (module+ everything
@@ -225,14 +225,15 @@
                )
   #:type-name Stage)
 
-(define (protect-stage! [stage : Stage] [area : Area])
+(: protect-area! (-> Stage Area Area))
+(define (protect-area! stage area)
   (define chunky-area
     (cond
       [(chunky-area? area) area]
-      [else (error "TODO need to convert to chunky area here...")]))
+      [else (error "TODO need to remove legacy area code, or convert to chunky area here...")]))
   (define previous (unbox (stage-protected-area stage)))
   (when (not (eq? previous empty-chunky-area))
-    (error "TODO need to do intersection here"))
+    (error "TODO I need to do an area-union here..."))
   (set-box! (stage-protected-area stage) chunky-area)
   previous)
 
