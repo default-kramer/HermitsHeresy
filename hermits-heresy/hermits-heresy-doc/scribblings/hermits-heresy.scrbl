@@ -155,7 +155,13 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
    (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/"))
 }
 
-@defproc[(load-stage [kind (or/c 'IoA)]
+@defproc[(load-stage [kind (or/c 'IoA
+                                 'Furrowfield
+                                 'Khrumbul-Dun
+                                 'Moonbrooke
+                                 'Malhalla
+                                 'Anglers-Isle
+                                 'Skelkatraz)]
                      [slot (or/c 'B00 'B01 'B02 path-string?)])
          stage?]{
  Loads a STGDAT file.
@@ -198,10 +204,26 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
  The current list of template images is as follows:
  @(racketblock
    'IoA-background
-   'IoA-mask)
+   'IoA-bedrock-mask
+   'IoA-chunk-mask
+   'Furrowfield-background
+   'Furrowfield-chunk-mask
+   'Khrumbul-Dun-background
+   'Khrumbul-Dun-chunk-mask
+   'Moonbrooke-background
+   'Moonbrooke-chunk-mask
+   'Malhalla-background
+   'Malhalla-chunk-mask
+   'Anglers-Isle-background
+   'Anglers-Isle-chunk-mask
+   'Skelkatraz-background
+   'Skelkatraz-chunk-mask)
  @(examples
    (require pict hermits-heresy)
    (scale (get-template-image 'IoA-background) 0.5))
+
+ TODO: Explain the difference between a "bedrock mask" and a "chunk mask" and update
+ the Basic Hill tutorial so it does not use the legacy @(racket 'IoA-mask).
 }
 
 @defproc[(save-template-image [id symbol?])

@@ -4,8 +4,10 @@
          XZ (struct-out xz) xz->values
          Rect (struct-out rect)
          Point point? make-point point-y point-x point-z
-         Chunk-Layout chunk-translate
+         Chunk-Layout chunk-translate chunk-count
          )
+
+(require "ufx.rkt")
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.
@@ -47,6 +49,14 @@
            [chunk-id (vector-ref row x-offset)])
       (and chunk-id
            (chunky chunk-id (make-xz x z))))))
+
+(: chunk-count (-> Chunk-Layout Fixnum))
+(define (chunk-count layout)
+  (define count : Fixnum 0)
+  (for ([row layout])
+    (for ([cell row])
+      (when cell (set! count (ufx+ 1 count)))))
+  count)
 
 (struct rect ([start : XZ]
               [end : XZ])

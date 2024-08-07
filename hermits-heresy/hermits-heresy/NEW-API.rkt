@@ -208,7 +208,36 @@
       [(flat-hi) (ufxior #xD000 block)]
       [else (error "TODO more chisels..." kind)])))
 
-(define-type Stgdat-Kind (U 'IoA))
+(define-type Stgdat-Kind (U 'IoA
+                            'Furrowfield
+                            'Khrumbul-Dun
+                            'Moonbrooke
+                            'Malhalla
+                            'Anglers-Isle
+                            'Skelkatraz
+                            ))
+
+(: kind->filename (-> Stgdat-Kind String))
+(define (kind->filename kind)
+  (case kind
+    [(IoA) "STGDAT01.BIN"]
+    [(Furrowfield) "STGDAT02.BIN"]
+    [(Khrumbul-Dun) "STGDAT03.BIN"]
+    [(Moonbrooke) "STGDAT04.BIN"]
+    [(Malhalla) "STGDAT05.BIN"]
+    [(Anglers-Isle) "STGDAT09.BIN"]
+    [(Skelkatraz) "STGDAT10.BIN"]))
+
+(: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
+(define (get-chunk-layout kind)
+  (case kind
+    [(IoA) layout:IoA]
+    [(Furrowfield) layout:Furrowfield]
+    [(Khrumbul-Dun) layout:Khrumbul-Dun]
+    [(Moonbrooke) layout:Moonbrooke]
+    [(Malhalla) layout:Malhalla]
+    [(Anglers-Isle) layout:Anglers-Isle]
+    [(Skelkatraz) layout:Skelkatraz]))
 
 (define header-length #x110)
 
@@ -255,12 +284,6 @@
 
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
-
-(: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
-(define (get-chunk-layout kind)
-  (case kind
-    [(IoA) layout:IoA]
-    [else (error "Unexpected kind:" kind)]))
 
 (: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
@@ -471,11 +494,10 @@
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
 
+  (define layout (get-chunk-layout kind))
   (define chunks
     (build-vector
-     (case kind
-       [(IoA) 369]
-       [else (error "unexpected kind" kind)])
+     (chunk-count layout)
      (lambda ([i : Index])
        (define chunk (make-empty-chunk))
        (load-chunk! chunk buffer (dqb2-chunk-start-addr i))
@@ -483,14 +505,12 @@
   (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)
          (box empty-chunky-area)))
 
-(: load-stage (-> (U 'IoA) (U 'B00 'B01 'B02 Path-String) Stage))
+(: load-stage (-> Stgdat-Kind (U 'B00 'B01 'B02 Path-String) Stage))
 (define (load-stage kind slot)
   (define path (case slot
                  [(B00 B01 B02)
                   (let ([sd (save-dir)]
-                        [filename (case kind
-                                    [(IoA) "STGDAT01.BIN"]
-                                    [else (error "TODO" kind)])])
+                        [filename (kind->filename kind)])
                     (if sd
                         (build-path sd (~a slot) filename)
                         (error "You must parameterize `save-dir` to load:" slot)))]
@@ -809,20 +829,20 @@
                         CMNDAT.BIN
                         SCSHDAT.BIN
                         STGDAT01.BIN ; IoA
-                        STGDAT02.BIN
-                        STGDAT03.BIN
-                        STGDAT04.BIN
-                        STGDAT05.BIN
-                        STGDAT06.BIN
-                        STGDAT07.BIN
-                        STGDAT08.BIN
-                        STGDAT09.BIN
-                        STGDAT10.BIN
-                        STGDAT11.BIN
+                        STGDAT02.BIN ; Furrowfield
+                        STGDAT03.BIN ; Khrumbul-Dun
+                        STGDAT04.BIN ; Moonbrooke
+                        STGDAT05.BIN ; Malhalla
+                        STGDAT06.BIN ; ?? Malhalla Final Battle ??
+                        STGDAT07.BIN ; broken?
+                        STGDAT08.BIN ; broken?
+                        STGDAT09.BIN ; Angler's Isle
+                        STGDAT10.BIN ; Skelkatraz
+                        STGDAT11.BIN ; broken?
                         STGDAT12.BIN ; BT1
                         STGDAT13.BIN ; BT2
-                        STGDAT14.BIN
-                        STGDAT15.BIN
+                        STGDAT14.BIN ; Battle Atoll, debug only
+                        STGDAT15.BIN ; ?? Tutorial ship ??
                         STGDAT16.BIN ; BT3
                         ))
   (define from-dir : Path
