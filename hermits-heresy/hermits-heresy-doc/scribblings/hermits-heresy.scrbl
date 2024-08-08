@@ -249,6 +249,10 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
    (scale (cc-superimpose (get-template-image 'IoA-background)
                           (get-template-image 'IoA-bedrock-mask))
           0.5))
+
+ You might also consider using
+ @hyperlink["https://github.com/Sapphire645/DQB2MinimapExporter"]{this Minimap Exporter
+  by Sapphire645} instead of these prebuilt @(racket '*-background) images.
 }
 
 @defproc[(save-template-image [id symbol?])
