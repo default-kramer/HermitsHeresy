@@ -166,10 +166,6 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
          stage?]{
  Loads a STGDAT file.
 
- For now, the only supported @(racket kind) is @(racket 'IoA) indicating "Isle of Awakening"
- / "Home Island" / STGDAT01.BIN.
- Support for other kinds of islands will be added in the future.
-
  The meaning of @(racket slot) is as follows:
  @(itemlist
    @item{@(racket 'B00) -- Save Slot 1, relative to @(racket save-dir)}
