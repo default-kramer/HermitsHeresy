@@ -40,6 +40,11 @@
 ; outskirts using image editing and assume that all the outskirts are destructible (using the
 ; trowel-to-Shifting-Sands trick).
 ; So anything else will be considered indestructible.
+;
+; After pass20, I ran this to remove the platforms:
+#;(let ([bid (block 'Seaside-Scene-Block)])
+    (remove-blocks! stage 'all (list bid (bitwise-and bid #x7FF))))
+; It removed 929078 blocks.
 
 {module+ main
   (save-dir "C:/Users/defau/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
@@ -50,7 +55,7 @@
     (stage->pictOLD
      stage (lambda (xz column)
              (define anything? #f)
-             (for ([y '(21 22 23 24 25 26 27 28 29 30)])
+             (for ([y '(11 12 13 14 15 16 17 18 19 20)])
                (let ([block (vector-ref column y)])
                  (when (and (not (= block 0))
                             (not (= block platform-block)))
