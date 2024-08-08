@@ -21,11 +21,16 @@
 (define images (load-images IoA-background
                             IoA-bedrock-mask
                             Furrowfield-background
+                            Furrowfield-bedrock-mask
                             Khrumbul-Dun-background
+                            Khrumbul-Dun-bedrock-mask
                             Moonbrooke-background
+                            Moonbrooke-bedrock-mask
                             Malhalla-background
                             Anglers-Isle-background
+                            Anglers-Isle-bedrock-mask
                             Skelkatraz-background
+                            Skelkatraz-bedrock-mask
                             ))
 
 (module+ test ; make sure all image dimensions are some multiple of 32
@@ -95,18 +100,30 @@
 (define (spot-check)
   (list (cc-superimpose (get-template-image 'IoA-background)
                         (get-template-image 'IoA-chunk-mask))
+        (cc-superimpose (get-template-image 'IoA-background)
+                        (get-template-image 'IoA-bedrock-mask))
         (cc-superimpose (get-template-image 'Furrowfield-background)
                         (get-template-image 'Furrowfield-chunk-mask))
+        (cc-superimpose (get-template-image 'Furrowfield-background)
+                        (get-template-image 'Furrowfield-bedrock-mask))
         (cc-superimpose (get-template-image 'Khrumbul-Dun-background)
                         (get-template-image 'Khrumbul-Dun-chunk-mask))
+        (cc-superimpose (get-template-image 'Khrumbul-Dun-background)
+                        (get-template-image 'Khrumbul-Dun-bedrock-mask))
         (cc-superimpose (get-template-image 'Moonbrooke-background)
                         (get-template-image 'Moonbrooke-chunk-mask))
+        (cc-superimpose (get-template-image 'Moonbrooke-background)
+                        (get-template-image 'Moonbrooke-bedrock-mask))
         (cc-superimpose (get-template-image 'Malhalla-background)
                         (get-template-image 'Malhalla-chunk-mask))
         (cc-superimpose (get-template-image 'Anglers-Isle-background)
                         (get-template-image 'Anglers-Isle-chunk-mask))
+        (cc-superimpose (get-template-image 'Anglers-Isle-background)
+                        (get-template-image 'Anglers-Isle-bedrock-mask))
         (cc-superimpose (get-template-image 'Skelkatraz-background)
-                        (get-template-image 'Skelkatraz-chunk-mask))))
+                        (get-template-image 'Skelkatraz-chunk-mask))
+        (cc-superimpose (get-template-image 'Skelkatraz-background)
+                        (get-template-image 'Skelkatraz-bedrock-mask))))
 
 (module+ test
   (void (spot-check)))

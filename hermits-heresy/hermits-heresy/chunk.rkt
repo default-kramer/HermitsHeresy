@@ -74,13 +74,25 @@
     (vector-set! index 0 (* 96 32 32))
     (chunk (make-bytes data-size 0) index)))
 
-(define (load-chunk! [chunk : Chunk] [dqb2-bytes : Bytes] [addr : Fixnum])
-  (for ([y (in-range 96)])
-    (for ([z (in-range 32)])
-      (for ([x (in-range 32)])
-        (let ([block (get-block dqb2-bytes addr)])
-          (chunk-set! chunk #:x x #:z z #:y y #:block block)
-          (set! addr (ufx+ 2 addr))))))
+; Unfortunately we can't assume that all chunks will be the usual 0x30000 bytes!
+; The last chunk might be shorter than we would like.
+; See https://github.com/default-kramer/HermitsHeresy/discussions/7
+(define (load-chunk! [chunk : Chunk] [dqb2-bytes : Bytes] [addr : Fixnum] [end-addr : Fixnum])
+  (define y : Fixnum 0)
+  (define z : Fixnum 0)
+  (define x : Fixnum 0)
+  (let loop ([addr addr])
+    (let ([block (get-block dqb2-bytes addr)])
+      (chunk-set! chunk #:x x #:z z #:y y #:block block)
+      (set! x (ufx+ 1 x))
+      (when (= x 32)
+        (set! x 0)
+        (set! z (ufx+ 1 z)))
+      (when (= z 32)
+        (set! z 0)
+        (set! y (ufx+ 1 y)))
+      (when (ufx< addr (ufx+ -2 end-addr)) ; 2 bytes per block
+        (loop (ufx+ 2 addr)))))
   (void))
 
 (define (unload-chunk! [chunk : Chunk] [dqb2-bytes : Bytes] [addr : Fixnum])

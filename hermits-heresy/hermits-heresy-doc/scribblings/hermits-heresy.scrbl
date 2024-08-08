@@ -207,23 +207,48 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
    'IoA-bedrock-mask
    'IoA-chunk-mask
    'Furrowfield-background
+   'Furrowfield-bedrock-mask
    'Furrowfield-chunk-mask
    'Khrumbul-Dun-background
+   'Khrumbul-Dun-bedrock-mask
    'Khrumbul-Dun-chunk-mask
    'Moonbrooke-background
+   'Moonbrooke-bedrock-mask
    'Moonbrooke-chunk-mask
    'Malhalla-background
    'Malhalla-chunk-mask
    'Anglers-Isle-background
+   'Anglers-Isle-bedrock-mask
    'Anglers-Isle-chunk-mask
    'Skelkatraz-background
+   'Skelkatraz-bedrock-mask
    'Skelkatraz-chunk-mask)
  @(examples
    (require pict hermits-heresy)
    (scale (get-template-image 'IoA-background) 0.5))
 
- TODO: Explain the difference between a "bedrock mask" and a "chunk mask" and update
- the Basic Hill tutorial so it does not use the legacy @(racket 'IoA-mask).
+ The masks can be used to guide you while you work in your image editor.
+ The @(racket '*-bedrock-mask) images black out all pixels which lack "bedrock",
+ the indestructible block that forms the floor of the island.
+ While playing the game normally, it is impossible to place, destroy, or even trowel blocks
+ that are outside of the bedrock area.
+ But using Hermit's Heresy, it is possible to place blocks outside of the bedrock area.
+ If you do this, you won't be able to manipulate those blocks while playing normally.
+
+ If you want to avoid accidentally placing any blocks outside of the bedrock area,
+ consider passing the bedrock-mask image into @(racket bitmap->area) and then passing
+ the resulting area into @(racket protect-area!).
+
+ The @(racket '*-chunk-mask) images black out all pixels which cannot hold any blocks
+ under any circumstances, because there is no place in the save file that maps
+ to those coordinates.
+ Using these images with @(racket protect-area!) would be redundant.
+
+ @(examples
+   (require pict hermits-heresy)
+   (scale (cc-superimpose (get-template-image 'IoA-background)
+                          (get-template-image 'IoA-bedrock-mask))
+          0.5))
 }
 
 @defproc[(save-template-image [id symbol?])

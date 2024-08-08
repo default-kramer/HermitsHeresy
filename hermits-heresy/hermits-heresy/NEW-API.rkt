@@ -493,14 +493,27 @@
   ; and we'll just add some room to spare just in case
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
+  (define buffer-length (bytes-length buffer))
 
   (define layout (get-chunk-layout kind))
+  (define num-chunks (chunk-count layout))
   (define chunks
     (build-vector
-     (chunk-count layout)
+     num-chunks
      (lambda ([i : Index])
        (define chunk (make-empty-chunk))
-       (load-chunk! chunk buffer (dqb2-chunk-start-addr i))
+       (define end-addr
+         (let ([end-addr (dqb2-chunk-start-addr (ufx+ 1 i))])
+           (cond
+             [(<= end-addr buffer-length)
+              end-addr]
+             [(= i (sub1 num-chunks))
+              ; Silly special case for last chunk, just read up to the end of the file.
+              ; This is needed for Moonbrooke https://github.com/default-kramer/HermitsHeresy/discussions/7
+              buffer-length]
+             [else
+              (error "Uncompressed file is smaller than expected! No data for chunk:" i path)])))
+       (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr)
        chunk)))
   (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)
          (box empty-chunky-area)))
