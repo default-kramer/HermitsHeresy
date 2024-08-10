@@ -434,6 +434,7 @@
   (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
   (define all-empty? : Boolean #t)
   (define all-full? : Boolean #t)
+  (define semitransparent-warned? : Boolean #f)
   (let ([index 0])
     (for ([z (in-range depth)])
       (for ([x (in-range width)])
@@ -445,6 +446,16 @@
           (set! index (+ 4 index)) ; 4 bytes per pixel
           (cond
             [(> alpha 0)
+             (when (and (not semitransparent-warned?)
+                        (< alpha 255))
+               ; This is such an easy pitfall we should at least warn about it.
+               ; (I wonder if we could actually "do what the user meant" here?
+               ;  Would scaling the resulting elevation by alpha/255 work?)
+               (set! semitransparent-warned? #t)
+               (show-msg "!! WARNING !! Your hill bitmap contains at least 1 semi-transparent pixel (alpha=~a at ~a,~a).
+  If you see unexpected spikes, this is the most likely cause.
+  In file: ~a"
+                         alpha x z arg))
              (set! all-empty? #f)
              (hash-set! elevations (cons x z)
                         (max 0 (- 95 (quotient (max red green blue) 2))))]
