@@ -1,6 +1,7 @@
 #lang racket
 
-(require "../../NEW-API.rkt"
+(require hermits-heresy
+         (submod hermits-heresy undocumented)
          pict
          rackunit)
 
@@ -47,7 +48,7 @@
 ; It removed 929078 blocks.
 
 {module+ main
-  (save-dir "C:/Users/defau/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
+  (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
   (define stage (load-stage 'IoA 'B01))
   (define platform-block (block 'Seaside-Scene-Block))
 
@@ -55,7 +56,7 @@
     (stage->pictOLD
      stage (lambda (xz column)
              (define anything? #f)
-             (for ([y '(11 12 13 14 15 16 17 18 19 20)])
+             (for ([y '(1 2 3 4 5 6 7 8 9 10)])
                (let ([block (vector-ref column y)])
                  (when (and (not (= block 0))
                             (not (= block platform-block)))

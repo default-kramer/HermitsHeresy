@@ -20,6 +20,8 @@
            decorate-peaks!
            simple?
            stage->pict
+           stage->pictOLD
+           remove-blocks!
            ))
 
 (require "NEW-API.rkt"

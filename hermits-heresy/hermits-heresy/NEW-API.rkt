@@ -710,14 +710,17 @@
   (define area (get-area where stage))
   (define count 0)
   (define blocks (map (lambda ([b : Fixnum]) (ufxand b #x7FF)) unmasked-blocks))
+  (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz area])
-    (for ([y (in-range 96)])
-      (let* ([p (make-point xz y)]
-             [block (stage-read stage p)])
-        (when (and block
-                   (member (ufxand block #x7FF) blocks))
-          (stage-write! stage p 0)
-          (set! count (add1 count))))))
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (for ([y (in-range 96)])
+        (let* ([p (make-point xz y)]
+               [block (stage-read stage p)])
+          (when (and block
+                     (member (ufxand block #x7FF) blocks))
+            (stage-write! stage proof p 0)
+            (set! count (add1 count)))))))
   count)
 
 (define (blocks-hash [stage : Stage]
