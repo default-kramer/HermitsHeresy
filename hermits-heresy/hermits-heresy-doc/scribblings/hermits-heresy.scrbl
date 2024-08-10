@@ -259,7 +259,9 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
  and use them as a guide for drawing your own custom geographical features.
 }
 
-@defproc[(bitmap->hill [path path-string?])
+@defproc[(bitmap->hill [path path-string?]
+                       [#:semitransparent-handling semitransparent-handling
+                        (or/c 'adjust 'ignore) 'adjust])
          hill?]{
  Converts the given bitmap to a hill.
  Each pixel corresponds to a 1x1 column of blockspace.
@@ -277,6 +279,13 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
 
 This version discards the remainder of the division by 2.
 A future version may decide to respect it via the flat chisel.
+
+For the most accurate results, you should avoid semitransparent pixels in your hill.
+(In other words, alpha should always be either 0 or 255, no in-between values.)
+But in practice, it's very easy to accidentally introduce semitransparency.
+For this reason, @(racket semitransparent-handling) defaults to @(racket 'adjust)
+which reduces the elevation based on how transparent the pixel is.
+If you really know what you are doing, you might want to disable this behavior by using @(racket 'ignore).
 
 @defproc[(bitmap->area [path path-string?])
          area?]{

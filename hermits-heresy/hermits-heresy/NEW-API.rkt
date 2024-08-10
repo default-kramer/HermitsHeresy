@@ -418,8 +418,12 @@
               (lambda () 0)))
   (area->hill area elevation-func))
 
-(: bitmap->hill (-> (U (Instance Bitmap%) Path-String) Hill))
-(define (bitmap->hill arg)
+(: bitmap->hill (->* ((U (Instance Bitmap%) Path-String))
+                     (#:semitransparent-handling (U 'ignore 'adjust))
+                     Hill))
+(define (bitmap->hill arg #:semitransparent-handling [semitransparent-handling 'adjust])
+  ; Semi-transparent pixels were a pain point for the first two users (one of them was me),
+  ; so I think it's best that adjusting for this is the default behavior.
   (define bmp (bitmap arg))
   (define width : Fixnum
     (let ([w (pict-width bmp)])
@@ -446,19 +450,29 @@
           (set! index (+ 4 index)) ; 4 bytes per pixel
           (cond
             [(> alpha 0)
-             (when (and (not semitransparent-warned?)
-                        (< alpha 255))
-               ; This is such an easy pitfall we should at least warn about it.
-               ; (I wonder if we could actually "do what the user meant" here?
-               ;  Would scaling the resulting elevation by alpha/255 work?)
-               (set! semitransparent-warned? #t)
-               (show-msg "!! WARNING !! Your hill bitmap contains at least 1 semi-transparent pixel (alpha=~a at ~a,~a).
-  If you see unexpected spikes, this is the most likely cause.
-  In file: ~a"
-                         alpha x z arg))
+             (define raw-elevation : Fixnum
+               (max 0 (- 95 (quotient (max red green blue) 2))))
+             (define adjusted-elevation : Fixnum
+               (cond
+                 [(= alpha 255) raw-elevation]
+                 [else
+                  (when (not semitransparent-warned?)
+                    (set! semitransparent-warned? #t)
+                    (show-msg "!! WARNING !! Your hill bitmap contains at least 1 semi-transparent pixel (alpha=~a at ~a,~a).
+* ~a
+* In file: ~a"
+                              alpha x z
+                              (ann (case semitransparent-handling
+                                     [(adjust) "Elevation is being adjusted, but may not be exactly what you wanted."]
+                                     [(ignore) "Elevation is not being adjusted. If you see spikes, this is the most likely cause."])
+                                   String)
+                              arg))
+                  (case semitransparent-handling
+                    ; This adjustment formula looks good to me...
+                    [(adjust) (cast (round (/ (* raw-elevation alpha) 255)) Fixnum)]
+                    [(ignore) raw-elevation])]))
              (set! all-empty? #f)
-             (hash-set! elevations (cons x z)
-                        (max 0 (- 95 (quotient (max red green blue) 2))))]
+             (hash-set! elevations (cons x z) adjusted-elevation)]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)

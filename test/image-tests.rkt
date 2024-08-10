@@ -6,7 +6,9 @@
            (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 
-  (let ([hill (bitmap->hill "images/hill1.bmp")]
+  (let ([hill (bitmap->hill "images/hill1.bmp" #:semitransparent-handling 'ignore)]
+        ; This test was written when 'ignore was the hard-coded only behavior.
+        ; I should probably write another test for 'adjust.
         [expect #hash(
                  ; first row - left and right corners are fully transparent
                  ((0 . 0) . #f)
