@@ -81,9 +81,12 @@
   (define y : Fixnum 0)
   (define z : Fixnum 0)
   (define x : Fixnum 0)
+  (define non-empty-count : Fixnum 0)
   (let loop ([addr addr])
     (let ([block (get-block dqb2-bytes addr)])
       (chunk-set! chunk #:x x #:z z #:y y #:block block)
+      (when (not (ufx= 0 block))
+        (set! non-empty-count (ufx+ 1 non-empty-count)))
       (set! x (ufx+ 1 x))
       (when (= x 32)
         (set! x 0)
@@ -93,7 +96,7 @@
         (set! y (ufx+ 1 y)))
       (when (ufx< addr (ufx+ -2 end-addr)) ; 2 bytes per block
         (loop (ufx+ 2 addr)))))
-  (void))
+  non-empty-count)
 
 (define (unload-chunk! [chunk : Chunk] [dqb2-bytes : Bytes] [addr : Fixnum])
   (for ([y (in-range 96)])
