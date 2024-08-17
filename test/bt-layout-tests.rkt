@@ -1,16 +1,21 @@
 #lang racket
 
 (require rackunit
-         (submod "../hermits-heresy/hermits-heresy/BT-HACKING.rkt" for-testing))
+         (only-in (submod "../hermits-heresy/hermits-heresy/BT-HACKING.rkt" for-testing)
+                  get-layout print-runs)
+         (only-in (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
+                  get-bedrock-chunks))
 
 (define-syntax-rule (check-layout filename expect)
   (let* ([path (build-path "fresh-topias" filename)]
-         [layout (get-layout path)])
+         [chunks (get-bedrock-chunks path)]
+         [layout (get-layout chunks)])
     (check-equal? expect layout)))
 
 (define (show-runs filename)
-  (let* ([path (build-path "fresh-topias" filename)])
-    (print-runs path)))
+  (let* ([path (build-path "fresh-topias" filename)]
+         [chunks (get-bedrock-chunks path)])
+    (print-runs chunks)))
 
 ; Filename is the code you can give to Brownbeard to recreate the island.
 

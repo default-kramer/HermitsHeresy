@@ -15,45 +15,6 @@
 
 (define length/any (ann length (-> (Listof Any) Index))) ; is this type just better?
 
-; BEGIN DUPLICATE CODE
-
-(define-syntax-rule (dqb2-chunk-start-addr i)
-  ; Returns the address of chunk i within the uncompressed buffer
-  (ufx+ #x183FEF0 (ufx* i #x30000)))
-
-(define header-length #x110)
-
-(define (open-stgdat [path : Path])
-  (define all-bytes (file->bytes path))
-  (define header (subbytes all-bytes 0 header-length))
-  (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
-  ; I'm guessing IoA probably always uncompresses to exactly 163,053,024 bytes (including the header),
-  ; and we'll just add some room to spare just in case
-  (define buffer-size #xA000000)
-  (define buffer (zlib:uncompress compressed buffer-size))
-  ;(define buffer-length (bytes-length buffer))
-  buffer)
-
-; END DUPLICATE CODE
-
-(: get-bedrock-chunks (-> Path-String (Listof Chunk)))
-(define (get-bedrock-chunks pathstr)
-  (define path : Path
-    (if (string? pathstr)
-        (string->path pathstr)
-        (ann pathstr Path)))
-  (define buffer (open-stgdat path))
-  (let loop ([chunks : (Listof Chunk) (list)]
-             [i : Fixnum 0])
-    (define start-addr (dqb2-chunk-start-addr i))
-    (define end-addr (ufx+ start-addr (:ufx* 2 32 32))) ; just read y=0
-    (define chunk (make-empty-chunk))
-    (define block-count (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr))
-    (if (ufx= 0 block-count) ; empty chunk means we are done
-        (reverse chunks)
-        (loop (cons chunk chunks)
-              (ufx+ 1 i)))))
-
 (: chunk->pict (-> Chunk Pict))
 (define (chunk->pict chunk)
   (define bytes-per-pixel 4)
@@ -230,8 +191,8 @@
          (error "assert fail - all rows must have the same width!"))
        (define-syntax-rule (lognot expr msg)
          (let ([ret expr])
-           (when (not ret)
-             (println msg))
+           #;(when (not ret)
+               (println msg))
            ret))
        (define result
          (for/and : Boolean
@@ -262,8 +223,8 @@
                 [else
                  (lognot (< jaggedness 5) ; Probably too tolerant, see comments on the a1i60xvhuw test
                          (list "too jagged:" jaggedness " ..."))])])))
-       (when (not result)
-         (println (list "INVALIDATING" (show-row rowI) (show-row rowJ))))
+       (lognot result
+               (list "INVALIDATING" (show-row rowI) (show-row rowJ)))
        result]
       ; When we don't have two rows yet, it's valid
       [else #t]))
@@ -313,13 +274,11 @@
        (map show-row result)))
 
 {module+ for-testing
-  (define (get-layout [path : Path])
-    (let* ([chunks (get-bedrock-chunks path)])
-      (calc-chunk-layout chunks)))
+  (define (get-layout [chunks : (Listof Chunk)])
+    (calc-chunk-layout chunks))
 
-  (define (print-runs [path : Path])
-    (let* ([chunks (get-bedrock-chunks path)]
-           [runs (split-into-runs chunks)])
+  (define (print-runs [chunks : (Listof Chunk)])
+    (let* ([runs (split-into-runs chunks)])
       (for ([run runs])
         (println (map chunk->pict run)))))
   }

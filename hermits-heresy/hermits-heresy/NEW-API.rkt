@@ -34,7 +34,7 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide blocks-hash hill-ref rect area-bounds xz)
+  (provide get-bedrock-chunks blocks-hash hill-ref rect area-bounds xz)
 
   (define (hill-ref [hill : Hill] [loc : (Pairof Fixnum Fixnum)])
     (define locxz (xz (car loc) (cdr loc)))
@@ -510,7 +510,7 @@
   ; Returns the address of chunk i within the uncompressed buffer
   (ufx+ #x183FEF0 (ufx* i #x30000)))
 
-(define (open-stgdat [kind : Stgdat-Kind] [path : Path])
+(define (read-stgdat [path : Path-String])
   (define all-bytes (file->bytes path))
   (define header (subbytes all-bytes 0 header-length))
   (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
@@ -518,6 +518,11 @@
   ; and we'll just add some room to spare just in case
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
+  (values header buffer))
+
+(define (open-stgdat [kind : Stgdat-Kind] [path : Path])
+  (define-values (header buffer)
+    (read-stgdat path))
   (define buffer-length (bytes-length buffer))
 
   (define layout (get-chunk-layout kind))
@@ -556,6 +561,24 @@
                            (string->path slot)
                            (ann slot Path))]))
   (open-stgdat kind path))
+
+{module+ for-testing
+  (: get-bedrock-chunks (-> Path-String (Listof Chunk)))
+  ; Loads chunks but just y=0 to save time. For BT layout tests.
+  (define (get-bedrock-chunks path)
+    (define-values (header buffer)
+      (read-stgdat path))
+    (let loop ([chunks : (Listof Chunk) (list)]
+               [i : Fixnum 0])
+      (define start-addr (dqb2-chunk-start-addr i))
+      (define end-addr (ufx+ start-addr (:ufx* 2 32 32))) ; just read y=0
+      (define chunk (make-empty-chunk))
+      (define block-count (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr))
+      (if (ufx= 0 block-count) ; empty chunk means we are done
+          (reverse chunks)
+          (loop (cons chunk chunks)
+                (ufx+ 1 i)))))
+  }
 
 (: fill-area! (->* (Stage Area Integer #:y-max Fixnum)
                    (#:y-min Fixnum)
