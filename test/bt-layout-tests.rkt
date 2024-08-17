@@ -1,16 +1,16 @@
 #lang racket
 
 (require rackunit
-         (prefix-in ft: (submod "../hermits-heresy/hermits-heresy/BT-HACKING.rkt" for-testing)))
+         (submod "../hermits-heresy/hermits-heresy/BT-HACKING.rkt" for-testing))
 
 (define-syntax-rule (check-layout filename expect)
   (let* ([path (build-path "fresh-topias" filename)]
-         [layout (ft:get-layout path)])
+         [layout (get-layout path)])
     (check-equal? expect layout)))
 
-(define (print filename)
+(define (show-runs filename)
   (let* ([path (build-path "fresh-topias" filename)])
-    (ft:print-runs path)))
+    (print-runs path)))
 
 ; Filename is the code you can give to Brownbeard to recreate the island.
 
@@ -32,7 +32,18 @@
 ; Medium Coral Cay
 ; Okay, already we have a test case that needs us to put the first two runs,
 ; which have length 5 and 4, into a single row like [X X X X X _ X X X X]
-(check-layout "9y1ckuju01.BIN" "TODO see comments")
+(check-layout "9y1ckuju01.BIN" '((X X X X X _ X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X X)
+                                 (X X X X X X X X X _)
+                                 (X X X X X X X X X _)
+                                 (X X X X X X X _ _ _)
+                                 (_ X X _ _ _ _ _ _ _)
+                                 (_ X X _ _ _ _ _ _ _)))
 
 ; Small Coral Cay
 ; Useful test case because the first chunk has a "jaggedness" of 4 relative

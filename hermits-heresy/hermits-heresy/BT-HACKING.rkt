@@ -9,6 +9,8 @@
          typed/pict
          (prefix-in zlib: "zlib.rkt"))
 
+(module+ test (require typed/rackunit))
+
 (define-type Pict pict)
 
 (define length/any (ann length (-> (Listof Any) Index))) ; is this type just better?
@@ -141,14 +143,68 @@
 ; No, let's keep "run" to mean the same thing and introduce a new type "row"
 (define-type Row (Listof (U #f Chunk)))
 
-(: run->row-possibilities (-> (Listof Chunk) Integer (Listof Row)))
-(define (run->row-possibilities run max-width)
-  (define shortness (- max-width (length run)))
-  (for/list : (Listof Row)
-    ([i (in-range (+ 1 shortness))])
-    (let ([front (make-list i #f)]
-          [back (make-list (- shortness i) #f)])
-      (ann (append front run back) Row))))
+
+; Given some runs, returns all possible rows such that:
+; * The row contains all of the given runs in the same order
+; * The width of each row equals the requested width
+; * There is at least one #f ("spacer") between any two runs
+(: run-combiner (All (A) (-> (Listof (Listof A)) Integer (Listof (Listof (U #f A))))))
+; The generic type is for testability.
+(define (run-combiner runs width)
+  (define-type ROW (Listof (U #f A))) ; When A=Chunk then ROW=Row
+  (: recurse (-> ROW (Listof (Listof A)) (Listof #f) (Listof ROW)))
+  (define (recurse row-accum runs spacers)
+    (match (list runs spacers)
+      [(list (list)
+             leftover-spacers)
+       (let ([row (ann (append row-accum leftover-spacers) ROW)])
+         (list row))]
+      [(list (list run)
+             (list))
+       ; Final run without any trailing spacers is the special case.
+       ; (During normal recursion we require at least one trailing spacer)
+       (let ([row (ann (append row-accum run) ROW)])
+         (list row))]
+      [(list (list run more-runs ...)
+             (list spacer more-spacers ...))
+       (let ([expanded-row (ann (append row-accum run (list spacer)) ROW)])
+         (append
+          ; recursion option 1: actually build a new row
+          (recurse expanded-row more-runs more-spacers)
+          ; recursion option 2: just consume one spacer
+          (recurse (append row-accum (list spacer)) runs more-spacers)))]
+      [else ; need a spacer but we need one
+       (list)]))
+  (define num-spacers-needed (- width (length (flatten runs))))
+  (cond
+    [(< num-spacers-needed 0) (list)]
+    [else
+     (define spacers (make-list num-spacers-needed #f))
+     (recurse (list) runs spacers)]))
+
+; Specializes the generic function with the types we actually want.
+(: runs->rows (-> (Listof (Listof Chunk)) Integer (Listof Row)))
+(define (runs->rows runs width)
+  (run-combiner runs width))
+
+{module+ test
+  (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 8)
+                '([x1 x2 x3 #f x4 x5 x6 #f]
+                  [x1 x2 x3 #f #f x4 x5 x6]
+                  [#f x1 x2 x3 #f x4 x5 x6]))
+
+  (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 7)
+                '([x1 x2 x3 #f x4 x5 x6]))
+
+  (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 6)
+                (list))
+
+  (check-equal? (run-combiner '((x1 x2)) 5)
+                '([x1 x2 #f #f #f]
+                  [#f x1 x2 #f #f]
+                  [#f #f x1 x2 #f]
+                  [#f #f #f x1 x2]))
+  }
 
 (define (show-row [row : Row])
   (map (lambda (item) (if item 'X '_)) row))
@@ -156,21 +212,6 @@
 (define (calc-chunk-layout [chunks : (Listof Chunk)])
   (define runs (split-into-runs chunks))
   (define max-width (apply max (map length/any runs)))
-  
-  ; WARNING - THIS ALGORITHM IS INCOMPLETE
-  ; Remember this is possible!
-  #;(define small-coral-cay : Chunk-Layout
-      (parse-map '((X X X _ X X X)
-                   (X X X X X X X)
-                   (X X X X X X X)
-                   (X X X X X X X)
-                   (X X X X X X X)
-                   (X X X X X X X)
-                   (X X X X X _ _)
-                   (_ X X _ _ _ _)
-                   (_ X X _ _ _ _))))
-  ; So we also need to generate possibilities when you could put two runs into the same row.
-
   ; This algorithm generates all plausible solutions expecting to invalidate
   ; all but one of them as it progresses.
   ; When a run's width matches the max width, there is only one possibility.
@@ -248,17 +289,24 @@
              [dock-bot-row : Row
                            (cons #f (cons c (cons d (make-list (- max-width 3) #f))))])
          (reverse (cons dock-bot-row (cons dock-top-row row-accum))))]
-      [(list run more-runs ...)
-       (cond
-         [(= max-width (length run))
-          (loop more-runs (cons (ann run Row) row-accum))]
-         [else
-          ; TODO we also need to handle the case when two runs belong in the same row
-          ; But for now skip it
-          (define (recurse [row : Row])
-            (println (list "trying possi:" (show-row row)))
-            (loop more-runs (cons row row-accum)))
-          (ormap recurse (run->row-possibilities run max-width))])]))
+      [else
+       (: take-runs (-> Integer (U #f (Listof Row))))
+       (define (take-runs [take-count : Integer])
+         (cond
+           [(< (length remaining-runs) take-count)
+            #f]
+           [else
+            (define-values (runs more-runs)
+              (split-at remaining-runs take-count))
+            (define (try-row [row : Row])
+              (loop more-runs (cons row row-accum)))
+            (define row-possis (runs->rows runs max-width))
+            (define too-wide? ; stop recursion, it would also be too wide
+              (empty? row-possis))
+            (and (not too-wide?)
+                 (or (ormap try-row row-possis)
+                     (take-runs (+ 1 take-count))))]))
+       (take-runs 1)]))
 
   (define result (loop runs (list)))
   (and result
@@ -275,22 +323,3 @@
       (for ([run runs])
         (println (map chunk->pict run)))))
   }
-
-#;{begin
-    (define-syntax-rule (print-runs chunks)
-      (let ([runs (split-into-runs chunks)])
-        (for ([run runs])
-          (println (map chunk->pict run)))))
-
-    (define chunks12 (get-bedrock-chunks "Soggy/01/STGDAT12.BIN"))
-    (print-runs chunks12)
-    (calc-chunk-layout chunks12)
-
-    (define chunks13 (get-bedrock-chunks "Soggy/01/STGDAT13.BIN"))
-    (print-runs chunks13)
-    (calc-chunk-layout chunks13)
-
-    (define chunks16 (get-bedrock-chunks "Soggy/01/STGDAT16.BIN"))
-    (print-runs chunks16)
-    (calc-chunk-layout chunks16)
-    }
