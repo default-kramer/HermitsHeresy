@@ -128,7 +128,7 @@
        (define start-new-run?
          (cond
            [(= score 0) #t]
-           [(> jaggedness 2) #t]
+           [(> jaggedness 4) #t]
            [else #f]))
        (if start-new-run?
            (loop (cdr chunks)
