@@ -595,7 +595,9 @@
                  [else (if (string? slot)
                            (string->path slot)
                            (ann slot Path))]))
-  (open-stgdat kind path))
+  (define stgdat (open-stgdat kind path))
+  (show-msg "loaded stage: ~a" path)
+  stgdat)
 
 {module+ for-testing
   (: get-bedrock-chunks (-> Path-String (Listof Chunk)))
