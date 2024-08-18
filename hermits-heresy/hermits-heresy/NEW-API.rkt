@@ -49,6 +49,7 @@
          "ufx.rkt"
          "config-util.rkt"
          "blockdata/blockdef.rkt"
+         "infer-topia-layout.rkt"
          racket/hash
          typed/pict
          racket/fixnum
@@ -215,6 +216,9 @@
                             'Malhalla
                             'Anglers-Isle
                             'Skelkatraz
+                            'BT1
+                            'BT2
+                            'BT3
                             ))
 
 (: kind->filename (-> Stgdat-Kind String))
@@ -226,11 +230,15 @@
     [(Moonbrooke) "STGDAT04.BIN"]
     [(Malhalla) "STGDAT05.BIN"]
     [(Anglers-Isle) "STGDAT09.BIN"]
-    [(Skelkatraz) "STGDAT10.BIN"]))
+    [(Skelkatraz) "STGDAT10.BIN"]
+    [(BT1) "STGDAT12.BIN"]
+    [(BT2) "STGDAT13.BIN"]
+    [(BT3) "STGDAT16.BIN"]))
 
-(: get-chunk-layout (-> Stgdat-Kind Chunk-Layout))
+(: get-chunk-layout (-> Stgdat-Kind (U #f Chunk-Layout)))
 (define (get-chunk-layout kind)
   (case kind
+    [(BT1 BT2 BT3) #f]
     [(IoA) layout:IoA]
     [(Furrowfield) layout:Furrowfield]
     [(Khrumbul-Dun) layout:Khrumbul-Dun]
@@ -251,6 +259,7 @@
                ; Or maybe keep the buffer to know what the file had when it was loaded.
                [chunks : (Immutable-Vectorof Chunk)]
                [protected-area : (Boxof Chunky-Area)]
+               [chunk-layout : Chunk-Layout]
                )
   #:type-name Stage)
 
@@ -287,7 +296,7 @@
 
 (: stage-read (-> Stage Point (U #f Integer)))
 (define (stage-read stage point)
-  (let* ([chunk-layout (get-chunk-layout (stage-kind stage))]
+  (let* ([chunk-layout (stage-chunk-layout stage)]
          [chunky (chunk-translate chunk-layout point)])
     (and chunky
          (let* ([chunks (stage-chunks stage)]
@@ -306,7 +315,7 @@
 
 (: stage-write! (-> Stage Unprotected-Proof Point Integer (U #f Void)))
 (define (stage-write! stage proof point block)
-  (define chunk-layout (get-chunk-layout (stage-kind stage)))
+  (define chunk-layout (stage-chunk-layout stage))
   (define chunky (chunk-translate chunk-layout point))
   (cond
     [(not chunky) #f]
@@ -506,9 +515,11 @@
                 (set! item-count (ufx+ 1 item-count))))))))
   (show-msg "put-hill! placed ~a blocks, left ~a items intact" block-count item-count))
 
+(define chunk-length-bytes : Fixnum #x30000)
+
 (define-syntax-rule (dqb2-chunk-start-addr i)
   ; Returns the address of chunk i within the uncompressed buffer
-  (ufx+ #x183FEF0 (ufx* i #x30000)))
+  (ufx+ #x183FEF0 (ufx* i chunk-length-bytes)))
 
 (define (read-stgdat [path : Path-String])
   (define all-bytes (file->bytes path))
@@ -520,33 +531,57 @@
   (define buffer (zlib:uncompress compressed buffer-size))
   (values header buffer))
 
+(: read-chunks (-> Bytes (U #f Integer) Fixnum (Listof Chunk)))
+(define (read-chunks buffer expect-chunk-count chunk-length-bytes)
+  (define stop-count (and expect-chunk-count
+                          (sub1 expect-chunk-count)))
+  (define buffer-length (bytes-length buffer))
+  (let loop ([chunks : (Listof Chunk) (list)]
+             [i : Fixnum 0])
+    (define start-addr (dqb2-chunk-start-addr i))
+    (define end-addr
+      (let ([end-addr (ufx+ start-addr chunk-length-bytes)])
+        (cond
+          [(<= end-addr buffer-length)
+           end-addr]
+          [(= 699 i (or stop-count -1))
+           ; Silly special case for last chunk, just read up to the end of the file.
+           ; This is needed for Moonbrooke https://github.com/default-kramer/HermitsHeresy/discussions/7
+           buffer-length]
+          [else
+           (error "Uncompressed file is smaller than expected! No data for chunk:" i)])))
+    (define chunk (make-empty-chunk))
+    (define block-count (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr))
+    (cond
+      [(and stop-count
+            (= i stop-count))
+       (reverse (cons chunk chunks))]
+      [(and (not stop-count)
+            (ufx= 0 block-count))
+       (reverse chunks)]
+      [else
+       (loop (cons chunk chunks)
+             (ufx+ 1 i))])))
+
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
   (define-values (header buffer)
     (read-stgdat path))
-  (define buffer-length (bytes-length buffer))
-
-  (define layout (get-chunk-layout kind))
-  (define num-chunks (chunk-count layout))
-  (define chunks
-    (build-vector
-     num-chunks
-     (lambda ([i : Index])
-       (define chunk (make-empty-chunk))
-       (define end-addr
-         (let ([end-addr (dqb2-chunk-start-addr (ufx+ 1 i))])
-           (cond
-             [(<= end-addr buffer-length)
-              end-addr]
-             [(= i (sub1 num-chunks))
-              ; Silly special case for last chunk, just read up to the end of the file.
-              ; This is needed for Moonbrooke https://github.com/default-kramer/HermitsHeresy/discussions/7
-              buffer-length]
-             [else
-              (error "Uncompressed file is smaller than expected! No data for chunk:" i path)])))
-       (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr)
-       chunk)))
-  (stage (stgdat-file kind path) header buffer (vector->immutable-vector chunks)
-         (box empty-chunky-area)))
+  (define predefined-layout (get-chunk-layout kind))
+  (define expect-chunk-count (and predefined-layout
+                                  (chunk-count predefined-layout)))
+  (define chunk-list (read-chunks buffer expect-chunk-count chunk-length-bytes))
+  (define layout (or predefined-layout
+                     (infer-topia-layout chunk-list)))
+  (when (not layout)
+    (error "Failed to infer buildertopia layout from bedrock!
+  Assuming you have not modified the bedrock, please include
+  the island-generation password in a bug report."))
+  (stage (stgdat-file kind path)
+         header
+         buffer
+         (apply vector-immutable chunk-list)
+         (box empty-chunky-area)
+         layout))
 
 (: load-stage (-> Stgdat-Kind (U 'B00 'B01 'B02 Path-String) Stage))
 (define (load-stage kind slot)
@@ -568,16 +603,8 @@
   (define (get-bedrock-chunks path)
     (define-values (header buffer)
       (read-stgdat path))
-    (let loop ([chunks : (Listof Chunk) (list)]
-               [i : Fixnum 0])
-      (define start-addr (dqb2-chunk-start-addr i))
-      (define end-addr (ufx+ start-addr (:ufx* 2 32 32))) ; just read y=0
-      (define chunk (make-empty-chunk))
-      (define block-count (load-chunk! chunk buffer (dqb2-chunk-start-addr i) end-addr))
-      (if (ufx= 0 block-count) ; empty chunk means we are done
-          (reverse chunks)
-          (loop (cons chunk chunks)
-                (ufx+ 1 i)))))
+    (define chunk-length-bytes (:ufx* 2 32 32)) ; just read y=0
+    (read-chunks buffer #f chunk-length-bytes))
   }
 
 (: fill-area! (->* (Stage Area Integer #:y-max Fixnum)
@@ -643,9 +670,8 @@
            [val (stage-read stage p)])
       (println (list "y:" y "block:" val)))))
 
-(define (stage-full-area [kind : Stgdat-Kind])
-  (let* ([chunk-layout (get-chunk-layout kind)]
-         [depth (ufx* 32 (vector-length chunk-layout))]
+(define (stage-full-area [chunk-layout : Chunk-Layout])
+  (let* ([depth (ufx* 32 (vector-length chunk-layout))]
          [width (ufx* 32 (vector-length (vector-ref chunk-layout 0)))]
          [bounds (rect (xz 0 0) (xz width depth))])
     (define (contains? [xz : XZ])
@@ -654,7 +680,7 @@
 
 (define-syntax-rule (get-area x stage)
   (case x
-    [(all) (stage-full-area (stage-kind stage))]
+    [(all) (stage-full-area (stage-chunk-layout stage))]
     [else (ann x Area)]))
 
 (define (repair-sea! [stage : Stage] [where : (U 'all Area)] #:sea-level [sea-level : (U #f Fixnum) #f])
@@ -756,11 +782,11 @@
     (hash-keys colorizers))
   (define (get-argb [block : Fixnum])
     (hash-ref colorizers block (lambda () #f)))
-  (define area (stage-full-area (stage-kind stage)))
+  (define chunk-layout (stage-chunk-layout stage))
+  (define area (stage-full-area chunk-layout))
   (define-values (width depth) (area-dimensions area))
   (define bytes-per-pixel 4)
   (define pict-bytes (make-bytes (* bytes-per-pixel width depth)))
-  (define chunk-layout (get-chunk-layout (stage-kind stage)))
   (define chunks-per-row (ufxquotient width 32))
   (define row-of-chunks (ann (make-vector chunks-per-row #f)
                              (Mutable-Vectorof (U #f Chunk))))
@@ -819,7 +845,7 @@
 ; Keeping this for the destroy-everything project. Passes the whole column back to the caller
 (define (stage->pictOLD [stage : Stage]
                         [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
-  (define area (stage-full-area (stage-kind stage)))
+  (define area (stage-full-area (stage-chunk-layout stage)))
   (define-values (width depth) (area-dimensions area))
   (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
   (define index : Integer 0)
@@ -954,7 +980,7 @@
       [(6) (block 'Umber)]
       [else (error "assert fail")]))
   (define chunks (stage-chunks stage))
-  (define layout (get-chunk-layout (stage-kind stage)))
+  (define layout (stage-chunk-layout stage))
   (for ([row layout])
     (for ([chunk-id row])
       (when (fixnum? chunk-id)

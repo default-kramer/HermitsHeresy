@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit
-         (only-in (submod "../hermits-heresy/hermits-heresy/BT-HACKING.rkt" for-testing)
+         (only-in (submod "../hermits-heresy/hermits-heresy/infer-topia-layout.rkt" for-testing)
                   get-layout print-runs)
          (only-in (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
                   get-bedrock-chunks))
@@ -193,5 +193,3 @@
                                  (X X X X X X X)
                                  (_ X X _ _ _ _)
                                  (_ X X _ _ _ _)))
-
-(fail "don't forget to rename BT-HACKING and clean it up")

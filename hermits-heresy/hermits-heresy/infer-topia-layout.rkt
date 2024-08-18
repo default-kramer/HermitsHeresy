@@ -1,11 +1,38 @@
 #lang typed/racket
 
+(provide infer-topia-layout)
+
+; Uses the shape of the bedrock to infer the chunk layout.
+; This algorithm works in two steps:
+; 1) Detect "runs", sequences of chunks that belong
+;    next to each other in the same row.
+;    This also gives us the width of the layout, because there will always
+;    be at least one full-width run.
+; 2) Arrange the runs into "rows".
+;    This is a pretty classic FP algorithm where we process the runs sequentially
+;    and any time there is an ambiguity we explore all possibilities, trusting
+;    that only one of them will end up being valid.
+; The definition of "valid" is a little loose, but the basic idea is that
+; you compare the adjacent sides of the chunks and if there are too many
+; mismatches then those two sides must not belong together.
+;
+; I have a feeling that this algorithm is more complicated than it needs to be.
+; Now that I have it working, I wonder if I even need to detect runs at all?
+; I suspect I could simply process each chunk sequentially and try just 2 possibilities:
+;  * place the chunk at the current position
+;  * place a spacer are the current position (keep the chunk)
+; This assumes we know the width, which the "run" concept reliably detects,
+; but I also think we can determine the width from the number of chunks
+;  (e.g. N < count < M implies Medium size which is always 10 wide).
+
+
 (module+ for-testing
   (provide get-layout print-runs))
 
 (require "chunk.rkt"
          "basics.rkt"
          "ufx.rkt"
+         (only-in "layouts.rkt" parse-map)
          typed/pict
          (prefix-in zlib: "zlib.rkt"))
 
@@ -30,8 +57,6 @@
             (bytes-set! pict-bytes (ufx+ 2 index) (bitwise-bit-field argb 08 16))
             (bytes-set! pict-bytes (ufx+ 3 index) (bitwise-bit-field argb 00 08)))))))
   (argb-pixels->pict pict-bytes 32))
-
-#;(define-type Chunk-Layout (Vectorof (Vectorof (U #f Integer))))
 
 (define list-of-0 (make-list 32 (ann 0 Fixnum)))
 (define list-of-31 (make-list 32 (ann 31 Fixnum)))
@@ -272,6 +297,11 @@
   (define result (loop runs (list)))
   (and result
        (map show-row result)))
+
+(: infer-topia-layout (-> (Listof Chunk) (U #f Chunk-Layout)))
+(define (infer-topia-layout chunks)
+  (define result (calc-chunk-layout chunks))
+  (and result (parse-map result)))
 
 {module+ for-testing
   (define (get-layout [chunks : (Listof Chunk)])
