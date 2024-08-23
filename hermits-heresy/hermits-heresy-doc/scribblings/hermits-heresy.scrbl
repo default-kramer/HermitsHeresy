@@ -40,6 +40,7 @@ If you are using all 3 save slots, you will see 3 subdirectories:
 Copying the entire directory is the safest way to create a backup.
 You can prove this to yourself by doing something like this:
 @(itemlist
+  @item{Start and then exit DQB2. Leave Steam running.}
   @item{Using Windows Explorer, copy one of the directories (e.g. B00) to create a backup.}
   @item{Start DQB2, load that slot, place a single test block, and save your game.}
   @item{Exit DQB2.}
@@ -52,6 +53,16 @@ where an extremely small percentage of files were corrupted or lost.
 For this reason, I copy my backups to 2 different cloud storage providers.
 
 @subsection{Beware Steam Autocloud}
+@subsubsub*section{It might revert your changes}
+If you modify a save file while Steam is not running, it is likely that when you
+do start Steam it will overwrite your change, reverting to your previous cloud save.
+For this reason, you should start Steam and DQB2 before using Hermit's Heresy.
+I recommend exiting DQB2 whenever you run a Hermit's Heresy script,
+but you must leave Steam running.
+This seems to work; Steam will accept the save file modifications
+as if they had come from DQB2.
+
+@subsubsub*section{It might make files undeletable}
 One time I accidentally copied a STGDAT file into the same directory,
 resulting in a file named @tt{STGDAT01 - Copy.BIN}.
 Because of the way Steam Autocloud is configured, I am now unable to remove this file.
@@ -161,10 +172,15 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
                                  'Moonbrooke
                                  'Malhalla
                                  'Anglers-Isle
-                                 'Skelkatraz)]
+                                 'Skelkatraz
+                                 'BT1
+                                 'BT2
+                                 'BT3)]
                      [slot (or/c 'B00 'B01 'B02 path-string?)])
          stage?]{
  Loads a STGDAT file.
+
+ The kinds @(racket 'BT1 'BT2 'BT3) refer to Buildertopias 1, 2, and 3.
 
  The meaning of @(racket slot) is as follows:
  @(itemlist

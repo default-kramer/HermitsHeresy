@@ -7,17 +7,7 @@
          Malhalla
          Anglers-Isle
          Skelkatraz
-         ; Oh no, my fears were true...
-         ; Buildertopia layouts are not fixed!
-         ; Well, at least this means it must be saved in the file somewhere...
-         ; but do I stand a chance of figuring *that* out??
-
-         ;small-soggy-skerry
-         ;med-soggy-skerry
-         ;large-soggy-skerry
-         ;small-coral-cay
-         ;med-coral-cay
-         ;large-coral-cay
+         parse-map
          )
 
 (require "basics.rkt")
