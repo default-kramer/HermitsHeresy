@@ -12,6 +12,11 @@
          save-template-image
          bitmap->area
          protect-area!
+         traverse
+
+         ; Traversal lang
+         (rename-out [compile-traversal traversal])
+         block-matches? set-block!
          )
 
 (module+ undocumented
@@ -20,7 +25,16 @@
            decorate-peaks!
            simple?
            stage->pict
+
+           ; For alternate traversal
+           traverse-lambda
+           argbox-block
+           set-argbox-block!
            ))
 
 (require "NEW-API.rkt"
+         (only-in "traversal/untyped-traversal.rkt"
+                  compile-traversal block-matches? set-block!)
+         (only-in "traversal/traversal.rkt"
+                  argbox-block set-argbox-block!)
          "images.rkt")

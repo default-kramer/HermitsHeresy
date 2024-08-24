@@ -27,6 +27,8 @@
          save-stage!
          find-block-name
          protect-area!
+         traverse
+         traverse-lambda
          )
 
 (module+ everything
@@ -43,6 +45,7 @@
 
 (require (prefix-in zlib: "zlib.rkt")
          (prefix-in layout: "layouts.rkt")
+         (prefix-in t: "traversal/traversal.rkt")
          "chunk.rkt"
          "chunky-area.rkt"
          "basics.rkt"
@@ -96,38 +99,7 @@
         [else (error "Unknown block:" a)])))
 
 
-; == ERRATA ==
-; The following idea that there is a "simple block?" flag is not correct.
-; It is just coincidentally true in many cases.
-; But there exist at least some block IDs which do not require a 24-byte record
-; in the range #x400 - #x800, such as many liquids.
-; == END ERRATA ==
-; Blocks are saved as 2 bytes.
-; One of the bits is a "simple block?" flag.
-; A simple block is fully represented by these 2 bytes, while everything else
-; (e.g. decorative items) will have extra info stored in a 24-byte record elsewhere.
-; After endian adjustment we have this bit layout (applies to simple blocks only):
-;   cccc p0ii iiii iiii
-; where
-;   c - chisel status
-;   p - flag (not really: "placed by player?" flag)
-;   0 - zero (not really: zero here indicates simple block)
-;   i - block ID
-; The 4-bit chisel status can be one of:
-; * 0 - no chisel
-; * 1/3/5/7 - diagonal chisel N/E/S/W, matches (blueprint.chisel_status << 4)
-; * 2/4/6/8 - diagonal chisel SW/SE/NW/NE
-; * 9/a/b/c - concave chisel NW/SW/SE/NE
-; * d/e - flat chisel hi/lo
-; The p flag appears to indicate whether the block was created/placed by the game (0)
-; or placed by the player (1). I think the huge pyramid the NPCs build also uses a 0 flag.
-; And maybe all NPC-placed blocks do?
-; And when you use the trowel, the new blocks will have p=0 (confirmed with Seaweed-Styled on my IoA).
-;
-; Note that not every simple block can be chiseled.
-; For example, shallow (top level) seawater is a simple block (stored as #x1A4 aka "A4 01")
-; but it cannot be chiseled (actually I haven't tested what happens if you try...)
-;
+; TODO this list must be elsewhere
 ; For future reference, I believe that every non-simple block must have one of the following values:
 ;  04DE (1246)
 ;  0537 (1335)
@@ -294,7 +266,7 @@
 ; The Steam directory .../DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/
 (define save-dir (make-parameter (ann #f (U #f Path-String))))
 
-(: stage-read (-> Stage Point (U #f Integer)))
+(: stage-read (-> Stage Point (U #f Fixnum)))
 (define (stage-read stage point)
   (let* ([chunk-layout (stage-chunk-layout stage)]
          [chunky (chunk-translate chunk-layout point)])
@@ -1010,6 +982,57 @@
     [else
      (displayln (format "No matches found for ~a" name))])
   (void))
+
+(: traverse (-> Stage t:Traversal Any))
+(define (traverse stage trav)
+  (define args (t:argbox 0 0 0 0))
+  (define callback ((t:traversal-callback-maker trav) args))
+  (when (impersonator? callback)
+    ; Slowdown observed from 11s to 13s on the command line,
+    ; and it gets worse in DrRacket. So this is worth it IMO.
+    (error "assert fail: callback is an impersonator"))
+  (define protected-area (unbox (stage-protected-area stage)))
+  (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (define-values (x z) (xz->values xz))
+      (t:set-argbox-x! args x)
+      (t:set-argbox-z! args z)
+      (for ([y : Fixnum (ufx-in-range 96)])
+        (define p (make-point xz y))
+        (define block : Fixnum
+          (or (stage-read stage p)
+              (error "TODO is this possible?
+If so, just do an area-intersect with the stage full area, right?")))
+        (t:set-argbox-y! args y)
+        (t:set-argbox-block! args block)
+        (callback)
+        (stage-write! stage proof p (t:argbox-block args))
+        )))
+  (void))
+
+(: traverse-lambda (-> Stage (-> t:Argbox Any) Any))
+(define (traverse-lambda stage callback)
+  (define args (t:argbox 0 0 0 0))
+  (define protected-area (unbox (stage-protected-area stage)))
+  (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
+    (define proof (unprotected? protected-area xz))
+    (when proof
+      (t:set-argbox-x! args (xz-x xz))
+      (t:set-argbox-z! args (xz-z xz))
+      (for ([y : Fixnum (ufx-in-range 96)])
+        (define p (make-point xz y))
+        (define block : Fixnum
+          (or (stage-read stage p)
+              (error "TODO is this possible?
+If so, just do an area-intersect with the stage full area, right?")))
+        (t:set-argbox-y! args y)
+        (t:set-argbox-block! args block)
+        (callback args)
+        (stage-write! stage proof p (t:argbox-block args))
+        )))
+  (void))
+
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,
 ; but the following code takes about 3 minutes to load my IoA.

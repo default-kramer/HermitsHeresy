@@ -20,6 +20,9 @@
 ; Note: This is agnostic of any stage's Chunk-Layout; it simply borrows
 ; the concept of 32x32 chunks which will have similar performance benefits.
 ; But don't assume that any chunk-id will match a chunk-id relative to a "real" Chunk-Layout.
+; (Wait, why not? Because)
+; The bytevec is relative to a 0,0 top left corner and W32;
+; the bounds is irrelevant to finding which bit corresponds to a given coordinate.
 ;
 ; Note: This might be a questionable optimization. I measured that it performed better
 ; than a HashTable. Then after some more time I realized that most call sites should only test
@@ -34,8 +37,8 @@
   (define-values (x z) (xz->values xz-in))
   (define chunk-num (ufx+ (ufx* W32 (ufxquotient z 32))
                           (ufxquotient x 32)))
-  (and (>= chunk-num 0)
-       (< chunk-num (vector-length bytevec))
+  (and (ufx>= chunk-num 0)
+       (ufx< chunk-num (vector-length bytevec))
        (chunky chunk-num (xz (ufxmodulo x 32)
                              (ufxmodulo z 32)))))
 
@@ -70,6 +73,26 @@
        (let ([bytes (vector-ref bytevec (chunky-chunk-id coord))])
          (define-values (index mask) (index+mask coord))
          (ufx= mask (ufxand mask (bytes-ref bytes index))))))
+
+(: chunk-layout->chunky-area (-> Chunk-Layout Chunky-Area))
+(define (chunk-layout->chunky-area layout)
+  (define W32 (vector-length (vector-ref layout 0)))
+  (define H32 (vector-length layout))
+  (define bytevec : (Vectorof Bytes)
+    (make-vector (ufx* W32 H32) empty-bytes))
+  (define i : Fixnum 0)
+  (for ([z32 (in-range H32)])
+    (define row (vector-ref layout z32))
+    (for ([x32 (in-range W32)])
+      (when (vector-ref row x32)
+        (vector-set! bytevec i full-bytes))
+      (set! i (ufx+ 1 i))))
+  (define max-x (ufx* 32 W32))
+  (define max-z (ufx* 32 H32))
+  (chunky-area (vector->immutable-vector bytevec)
+               W32
+               (rect (xz 0 0)
+                     (xz max-x max-z))))
 
 (: bitmap->chunky-area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->chunky-area arg)
