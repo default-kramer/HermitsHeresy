@@ -46,14 +46,25 @@
 
 (define-type Callback (-> AnyValues))
 
-(struct traversal ([callback-maker : (-> Argbox Callback)])
+(struct traversal ([callback-maker : (-> Argbox Callback)]
+                   [expanded : (Syntaxof Any)]
+                   [rewritten : (Syntaxof Any)])
   #:transparent #:type-name Traversal
   #:property prop:authentic #t)
 
-(define (make-traversal [callback-maker : (-> Argbox Callback)])
-  ; This proc will be provided unsafely
+(define (make-traversal [callback-maker : (-> Argbox Callback)]
+                        [expanded : Any]
+                        [rewritten : Any])
+  ; This proc will be provided unsafely (internally, not to the world).
   ; I wouldn't mind the impersonator on the (-> Callback-Args Callback) maker proc,
   ; but the Callback itself also gets impersonated.
-  ; I see no reason to impersonate this (-> Any) proc, especially when doing so
-  ; produces observable slowdown.
-  (traversal callback-maker))
+  ; I see no reason to impersonate the callback proc because
+  ; 1) doing so produces observable slowdown
+  ; 2) the type (-> AnyValues) needs no impersonation -- the only thing
+  ;    that could go wrong is passing in >0 arguments which will safely
+  ;    fail with a "wrong arity" exception at runtime.
+  (when (not (syntax? expanded))
+    (error "assert fail - expanded was not syntax"))
+  (when (not (syntax? rewritten))
+    (error "assert fail - rewritten was not syntax"))
+  (traversal callback-maker expanded rewritten))

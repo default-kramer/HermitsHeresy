@@ -48,33 +48,55 @@
    )
 
 
+#;{begin ;module+ main
+    ;(copy-all-save-files! #:from 'B02 #:to 'B00)
+    (define B00 (load-stage 'IoA 'B00))
+
+    ; Of course, the following timing depends on what is actually in my B00 save slot.
+    ; What's important is that the macro traversal outperforms the lambda traversal,
+    ; or at least equals it.
+    ; For timing inside DrRacket, close it, run `raco setup --pkgs hermits-heresy`,
+    ; and restart DrRacket with only this file open.
+
+    ; Takes about 14 seconds on the command line or 15 seconds in DrRacket.
+    ; Full script takes about 21 seconds in DrRacket.
+    #;(time (let ([lava (block 'Lava)])
+              (traverse-lambda B00 (lambda (args)
+                                     (case (argbox-block args)
+                                       [(718 2766) (set-argbox-block! args lava)]
+                                       [else #f])))))
+
+    ; Takes about 11 seconds on the command line or 13 seconds in DrRacket.
+    ; Full script takes about 18 seconds in DrRacket.
+    (begin
+      (define trav
+        (let ([lava (block 'Lava)])
+          (traversal
+           (when (block-matches? 718 2766)
+             (set-block! lava)))))
+      (time (traverse B00 trav)))
+
+    ;(save-stage! B00)
+    }
+
 {begin ;module+ main
-  ;(copy-all-save-files! #:from 'B02 #:to 'B00)
-  (define B00 (load-stage 'IoA 'B00))
+  (define stage (load-stage 'BT1 'B00))
 
-  ; Of course, the following timing depends on what is actually in my B00 save slot.
-  ; What's important is that the macro traversal outperforms the lambda traversal,
-  ; or at least equals it.
-  ; For timing inside DrRacket, close it, run `raco setup --pkgs hermits-heresy`,
-  ; and restart DrRacket with only this file open.
-
-  ; Takes about 14 seconds on the command line or 15 seconds in DrRacket.
-  ; Full script takes about 21 seconds in DrRacket.
-  #;(time (let ([lava (block 'Lava)])
-            (traverse-lambda B00 (lambda (args)
-                                   (case (argbox-block args)
-                                     [(718 2766) (set-argbox-block! args lava)]
-                                     [else #f])))))
-
-  ; Takes about 11 seconds on the command line or 13 seconds in DrRacket.
-  ; Full script takes about 18 seconds in DrRacket.
-  (begin
-    (define trav
-      (let ([lava (block 'Lava)])
-        (traversal
-         (when (block-matches? 718 2766)
-           (set-block! lava)))))
-    (time (traverse B00 trav)))
-
-  ;(save-stage! B00)
+  (define chert-count 0)
+  (define lifted-chert-count 0)
+  (define trav
+    (traversal
+     (cond
+       [(block-matches? 'Umber)
+        (set-block! 'Lava)]
+       [(block-matches? 'Lumpy-Umber)
+        (set-block! 'Ice)]
+       [(not (block-matches? 0))
+        (set! chert-count (+ 1 chert-count))
+        (set-block! (let ()
+                      (set! lifted-chert-count (+ 1 lifted-chert-count))
+                      'Chert))])))
+  (time (traverse stage trav))
+  (println (list "chert-count" chert-count "lifted" lifted-chert-count))
+  ;(save-stage! stage)
   }

@@ -7,18 +7,29 @@
          )
 
 (require "traversal.rkt"
+         "../TEMP.rkt"
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam
          (for-syntax "compile-block-ids.rkt"
+                     racket/match
                      racket/list))
 
 (module+ test (require rackunit))
+
+(define-syntax-rule (HHEXPR a) a)
 
 ; Sometimes we definitely want to lift exprs outside of the loop.
 ; Other times we definitely want to keep them inside the loop.
 ; I'm not yet sure what the default behavior should be, so let's be explicit
 ; whenever it matters.
+; NOPE - I think the correct thing to do is to use lift to request that the
+; expression be lifted, but if it contains a nolift then it cannot be.
+; This would mean you have to be very careful with nolift to avoid accidentally
+; thwarting an important lift...
+; AHA Maybe what we really need is 3 things: mustlift, lift, and nolift.
+; Both mustlift and lift request that the expression be lifted,
+; but only mustlift will cause an error if it contains a nolift.
 (define-syntax-rule (lift a) a)
 (define-syntax-rule (nolift a) a)
 
@@ -48,8 +59,8 @@
     [(constant ...) #t]
     [else (member BLOCK (list runtime ...))]))
 
-(define-syntax-rule (set-block! block)
-  (do! (set! BLOCK block)))
+(define-syntax-rule (set-block! id)
+  (HHEXPR (do! (set! BLOCK (lift (block id))))))
 
 (define-syntax (block-matches? stx)
   (syntax-case stx ()
@@ -64,28 +75,80 @@
          (::block-matches? [#,@constants]
                            [#,@runtime])))]))
 
-(define-syntax-rule (compile-callback expr ...)
-  (lambda (args)
-    (when (not (argbox? args))
-      ; This check will only be executed once per traversal and it allows
-      ; us to confidently use the unsafe: procs that follow.
-      (error "assert fail - expected callback args"))
-    (let (; here is where lifted expressions will go
-          )
-      (lambda ()
-        (let ()
-          (syntax-parameterize ([BLOCK (make-set!-transformer
-                                        (lambda (stx)
-                                          (syntax-case stx (set!)
-                                            [(set! a b)
-                                             #'(unsafe:validate-fixnum-and-set-block! args b)]
-                                            [a
-                                             (identifier? #'a)
-                                             #'(unsafe:argbox-block args)])))])
-            expr ...))))))
+
+; = myexpand =
+; Performs partial expansion.
+; If a macro expands to (HHEXPR expr) it will accept the expansion and
+; replace it with just `expr` (dropping the HHEXPR wrapper).
+; All other macros are left unexpanded.
+(define-for-syntax (myexpand stx)
+  (define (step stx)
+    (local-expand stx 'expression (list #'HHEXPR)))
+  (syntax-case stx ()
+    [(a b ...)
+     (let ([exp (step stx)])
+       (syntax-case exp (HHEXPR)
+         [(HHEXPR a)
+          (let ()
+            ;(println "expand step:")
+            ;(println exp)
+            (myexpand #'a))]
+         [anything
+          (datum->syntax stx (map myexpand (syntax->list stx)) stx stx)]))]
+    [anything stx]))
+
+; = rewrite =
+; Replaces each (lift expr) with a generated identifier.
+; The lift-accum is a boxed list that will contain pairs
+; of (cons generated-id expr) for each (lift expr) that was replaced.
+(define-for-syntax (rewrite orig-stx lift-accum)
+  (define (recurse stx)
+    ;(println (list "recursing" stx))
+    (rewrite stx lift-accum))
+  (define stx
+    (syntax-case orig-stx ()
+      [(stuff ...)
+       (let ([items (syntax->list orig-stx)])
+         (datum->syntax orig-stx (map recurse items) orig-stx orig-stx))]
+      [_ orig-stx]))
+  (syntax-case stx (lift)
+    [(lift expr)
+     (let ([id (datum->syntax #f (gensym))])
+       (set-box! lift-accum (cons (cons id #'expr)
+                                  (unbox lift-accum)))
+       id)]
+    [_ stx]))
+
+(define-syntax-rule (callback-body args body)
+  (syntax-parameterize ([BLOCK (make-set!-transformer
+                                (lambda (stx)
+                                  (syntax-case stx (set!)
+                                    [(set! a b)
+                                     #'(unsafe:validate-fixnum-and-set-block! args b)]
+                                    [a
+                                     (identifier? #'a)
+                                     #'(unsafe:argbox-block args)])))])
+    body))
 
 (define-syntax (compile-traversal stx)
   (syntax-case stx ()
     [(_ expr ...)
-     (syntax/loc stx
-       (unsafe:make-traversal (compile-callback expr ...)))]))
+     (let* ([orig #'(let () expr ...)]
+            [expanded (myexpand orig)]
+            [lift-accum (box (list))]
+            [rewritten (rewrite expanded lift-accum)])
+       (with-syntax ([(lifted-id ...) (map car (unbox lift-accum))]
+                     [(lifted-expr ...) (map cdr (unbox lift-accum))])
+         (quasisyntax/loc stx
+           (unsafe:make-traversal
+            (lambda (args)
+              (when (not (argbox? args))
+                ; This check will only be executed once per traversal and it allows
+                ; us to confidently use the unsafe: procs inside callback-body.
+                (error "assert fail - expected callback args"))
+              (let ([lifted-id lifted-expr]
+                    ...)
+                (lambda () (callback-body args #,rewritten))))
+            #'#,expanded
+            #'#,rewritten
+            ))))]))
