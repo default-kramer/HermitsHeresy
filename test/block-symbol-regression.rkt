@@ -2,6 +2,7 @@
 
 {module+ test
   (require hermits-heresy rackunit
+           (only-in "../hermits-heresy/hermits-heresy/simple.rkt" simple?)
            (rename-in (submod "../hermits-heresy/hermits-heresy/blockdata/blockdef.rkt" for-tests)
                       [all-symbols currently-defined-symbols]))
 
@@ -283,42 +284,53 @@
                                          Damask-Design-Block
                                          Refined-Design-Block
                                          Classy-Cross-Block
-                                         Clear-Water-Full-Block
-                                         Clear-Water-Shallow-Block
-                                         Clear-Water-Surface-Block
-                                         Clear-Water-Small-Block
-                                         Hot-Water-Full-Block
-                                         Hot-Water-Shallow-Block
-                                         Hot-Water-Surface-Block
-                                         Hot-Water-Small-Block
-                                         Poison-Full-Block
-                                         Poison-Shallow-Block
-                                         Poison-Surface-Block
-                                         Poison-Small-Block
-                                         Liquid-Lava-Full-Block
-                                         Liquid-Lava-Shallow-Block
-                                         Liquid-Lava-Surface-Block
-                                         Liquid-Lava-Small-Block
-                                         Bottomless-Swamp-Full-Block
-                                         Bottomless-Swamp-Shallow-Block
-                                         Bottomless-Swamp-Surface-Block
-                                         Bottomless-Swamp-Small-Block
-                                         Filthy-Water-Full-Block
-                                         Filthy-Water-Shallow-Block
-                                         Filthy-Water-Surface-Block
-                                         Filthy-Water-Small-Block
-                                         Sea-Water-Full-Block
-                                         Sea-Water-Shallow-Block
-                                         Sea-Water-Surface-Block
-                                         Sea-Water-Small-Block
-                                         Plasma-Full-Block
-                                         Plasma-Shallow-Block
-                                         Plasma-Surface-Block
-                                         Plasma-Small-Block))
+                                         ; OOPS - gonna go ahead and make a breaking change.
+                                         ; Probably none of these should have been included.
+                                         ; https://github.com/default-kramer/HermitsHeresy/issues/11
+                                         #;(oops lets pretend these were never included:
+                                                 Clear-Water-Full-Block
+                                                 Clear-Water-Shallow-Block
+                                                 Clear-Water-Surface-Block
+                                                 Clear-Water-Small-Block
+                                                 Hot-Water-Full-Block
+                                                 Hot-Water-Shallow-Block
+                                                 Hot-Water-Surface-Block
+                                                 Hot-Water-Small-Block
+                                                 Poison-Full-Block
+                                                 Poison-Shallow-Block
+                                                 Poison-Surface-Block
+                                                 Poison-Small-Block
+                                                 Liquid-Lava-Full-Block
+                                                 Liquid-Lava-Shallow-Block
+                                                 Liquid-Lava-Surface-Block
+                                                 Liquid-Lava-Small-Block
+                                                 Bottomless-Swamp-Full-Block
+                                                 Bottomless-Swamp-Shallow-Block
+                                                 Bottomless-Swamp-Surface-Block
+                                                 Bottomless-Swamp-Small-Block
+                                                 Filthy-Water-Full-Block
+                                                 Filthy-Water-Shallow-Block
+                                                 Filthy-Water-Surface-Block
+                                                 Filthy-Water-Small-Block
+                                                 Sea-Water-Full-Block
+                                                 Sea-Water-Shallow-Block
+                                                 Sea-Water-Surface-Block
+                                                 Sea-Water-Small-Block
+                                                 Plasma-Full-Block
+                                                 Plasma-Shallow-Block
+                                                 Plasma-Surface-Block
+                                                 Plasma-Small-Block)))
   (for ([sym historically-defined-symbols])
     (check-true (integer? (block sym))))
 
   ; Make sure all current symbols are in the list
   (for ([sym currently-defined-symbols])
     (check-true (and (member sym historically-defined-symbols) #t)))
+
+
+  ; Make sure that all valid symbols resolve to a simple? block ID.
+  ; More specifically, make sure that (block 'some-liquid) returns the simple ID
+  ; and not one of the item ID variants of that liquid.
+  (for ([sym historically-defined-symbols])
+    (check-true (simple? (block sym))))
   }

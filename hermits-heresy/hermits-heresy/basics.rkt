@@ -5,9 +5,11 @@
          Rect (struct-out rect)
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
+         simple?
          )
 
-(require "ufx.rkt")
+(require "ufx.rkt"
+         "simple.rkt")
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.

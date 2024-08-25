@@ -137,17 +137,6 @@
     [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
     )
 
-; The precise definition of "simple?" is "any block which can be placed
-; into the blockdata without adding extra information anywhere else."
-; So any item which requires a 24-byte record is not simple.
-; And I think everything else is simple? Time will tell...
-(: simple? (-> Integer Boolean))
-(define (simple? block)
-  (case block
-    ; Copied these from the turtle-insect data files:
-    [(1246 1335 1424 1513 1602 1691 1780 1869 2047) #f]
-    [else #t]))
-
 {module+ test
   (check-true (simple? (block 'Clodstone)))
   (check-false (simple? 2047))

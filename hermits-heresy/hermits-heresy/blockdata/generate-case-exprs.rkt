@@ -6,6 +6,7 @@
 ;  rather see the diff in source control whenever I update it.)
 
 (require json
+         "../simple.rkt"
          racket/struct)
 
 (module+ test (require rackunit))
@@ -68,11 +69,14 @@
 (define blocks (map jblock->block jblocks))
 
 (set! blocks (filter (lambda (blk)
-                       ; skip blocks I don't understand for now
-                       (not (member (block-symbol blk) '(Default-Block
-                                                         Air?
-                                                         White-Unused-Block
-                                                         Item))))
+                       (and #t
+                            ; skip blocks I don't understand for now
+                            (not (member (block-symbol blk) '(Default-Block
+                                                              Air?
+                                                              White-Unused-Block
+                                                              Item)))
+                            ; only include simple blocks (filter out all those liquids)
+                            (simple? (block-id blk))))
                      blocks))
 
 

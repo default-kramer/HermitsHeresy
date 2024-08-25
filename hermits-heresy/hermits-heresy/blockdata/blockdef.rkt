@@ -104,9 +104,5 @@
     (check-equal? approx '((Poisonous-Peat 2)
                            (Poison-shallow-block 2)
                            (Poison-surface-block 2)
-                           (Poison-full-block 2)
-                           (Poison-Full-Block 2)
-                           (Poison-Shallow-Block 2)
-                           (Poison-Surface-Block 2)
-                           (Poison-Small-Block 2))))
+                           (Poison-full-block 2))))
   }
