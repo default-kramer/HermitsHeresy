@@ -5,7 +5,7 @@
 (define build-deps '())
 ;(define scribblings '(("scribblings/plisqin.scrbl" (multi-page))))
 (define pkg-desc "Power Tools for DQB2")
-(define version "0.1")
+(define version "0.2")
 (define pkg-authors '(|Ryan Kramer|))
 
 ; I just copied turtle-insect's license because maybe I would copy some code too.
