@@ -65,79 +65,8 @@
                                (#:exists-ok? Any)
                                Any)])
 
-(module+ test
-  (require typed/rackunit))
-
-#;(define-syntax-rule (define-blocks f [id val IGNORE ...] ...)
-    (define (f a)
-      (case a
-        ; Hmm, so far it looks like many or all blocks can be used without the following #x800 mask
-        ; (so having 0 for the hi byte)... and the zero-hi-byte indicates a prebuilt block?
-        ; The #x800 seems to indicate a player-placed block?
-        [(id) (bitwise-ior #x800 val)]
-        ...
-        [else (error "Unknown block:" a)])))
-
-
-; TODO this list must be elsewhere
-; For future reference, I believe that every non-simple block must have one of the following values:
-;  04DE (1246)
-;  0537 (1335)
-;  0590 (1424)
-;  05E9 (1513)
-;  0642 (1602)
-;  069B (1691)
-;  06F4 (1780)
-;  074D (1869)
-;  07FF (2047)
-
-; This has been replaced by the Sapphire's json data.
-; Keeping it here just in case I need to refer to it
-#;(define-blocks block
-    ; x01 - unbreakable floor of map
-    [Earth #x02]
-    [Grassy-Earth #x03]
-    [Limegrassy-Earth #x04]
-    [Tilled-Soil #x05]
-    [Clay #x06] ; unsure
-    [Mossy-Earth #x07]
-    [Chalk #x08]
-    [Chunky-Chalk #x09]
-    [Obsidian #x0A]
-    [Sand #x0B]
-    [Sandstone #x0C]
-    [Sandy-Sandstone #x0D]
-    ; x0E - a reddish block
-    [Ash #x0F] ; unsure
-    ; x10 - illegal
-    ; x11 - purple peat?
-    [Accumulated-Snow #x12] ; unsure
-    [Snow #x13]
-    [Ice #x14]
-    [Clodstone #x15]
-    [Crumbly-Clodstone #x16]
-    [Basalt #x17]
-    ; x18 - nothing?
-    [Lava #x19]
-    [Vault-Wall #x1A] ; Vault Wall that I place saves as #xA7A I think...?
-    [Viny-Vault-Wall #x1B]
-    ; ======
-    [Light-Dolomite #x82]
-    [Dark-Dolomite #x83]
-    [Stony-Soil #x8D]
-    [Seaside-Sand #x92]
-    [Arid-Earth #x93]
-    [Chert #x95]
-    [Chunky-Chert #x99]
-    [Spoiled-Soil #x9C]
-    [Umber #xD1]
-    [Lumpy-Umber #xF1]
-    [Seaweed-Styled-Block #x2CC #:name "Seaweed-Styled Block"]
-    [Seaside-Scene-Block #x2CE]
-    [Old-Skool-Wall-Block #x333 #:name "Old-Skool Wall Block"]
-    )
-
 {module+ test
+  (require typed/rackunit)
   (check-true (simple? (block 'Clodstone)))
   (check-false (simple? 2047))
   (check-true (simple? 0)) ; emptiness is simple
