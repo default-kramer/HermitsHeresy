@@ -1,6 +1,6 @@
 #lang racket
 
-(provide compile-block-ids
+(provide compile-block-ids validate-block-id
          (struct-out compiled-blocks))
 
 (require "../blockdata/blockdef.rkt")
@@ -69,6 +69,15 @@
                         runtime-exprs))]
     [else
      (raise-syntax-error 'compile-block-ids "needed a list of block IDs" stx)]))
+
+(define (validate-block-id val)
+  #;(-> Any (U #f Fixnum))
+  (cond
+    [(fixnum? val) val]
+    [(symbol? val)
+     (let ([def (symbol->blockdef val)])
+       (and def (blockdef-id def)))]
+    [else #f]))
 
 {module+ test
   (define-syntax-rule (check-constants result num ...)

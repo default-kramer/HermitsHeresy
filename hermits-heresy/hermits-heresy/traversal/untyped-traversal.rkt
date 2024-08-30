@@ -3,7 +3,7 @@
 (provide compile-traversal
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
-         lift nolift do! block-matches? set-block!
+         lift nolift do! block-matches? set-block! HHEXPR
          )
 
 (require "traversal.rkt"
@@ -51,29 +51,55 @@
 
 (define-syntax-parameter BLOCK #f)
 
+(define-for-syntax disable-context-check? (make-parameter #f))
+
+(define-for-syntax (check-context stx)
+  (when (not (disable-context-check?))
+    (let ([val (syntax-parameter-value #'BLOCK)])
+      (when (not (syntax-parameter-value #'BLOCK))
+        (raise-syntax-error #f "Cannot be used outside of a traversal" stx)))))
+
 (define-syntax-rule (::block-matches? [constant ...]
                                       [runtime ...])
   ; We know that BLOCK is always a fixnum, but it doesn't seem
   ; that using unsafe-fxand gives any significant boost here.
-  (case (fxand BLOCK #x7FF)
-    [(constant ...) #t]
-    [else (member BLOCK (list runtime ...))]))
-
-(define-syntax-rule (set-block! id)
-  (HHEXPR (do! (set! BLOCK (lift (block id))))))
+  (let ([b (fxand BLOCK #x7FF)])
+    (case b
+      [(constant ...) #t]
+      [else (member b (list runtime ...))])))
 
 (define-syntax (block-matches? stx)
+  (check-context stx)
   (syntax-case stx ()
     [(_ block ...)
      (let* ([result (compile-block-ids #'(block ...))]
             [constants (compiled-blocks-constant-values result)]
             [runtime (compiled-blocks-runtime-exprs result)])
-       (println result)
-       (when (not (empty? runtime))
-         (println (list "RUNTIME BLOCK IDS" runtime)))
        (quasisyntax/loc stx
-         (::block-matches? [#,@constants]
-                           [#,@runtime])))]))
+         (HHEXPR (::block-matches? [#,@constants]
+                                   [#,@runtime]))))]))
+
+(define-syntax (set-block! stx)
+  (check-context stx)
+  (syntax-case stx (quote)
+    [(_ (quote id))
+     (syntax/loc stx
+       ; Using (lift (block 'id)) has some nice properties:
+       ; 1) It reuses the "but other values were possible" message
+       ; 2) It shifts that message to runtime to avoid duplication
+       ; 3) It lifts (block 'id) which will run faster than calling it inside the loop
+       (HHEXPR (do! (set! BLOCK (lift (block 'id))))))]
+    [(_ val)
+     (fixnum? (syntax-e #'val))
+     (syntax/loc stx
+       (HHEXPR (do! (set! BLOCK val))))]
+    [(_ val)
+     ; Request the expression to be lifted, but it might not be.
+     ; So don't wrap it in some "slow" proc that checks whether it's
+     ; a symbol and resolves it. If you put an arbitrary expression here,
+     ; you are advanced enough to call (block 'foo) yourself.
+     (syntax/loc stx
+       (HHEXPR (do! (set! BLOCK (lift val)))))]))
 
 
 ; = myexpand =
@@ -134,7 +160,8 @@
   (syntax-case stx ()
     [(_ expr ...)
      (let* ([orig #'(let () expr ...)]
-            [expanded (myexpand orig)]
+            [expanded (parameterize ([disable-context-check? #t])
+                        (myexpand orig))]
             [lift-accum (box (list))]
             [rewritten (rewrite expanded lift-accum)])
        (with-syntax ([(lifted-id ...) (map car (unbox lift-accum))]

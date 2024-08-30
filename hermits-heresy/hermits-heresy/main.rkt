@@ -25,6 +25,7 @@
            decorate-peaks!
            simple?
            stage->pict
+           HHEXPR
 
            ; For alternate traversal
            traverse-lambda
@@ -34,7 +35,7 @@
 
 (require "NEW-API.rkt"
          (only-in "traversal/untyped-traversal.rkt"
-                  compile-traversal block-matches? set-block!)
+                  compile-traversal block-matches? set-block! HHEXPR)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)
          "images.rkt")

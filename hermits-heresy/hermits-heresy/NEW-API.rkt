@@ -954,7 +954,7 @@
 
 (: traverse (-> Stage t:Traversal Any))
 (define (traverse stage trav)
-  (define args (t:argbox 0 0 0 0))
+  (define args (t:make-empty-argbox))
   (define callback ((t:traversal-callback-maker trav) args))
   (when (impersonator? callback)
     ; Slowdown observed from 11s to 13s on the command line,
@@ -978,11 +978,13 @@ If so, just do an area-intersect with the stage full area, right?")))
         (callback)
         (stage-write! stage proof p (t:argbox-block args))
         )))
+  (show-msg "traverse ignored ~a attempts to overwrite an item"
+            (t:argbox-skipped-item-count args))
   (void))
 
 (: traverse-lambda (-> Stage (-> t:Argbox Any) Any))
 (define (traverse-lambda stage callback)
-  (define args (t:argbox 0 0 0 0))
+  (define args (t:make-empty-argbox))
   (define protected-area (unbox (stage-protected-area stage)))
   (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
     (define proof (unprotected? protected-area xz))
@@ -1000,6 +1002,8 @@ If so, just do an area-intersect with the stage full area, right?")))
         (callback args)
         (stage-write! stage proof p (t:argbox-block args))
         )))
+  (show-msg "traverse ignored ~a attempts to overwrite an item"
+            (t:argbox-skipped-item-count args))
   (void))
 
 

@@ -2,6 +2,7 @@
 
 (require hermits-heresy
          (submod hermits-heresy undocumented)
+         "helper.rkt"
          )
 
 (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
@@ -80,23 +81,24 @@
     }
 
 {begin ;module+ main
-  (define stage (load-stage 'BT1 'B00))
-
-  (define chert-count 0)
-  (define lifted-chert-count 0)
   (define trav
     (traversal
      (cond
-       [(block-matches? 'Umber)
-        (set-block! 'Lava)]
-       [(block-matches? 'Lumpy-Umber)
+       [(liquid?)
+        (void "keep liquids")]
+       [(block-matches? 'Seaside-Sand 'Stony-Sand 'Bubbling-Seaside-Sand)
         (set-block! 'Ice)]
+       [(block-matches? 'Marble)
+        (set-block! 'Zenithium-Vein)]
+       [(block-matches? 'Snow)
+        (void "keep snow")]
        [(not (block-matches? 0))
-        (set! chert-count (+ 1 chert-count))
-        (set-block! (let ()
-                      (set! lifted-chert-count (+ 1 lifted-chert-count))
-                      'Chert))])))
-  (time (traverse stage trav))
-  (println (list "chert-count" chert-count "lifted" lifted-chert-count))
-  ;(save-stage! stage)
+        (set-block! 'Basalt)]))
+    )
+
+  (begin
+    (define stage (load-stage 'BT1 'B00))
+    (time (traverse stage trav))
+    ;(save-stage! stage)
+    )
   }

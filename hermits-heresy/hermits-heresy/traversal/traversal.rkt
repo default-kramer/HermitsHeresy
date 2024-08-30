@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Argbox (struct-out argbox)
+(provide Argbox (struct-out argbox) make-empty-argbox
          Traversal (struct-out traversal)
          )
 
@@ -11,6 +11,9 @@
            argbox-block
            validate-fixnum-and-set-block!
            make-traversal))
+
+(require "../basics.rkt"
+         "../ufx.rkt")
 
 (require/typed racket/base [prop:authentic Struct-Type-Property])
 
@@ -29,9 +32,13 @@
 (struct argbox ([x : Fixnum]
                 [z : Fixnum]
                 [y : Fixnum]
-                [block : Fixnum])
+                [block : Fixnum]
+                [skipped-item-count : Fixnum])
   #:transparent #:mutable #:type-name Argbox
   #:property prop:authentic #t)
+
+(define (make-empty-argbox)
+  (argbox 0 0 0 0 0))
 
 (define (validate-fixnum-and-set-block! [args : Argbox] [val : Any])
   ; This proc will be provided unsafely.
@@ -42,7 +49,12 @@
   ; to give the user a custom error message.
   (when (not (fixnum? val))
     (error "During traversal, cannot set block to:" val))
-  (set-argbox-block! args val))
+  (cond
+    [(simple? (argbox-block args))
+     (set-argbox-block! args val)]
+    [else
+     (let ([i (argbox-skipped-item-count args)])
+       (set-argbox-skipped-item-count! args (ufx+ 1 i)))]))
 
 (define-type Callback (-> AnyValues))
 
@@ -68,3 +80,19 @@
   (when (not (syntax? rewritten))
     (error "assert fail - rewritten was not syntax"))
   (traversal callback-maker expanded rewritten))
+
+
+{module+ for-testing
+  (provide make-testable)
+  (define (make-testable [trav : Traversal])
+    (let* ([args (make-empty-argbox)]
+           [callback ((traversal-callback-maker trav) args)])
+      (lambda cmd
+        (match cmd
+          [(list 'setblock b)
+           (set-argbox-block! args (cast b Fixnum))]
+          [(list 'step)
+           (begin (callback) (argbox-block args))]
+          [else
+           (error "bad command:" cmd)]))))
+  }
