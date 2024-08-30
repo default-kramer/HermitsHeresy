@@ -46,7 +46,7 @@
 (require (prefix-in zlib: "zlib.rkt")
          (prefix-in layout: "layouts.rkt")
          (prefix-in t: "traversal/traversal.rkt")
-         "TEMP.rkt"
+         "block.rkt"
          "chunk.rkt"
          "chunky-area.rkt"
          "basics.rkt"

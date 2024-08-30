@@ -7,7 +7,7 @@
          )
 
 (require "traversal.rkt"
-         "../TEMP.rkt"
+         "../block.rkt"
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam
