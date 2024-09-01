@@ -22,14 +22,14 @@
   (set! id (+ 1 id)))
 
 (let* ([match-count 0]
-       ; The expression that mutates the following counter gets lifted outside the loop.
-       ; I'm not yet convinced this is great default behavior,
-       ; but I still want a test to let me know if I accidentally change it.
-       [lifted-count 0]
+       ; The expression that mutates this does not get lifted outside the loop.
+       ; It makes sense to only lift expressions that match known patterns,
+       ; don't just lift any arbitrary expression that you don't understand.
+       [block-producer-count 0]
        [trav (traversal (when (block-matches? 3 4 5 6)
                           (inc! match-count)
                           (set-block! (let ()
-                                        (inc! lifted-count)
+                                        (inc! block-producer-count)
                                         99))))]
        [f (make-testable trav)])
   (for ([block '(1 2 3 4 5 6 7 8 9)])
@@ -39,7 +39,7 @@
                              [(3 4 5 6) 99]
                              [else block]))))
   (check-equal? match-count 4)
-  (check-equal? lifted-count 1))
+  (check-equal? block-producer-count 4))
 
 
 ; Make sure we do not overwrite items
