@@ -47,6 +47,10 @@
   #;(set-block! (string-returning-proc))
   ; So we must do a runtime check of val here, and this also allows us
   ; to give the user a custom error message.
+  ; UPDATE
+  ; This actually isn't true anymore, the untyped code does an fxior to preserve
+  ; the chisel status, so we actually can be assured that `val` is a fixnum.
+  ; But dropping this check has no noticable performance impact, so I'll keep it for now.
   (when (not (fixnum? val))
     (error "During traversal, cannot set block to:" val))
   (cond
