@@ -19,6 +19,10 @@ Move mountains, carve canyons, or summon superstructures!
 Not authorized by Square Enix or Valve (Steam).
 Use at your own risk.
 
+Be sure to inspect your results after modifying a stage.
+In particular, make sure you can sail away from and return to
+the island you just modified.
+
 This tool and this documentation assumes that you are using Steam.
 It might work with Switch also, but I have never tested this.
 
@@ -374,4 +378,65 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
 
  This function returns the previously protected area intended for use with a future hypothetical
  function like @(racket revert-protected-area!).
+}
+
+@subsection{Traversal}
+A traversal is basically a callback that is invoked for each coordinate in the blockspace.
+It is a generic building block from which more complex functionality can be built.
+For example, here is how a traversal could be used to replace certain blocks with others:
+@(racketblock
+  (traverse stage
+            (traversal
+             (cond
+               [(block-matches? 'Snow)
+                (set-block! 'Mossy-Earth)]
+               [(block-matches? 'Chalk 'Chunky-Chalk)
+                (set-block! 'Stony-Soil)]
+               [(block-matches? 'Marble)
+                (set-block! 'Copper-Vein)]))))
+
+@defproc[(traverse [stage stage?] [traversal traversal?])
+         any/c]{
+ Executes the given @(racket traversal) over the given @(racket stage).
+}
+
+@defform[(traversal expr ...)]{
+ Produces a traversal to be executed by @(racket traverse).
+ Inside a traversal, certain macros become available such as @(racket block-matches?) and @(racket set-block!).
+
+ Conceptually, the code inside the traversal will be executed for every coordinate in the blockspace.
+ But optimizations might make this not strictly true.
+ For example, it is possible to prove that the following traversal only needs to
+ be run on coordinates which contain snow, and internal indexing of the stage
+ may allow the traversal to run faster by skipping portions of the stage known to lack snow.
+ @(racketblock
+   (traversal (when (block-matches? 'Snow)
+                (set-block! 'Ice))))
+}
+
+@defform[(block-matches? block-expr ...)]{
+ Can only be used inside a @(racket traversal).
+
+ Returns true if the current block (ignoring its chisel status)
+ matches any of the given @(racket block-expr)s.
+ Each @(racket block-expr) should be either a literal symbol (such as @(racket 'Chert))
+ or a literal number (such as @(racket 414)).
+ But if you know what you are doing, it can also be any expression that produces
+ a @(racket fixnum?).
+
+ Using symbols is recommended to match all possible values that symbol could mean.
+ For example, @(racket (block-matches? 'Earth)) will be true when the current block
+ is 2 or 414 because both of those values are mapped to Earth, as the following
+ log message proves:
+ @(examples
+   #:eval default-eval #:label #f
+   (block 'Earth))
+}
+
+@defform[(set-block! block-expr)]{
+ Can only be used inside a @(racket traversal).
+
+ Sets the current block to the given value (chisel status is preserved).
+ When @(racket block-expr) is a literal symbol, it is equivalent to @(racket (block block-expr)).
+ Otherwise @(racket block-expr) must produce a @(racket fixnum?).
 }
