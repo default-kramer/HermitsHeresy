@@ -124,6 +124,7 @@
   #:transparent #:type-name Stgdat-File)
 
 (struct stage ([loaded-from : Stgdat-File]
+               [original-file-size : Integer]
                [header : Bytes] ; mutable (but we probably won't)
                [buffer : Bytes] ; mutable TODO remove this from core? (just use chunks)
                ; Or maybe keep the buffer to know what the file had when it was loaded.
@@ -393,13 +394,14 @@
 
 (define (read-stgdat [path : Path-String])
   (define all-bytes (file->bytes path))
+  (define orig-size (bytes-length all-bytes))
   (define header (subbytes all-bytes 0 header-length))
   (define compressed (subbytes all-bytes header-length (bytes-length all-bytes)))
   ; I'm guessing IoA probably always uncompresses to exactly 163,053,024 bytes (including the header),
   ; and we'll just add some room to spare just in case
   (define buffer-size #xA000000)
   (define buffer (zlib:uncompress compressed buffer-size))
-  (values header buffer))
+  (values header buffer orig-size))
 
 (: read-chunks (-> Bytes (U #f Integer) Fixnum (Listof Chunk)))
 (define (read-chunks buffer expect-chunk-count chunk-length-bytes)
@@ -434,7 +436,7 @@
              (ufx+ 1 i))])))
 
 (define (open-stgdat [kind : Stgdat-Kind] [path : Path])
-  (define-values (header buffer)
+  (define-values (header buffer orig-size)
     (read-stgdat path))
   (define predefined-layout (get-chunk-layout kind))
   (define expect-chunk-count (and predefined-layout
@@ -447,6 +449,7 @@
   Assuming you have not modified the bedrock, please include
   the island-generation password in a bug report."))
   (stage (stgdat-file kind path)
+         orig-size
          header
          buffer
          (apply vector-immutable chunk-list)
@@ -473,7 +476,7 @@
   (: get-bedrock-chunks (-> Path-String (Listof Chunk)))
   ; Loads chunks but just y=0 to save time. For BT layout tests.
   (define (get-bedrock-chunks path)
-    (define-values (header buffer)
+    (define-values (header buffer file-size)
       (read-stgdat path))
     (define chunk-length-bytes (:ufx* 2 32 32)) ; just read y=0
     (read-chunks buffer #f chunk-length-bytes))
@@ -510,7 +513,23 @@
     (lambda ()
       (write-bytes header)
       (write-bytes compressed)))
-  (show-msg "Saved STGDAT file: ~a" orig-file))
+
+  ; https://github.com/default-kramer/HermitsHeresy/issues/12
+  ; Until this bug is solved, we need to warn them if the compressed size
+  ; has increased. Fortunately, it seems that DQB2 does not optimize for the
+  ; smallest possible file size, which gives us some headroom to increase the
+  ; complexity of the data while still reducing the compressed size.
+  (define orig-size (stage-original-file-size stage))
+  (define new-size (+ (bytes-length header)
+                      (bytes-length compressed)))
+  (show-msg "Saved STGDAT file: ~a" orig-file)
+  (show-msg "* Original size: ~a, new size: ~a" orig-size new-size)
+  (when (> new-size orig-size)
+    (show-msg "!!!!! WARNING !!!!!")
+    (show-msg "* File size has increased!")
+    (show-msg "* DQB2 might not read the entire file.")
+    (show-msg "* Be extra vigilant for errors, and make sure the ship still works.")
+    (show-msg "* Consider splitting your work into smaller edits if errors are present.")))
 
 (: rand (All (A) (-> (Vectorof A) A)))
 (define (rand vec)
