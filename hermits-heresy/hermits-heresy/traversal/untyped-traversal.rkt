@@ -3,7 +3,7 @@
 (provide compile-traversal
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
-         lift nolift do! block-matches? set-block! HHEXPR
+         lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
          )
 
 (require "traversal.rkt"
@@ -21,28 +21,17 @@
 
 ; Sometimes we definitely want to lift exprs outside of the loop.
 ; Other times we definitely want to keep them inside the loop.
-; I'm not yet sure what the default behavior should be, so let's be explicit
-; whenever it matters.
-; NOPE - I think the correct thing to do is to use lift to request that the
-; expression be lifted, but if it contains a nolift then it cannot be.
-; This would mean you have to be very careful with nolift to avoid accidentally
-; thwarting an important lift...
-; AHA Maybe what we really need is 3 things: mustlift, lift, and nolift.
-; Both mustlift and lift request that the expression be lifted,
-; but only mustlift will cause an error if it contains a nolift.
+; I think the correct default behavior is not to lift unless we can prove that
+; it is correct to do so. For example, we can analyze
+#;(set-block! 'Chert)
+; and decide that it should expand to
+#;(set-block! (lift (block 'Chert)))
+; But if we have something like
+#;(set-block! (my-mottle-proc))
+; we should not lift it because we can't know whether it is constant or not.
 (define-syntax-rule (lift a) a)
-(define-syntax-rule (nolift a) a)
 
-; For example, here is how `mottle` could be implemented without
-; requiring any changes to hermit's heresy!
-#;(define-syntax-rule (mottle [blocksym weight] ...)
-    (let ([prng (lift (make-pseudo-random-generator))]
-          [vec (lift (build-mottle-vector [blocksym weight] ...))]
-          [len (lift (vector-length vec))])
-      (nolift (let ([idx (random len prng)])
-                (vector-ref vec idx)))))
-
-; And then do! is a special kind of nolift indicating that the body
+; Idea for the future: do! indicates that the body
 ; is being called for side effects and thus cannot be optimized away.
 ; (Other void/constant expressions that appear to do nothing should
 ;  be optimized away.)
@@ -50,6 +39,9 @@
   (let () a b ...))
 
 (define-syntax-parameter BLOCK #f)
+(define-syntax-parameter YPARAM #f)
+(define-syntax-parameter XPARAM #f)
+(define-syntax-parameter ZPARAM #f)
 
 (define-for-syntax disable-context-check? (make-parameter #f))
 
@@ -79,6 +71,11 @@
          (HHEXPR (::block-matches? [#,@constants]
                                    [#,@runtime]))))]))
 
+(define-syntax-rule (::set-block! block)
+  ; Keep the other bits untouched (chisel status plus the mystery bit)
+  (set! BLOCK (fxior (fxand BLOCK #xF800)
+                     (fxand block #x07FF))))
+
 (define-syntax (set-block! stx)
   (check-context stx)
   (syntax-case stx (quote)
@@ -88,18 +85,38 @@
        ; 1) It reuses the "but other values were possible" message
        ; 2) It shifts that message to runtime to avoid duplication
        ; 3) It lifts (block 'id) which will run faster than calling it inside the loop
-       (HHEXPR (do! (set! BLOCK (lift (block 'id))))))]
+       (HHEXPR (do! (::set-block! (lift (block 'id))))))]
     [(_ val)
      (fixnum? (syntax-e #'val))
      (syntax/loc stx
-       (HHEXPR (do! (set! BLOCK val))))]
+       (HHEXPR (do! (::set-block! val))))]
     [(_ val)
-     ; Request the expression to be lifted, but it might not be.
-     ; So don't wrap it in some "slow" proc that checks whether it's
-     ; a symbol and resolves it. If you put an arbitrary expression here,
-     ; you are advanced enough to call (block 'foo) yourself.
+     ; Don't lift by default here. For example
+     #;(set-block! (my-mottle-proc))
+     ; should not be lifted and it would definitely surprise someone if we did it by default.
      (syntax/loc stx
-       (HHEXPR (do! (set! BLOCK (lift val)))))]))
+       (HHEXPR (do! (::set-block! val))))]))
+
+(define-syntax (YYY stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [id
+     (identifier? #'id)
+     (syntax/loc stx (HHEXPR YPARAM))]))
+
+(define-syntax (XXX stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [id
+     (identifier? #'id)
+     (syntax/loc stx (HHEXPR XPARAM))]))
+
+(define-syntax (ZZZ stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [id
+     (identifier? #'id)
+     (syntax/loc stx (HHEXPR ZPARAM))]))
 
 
 ; = myexpand =
@@ -153,7 +170,11 @@
                                      #'(unsafe:validate-fixnum-and-set-block! args b)]
                                     [a
                                      (identifier? #'a)
-                                     #'(unsafe:argbox-block args)])))])
+                                     #'(unsafe:argbox-block args)])))]
+                        ; we already enforce that these can only be used as identifiers
+                        [YPARAM (lambda (stx) #'(unsafe:argbox-y args))]
+                        [XPARAM (lambda (stx) #'(unsafe:argbox-x args))]
+                        [ZPARAM (lambda (stx) #'(unsafe:argbox-z args))])
     body))
 
 (define-syntax (compile-traversal stx)
