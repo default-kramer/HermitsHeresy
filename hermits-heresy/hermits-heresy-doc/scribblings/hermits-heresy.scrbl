@@ -455,7 +455,9 @@ For example, here is how a traversal could be used to replace certain blocks wit
 @defform[(set-block! block-expr)]{
  Can only be used inside a @(racket traversal).
 
- Sets the current block to the given value (chisel status is preserved).
+ Sets the current block to the given value (chisel status is unchanged).
  When @(racket block-expr) is a literal symbol, it is equivalent to @(racket (block block-expr)).
  Otherwise @(racket block-expr) must produce a @(racket fixnum?).
+
+ @tech{Simple} blocks are overwritten, but @tech[#:key "item"]{items} are left intact.
 }
