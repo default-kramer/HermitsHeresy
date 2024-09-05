@@ -13,6 +13,7 @@
          bitmap->area
          protect-area!
          traverse
+         build-mottler
 
          ; Traversal lang
          (rename-out [compile-traversal traversal])
@@ -36,6 +37,7 @@
            ))
 
 (require "NEW-API.rkt"
+         "build-mottler.rkt"
          (only-in "traversal/untyped-traversal.rkt"
                   compile-traversal block-matches? set-block! HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"

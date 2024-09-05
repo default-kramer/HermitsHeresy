@@ -380,6 +380,25 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
  function like @(racket revert-protected-area!).
 }
 
+@defproc[(build-mottler [arg (or/c symbol?
+                                   fixnum?
+                                   (list/c (or/c symbol? fixnum?)
+                                           exact-positive-integer?))] ...)
+         (-> fixnum?)]{
+ Creates a procedure that will return a random block from the given
+ weighted block list each time it is called.
+ @(examples
+   #:eval default-eval
+   (define my-grassy-mottler
+     (build-mottler '[Mossy-Earth 3] (code:comment "weight 3")
+                    'Grassy-Earth (code:comment "weight 1 by default")
+                    '[Earth 1] (code:comment "weight 1")
+                    '[Stony-Soil 2]))
+   (code:comment "c'mon RNG, please don't embarass me here:")
+   (for/list ([i (in-range 25)])
+     (my-grassy-mottler)))
+}
+
 @subsection{Traversal}
 A traversal is basically a callback that is invoked for each coordinate in the blockspace.
 It is a generic building block from which more complex functionality can be built.
