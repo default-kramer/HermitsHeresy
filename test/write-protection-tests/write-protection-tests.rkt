@@ -42,8 +42,15 @@
   (let ([msg (with-output-to-string
                (lambda () (copy-all-save-files! #:from 'B01 #:to 'B00)))]
         [B00-dnc (file->string (build-path here "B00" "DO-NOT-COPY.BIN"))]
-        [B01-dnc (file->string (build-path here "B01" "DO-NOT-COPY.BIN"))])
+        [B01-dnc (file->string (build-path here "B01" "DO-NOT-COPY.BIN"))]
+        ; The SCSHDAT.BIN file should never be modified outside of DQB2.
+        ; This holds photos and uploaded island info for the save slot
+        ; which is expected to match what is on the official servers.
+        [B00-scsh (file->string (build-path here "B00" "SCSHDAT.BIN"))]
+        [B01-scsh (file->string (build-path here "B01" "SCSHDAT.BIN"))])
     (check-true (string-contains? msg "Copied 1 files from"))
     (check-equal? B00-dnc "B00")
-    (check-equal? B01-dnc "B01"))
+    (check-equal? B01-dnc "B01")
+    (check-equal? B00-scsh "B00")
+    (check-equal? B01-scsh "B01"))
   }

@@ -801,11 +801,10 @@
   ; == Now it is safe to write ==
   ; We definitely don't want to copy *every* file.
   ; For example, copying the config file would be a disaster!
-  ; I might be missing some files here:
+  ; Also, SCSHDAT.BIN should never be modified from outside the game.
   (define known-files '(AUTOCMNDAT.BIN
                         AUTOSTGDAT.BIN
                         CMNDAT.BIN
-                        SCSHDAT.BIN
                         STGDAT01.BIN ; IoA
                         STGDAT02.BIN ; Furrowfield
                         STGDAT03.BIN ; Khrumbul-Dun
