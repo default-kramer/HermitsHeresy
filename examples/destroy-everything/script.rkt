@@ -47,6 +47,9 @@
     (remove-blocks! stage 'all (list bid (bitwise-and bid #x7FF))))
 ; It removed 929078 blocks.
 
+; After completing the final pass, I can't remember how I cleaned up the leaking water...
+; Probably ran a script to remove the water block IDs.
+
 {module+ main
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
   (define stage (load-stage 'IoA 'B01))
