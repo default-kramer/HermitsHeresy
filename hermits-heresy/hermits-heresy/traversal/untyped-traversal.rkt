@@ -8,6 +8,7 @@
 
 (require "traversal.rkt"
          "../block.rkt"
+         "../selection.rkt"
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam

@@ -1,7 +1,8 @@
 #lang typed/racket
 
 (provide rotate0 rotate90 rotate180 rotate270
-         reflect+0 reflect+90 reflect+180 reflect+270)
+         reflect+0 reflect+90 reflect+180 reflect+270
+         Transformer2D)
 
 (require "ufx.rkt")
 

@@ -2,7 +2,8 @@
 
 (provide Chunky (struct-out chunky)
          XZ (struct-out xz) xz->values
-         Rect (struct-out rect)
+         Rect (rename-out [make-rect rect])
+         rect-start rect-end rect-width rect-height
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
@@ -63,3 +64,18 @@
 (struct rect ([start : XZ]
               [end : XZ])
   #:type-name Rect #:transparent)
+
+(define (make-rect [a : XZ] [b : XZ])
+  ; Ensure that `start` is always the upper left and `end` the lower right
+  (define-values (x1 z1) (xz->values a))
+  (define-values (x2 z2) (xz->values b))
+  (rect (xz (min x1 x2) (min z1 z2))
+        (xz (max x1 x2) (max z1 z2))))
+
+(define (rect-width [rect : Rect])
+  (ufx- (xz-x (rect-end rect))
+        (xz-x (rect-start rect))))
+
+(define (rect-height [rect : Rect])
+  (ufx- (xz-z (rect-end rect))
+        (xz-z (rect-start rect))))
