@@ -46,9 +46,7 @@
     (and (area-contains? (hill-area hill) locxz)
          (hash-ref (hill-elevations hill) loc))))
 
-(require (prefix-in zlib: "zlib.rkt")
-         (prefix-in layout: "layouts.rkt")
-         (prefix-in t: "traversal/traversal.rkt")
+(require (prefix-in t: "traversal/traversal.rkt")
          "block.rkt"
          "chunk.rkt"
          "chunky-area.rkt"
@@ -58,10 +56,7 @@
          "config-util.rkt"
          "blockdata/blockdef.rkt"
          "stage.rkt"
-         racket/hash
          typed/pict
-         racket/fixnum
-         typed/racket/unsafe
          (only-in typed/racket/draw Bitmap%))
 
 (require/typed racket
