@@ -14,7 +14,6 @@
          protect-area!
          traverse
          build-mottler
-         copy-area!
          (rename-out [make-selection selection])
 
          ; Traversal lang

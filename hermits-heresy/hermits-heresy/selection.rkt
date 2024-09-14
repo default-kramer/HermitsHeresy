@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide make-selection selection-ref)
+(provide make-selection selection-ref selection-dst-area)
 
 (require "basics.rkt"
          "stage.rkt"
@@ -68,7 +68,7 @@
                    [transformer : Transformer2D] ; applied at (xz 0 0)
                    [dst-translation : XZ] ; translates from dst coordinates to (xz 0 0)
                    #;[delta-y : Fixnum]
-                   #;[dst-area : Chunky-Area])
+                   [dst-area : Chunky-Area])
   #:transparent #:type-name Selection)
 
 (: make-selection (-> Stage Chunky-Area (Listof Transform) Selection))
@@ -95,13 +95,25 @@
           [(180) rotate180]
           [(270) rotate270]
           [else (error "assert fail")])))
+  (define dst-area
+    (let-values ([(w h) (case rotation
+                          [(90 270) (values (rect-height src-rect)
+                                            (rect-width src-rect))]
+                          [(0 180) (values (rect-width src-rect)
+                                           (rect-height src-rect))]
+                          [else (error "assert fail")])])
+      (define new-bounds (rect (xz abs-x abs-z)
+                               (xz (ufx+ w abs-x)
+                                   (ufx+ h abs-z))))
+      (chunky-area-transform area transformer new-bounds)))
   (selection stage
              area
              WW HH
              top-left
              transformer
              (xz (ufx- 0 abs-x)
-                 (ufx- 0 abs-z))))
+                 (ufx- 0 abs-z))
+             dst-area))
 
 (: selection-ref (-> Selection Point (U #f Fixnum)))
 (define (selection-ref selection point)
@@ -122,5 +134,10 @@
                   [(x) (ufx+ x (xz-x src-translation))]
                   [(z) (ufx+ z (xz-z src-translation))]
                   [(src-xz) (xz x z)])
+      ; BUG DETECTION:
+      #;(let ([s (chunky-area-contains? src-area src-xz)]
+              [d (chunky-area-contains? (selection-dst-area selection) point)])
+          (when (not (equal? s d))
+            (error "assert fail: src and dest don't agree" s d)))
       (and (chunky-area-contains? src-area src-xz)
            (stage-read src-stage (make-point src-xz (point-y point)))))))

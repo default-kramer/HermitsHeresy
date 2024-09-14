@@ -29,7 +29,6 @@
          protect-area!
          traverse
          traverse-lambda
-         copy-area!
          )
 
 (module+ everything
@@ -57,12 +56,17 @@
          "blockdata/blockdef.rkt"
          "stage.rkt"
          typed/pict
+         typed/racket/unsafe
          (only-in typed/racket/draw Bitmap%))
 
 (require/typed racket
                [copy-file (->* (Path-String Path-String)
                                (#:exists-ok? Any)
                                Any)])
+
+(unsafe-require/typed (prefix-in ut: "traversal/untyped-traversal.rkt")
+                      [ut:area-key-param (Parameterof Any)]
+                      [ut:area-proc-param (Parameterof Any)])
 
 {module+ test
   (require typed/rackunit)
@@ -668,35 +672,80 @@
      (displayln (format "No matches found for ~a" name))])
   (void))
 
-(: traverse (-> Stage t:Traversal Any))
-(define (traverse stage trav)
-  (define args (t:make-empty-argbox))
-  (define callback ((t:traversal-callback-maker trav) args))
-  (when (impersonator? callback)
-    ; Slowdown observed from 11s to 13s on the command line,
-    ; and it gets worse in DrRacket. So this is worth it IMO.
-    (error "assert fail: callback is an impersonator"))
-  (define protected-area (unbox (stage-protected-area stage)))
-  (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
-    (define proof (unprotected? protected-area xz))
-    (when proof
-      (define-values (x z) (xz->values xz))
-      (t:set-argbox-x! args x)
-      (t:set-argbox-z! args z)
-      (for ([y : Fixnum (ufx-in-range 96)])
-        (define p (make-point xz y))
-        (define block : Fixnum
-          (or (stage-read stage p)
-              (error "TODO is this possible?
+(: traverse (-> Stage t:Traversal [#:force-unsound-optimization? Boolean] Any))
+(define (traverse stage trav #:force-unsound-optimization? [optimize? #f])
+  ; In the future, I should be able to analyze the code and determine the areas that
+  ; are relevant to optimization. For now, I'll just add this secret optional arg
+  ; which allows the caller to say "you can skip any XZ that is not contained by
+  ; any of the areas appearing in this traversal."
+  (define cannot-optimize? : Boolean (not optimize?))
+
+  (define areas (t:traversal-areas trav))
+
+  ; Assigns a zero-based index to each of the areas in the traversal.
+  ; This should be lifted so it only gets called once per area before
+  ; the traversal starts.
+  (define (traversal-area->index area)
+    (: go (-> Integer (Listof Any) Integer))
+    (define (go i areas)
+      (cond
+        [(empty? areas) (error "assert fail: cannot assign key to" area)]
+        [(eq? area (car areas)) i]
+        [(go (+ 1 i) (cdr areas))]))
+    (go 0 areas))
+
+  ; This vector will hold the `area-contains?` status for each area.
+  ; We will update it for each xz, but can leave it unchanged for all 96 y.
+  (define area-contains-vec
+    (ann (make-vector (length areas) #f)
+         (Mutable-Vectorof Boolean)))
+
+  ; Returns whether the area assigned to the given index contains
+  ; the current XZ coordinate. This proc can be called many times
+  ; in the traversal so we want it to be as fast as possible.
+  (define (get-area-contains-flag [index : Integer])
+    (vector-ref area-contains-vec index))
+
+  (parameterize ([ut:area-key-param traversal-area->index]
+                 [ut:area-proc-param get-area-contains-flag])
+    (define args (t:make-empty-argbox))
+    (define callback ((t:traversal-callback-maker trav) args))
+    (when (impersonator? callback)
+      ; Slowdown observed from 11s to 13s on the command line,
+      ; and it gets worse in DrRacket. So this is worth it IMO.
+      (error "assert fail: callback is an impersonator"))
+    (define protected-area (unbox (stage-protected-area stage)))
+    (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
+      (define proof (unprotected? protected-area xz))
+      (when proof
+
+        ; Update the area-contains? statuses for each area
+        (define in-any-area? : Boolean #f)
+        (let ([i : Fixnum 0])
+          (for ([area areas])
+            (let ([result (chunky-area-contains? area xz)])
+              (vector-set! area-contains-vec i result)
+              (set! in-any-area? (or in-any-area? result))
+              (set! i (ufx+ 1 i)))))
+
+        (when (or cannot-optimize? in-any-area?)
+          (define-values (x z) (xz->values xz))
+          (t:set-argbox-x! args x)
+          (t:set-argbox-z! args z)
+          (for ([y : Fixnum (ufx-in-range 96)])
+            (define p (make-point xz y))
+            (define block : Fixnum
+              (or (stage-read stage p)
+                  (error "TODO is this possible?
 If so, just do an area-intersect with the stage full area, right?")))
-        (t:set-argbox-y! args y)
-        (t:set-argbox-block! args block)
-        (callback)
-        (stage-write! stage proof p (t:argbox-block args))
-        )))
-  (show-msg "traverse ignored ~a attempts to overwrite an item"
-            (t:argbox-skipped-item-count args))
-  (void))
+            (t:set-argbox-y! args y)
+            (t:set-argbox-block! args block)
+            (callback)
+            (stage-write! stage proof p (t:argbox-block args))
+            ))))
+    (show-msg "traverse ignored ~a attempts to overwrite an item"
+              (t:argbox-skipped-item-count args))
+    (void)))
 
 (: traverse-lambda (-> Stage (-> t:Argbox Any) Any))
 (define (traverse-lambda stage callback)
@@ -721,24 +770,6 @@ If so, just do an area-intersect with the stage full area, right?")))
   (show-msg "traverse ignored ~a attempts to overwrite an item"
             (t:argbox-skipped-item-count args))
   (void))
-
-(: copy-area! (-> Area #:from Stage #:to Stage Any))
-(define (copy-area! area #:from src #:to dst)
-  (define count : Fixnum 0)
-  (define protected-area (unbox (stage-protected-area dst)))
-  (for/area ([xz area])
-    (define proof (unprotected? protected-area xz))
-    (when proof
-      (define-values (x z) (xz->values xz))
-      (for ([y : Fixnum (ufx-in-range 1 96)])
-        (let* ([p (make-point xz y)]
-               [src-block (stage-read src p)])
-          (when (and src-block (simple? src-block))
-            (let* ([dst-block (or (stage-read dst p) 0)])
-              (when (ufx= 0 dst-block)
-                (set! count (ufx+ 1 count))
-                (stage-write! dst proof p src-block))))))))
-  (show-msg "copy-area! copied ~a blocks" count))
 
 
 ; SQLite is super fast (even without indexes!) once the data has been loaded,

@@ -3,7 +3,7 @@
 (provide Chunky (struct-out chunky)
          XZ (struct-out xz) xz->values
          Rect (rename-out [make-rect rect])
-         rect-start rect-end rect-width rect-height
+         rect-start rect-end rect-width rect-height rect-contains?
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
@@ -79,3 +79,14 @@
 (define (rect-height [rect : Rect])
   (ufx- (xz-z (rect-end rect))
         (xz-z (rect-start rect))))
+
+;; TODO NOMERGE - oh no, look at rect-width and rect-height!
+;; I wonder how many off-by-one errors I have...
+(define (rect-contains? [rect : Rect] [xz : XZ])
+  (define-values (x z) (xz->values xz))
+  (define-values (x1 z1) (xz->values (rect-start rect)))
+  (define-values (x2 z2) (xz->values (rect-end rect)))
+  (and (ufx>= x x1)
+       (ufx>= z z1)
+       (ufx<= x x2)
+       (ufx<= z z2)))

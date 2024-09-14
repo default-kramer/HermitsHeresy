@@ -1,14 +1,17 @@
 #lang racket
 
-(provide compile-traversal
+(provide compile-traversal area-key-param area-proc-param
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
          lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
+         in-area?
          )
 
 (require "traversal.rkt"
          "../block.rkt"
          "../selection.rkt"
+         "../chunky-area.rkt"
+         "../basics.rkt"
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam
@@ -98,6 +101,29 @@
      (syntax/loc stx
        (HHEXPR (do! (::set-block! val))))]))
 
+(define area-key-param (make-parameter #f))
+(define area-proc-param (make-parameter #f))
+
+(define (get-area-key area)
+  (let ([key ((area-key-param) area)])
+    #;(println (list "got area key:" key))
+    key))
+
+(define (get-area-proc)
+  (let ([proc (area-proc-param)])
+    (println (list "got area proc:" proc (impersonator? proc)))
+    proc))
+
+(define-syntax (in-area? stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [(_ area)
+     (syntax/loc stx
+       (HHEXPR
+        (let ([:in-area? (lift (get-area-proc))]
+              [:area (lift (get-area-key area))])
+          (:in-area? :area))))]))
+
 (define-syntax (YYY stx)
   (check-context stx)
   (syntax-case stx ()
@@ -140,6 +166,24 @@
          [anything
           (datum->syntax stx (map myexpand (syntax->list stx)) stx stx)]))]
     [anything stx]))
+
+; = collect-areas =
+; Finds all (get-area-key area) forms and collect them into area-accum,
+; a boxed list of areas.
+(define-for-syntax (collect-areas orig-stx area-accum)
+  (define (recurse stx)
+    ;(println (list "recursing" stx))
+    (collect-areas stx area-accum))
+  (syntax-case orig-stx (get-area-key)
+    [(get-area-key area)
+     (let ()
+       (set-box! area-accum (cons #'area (unbox area-accum)))
+       (void))]
+    [(stuff ...)
+     (let ([items (syntax->list orig-stx)])
+       (map recurse items)
+       (void))]
+    [_ (void)]))
 
 ; = rewrite =
 ; Replaces each (lift expr) with a generated identifier.
@@ -184,10 +228,14 @@
      (let* ([orig #'(let () expr ...)]
             [expanded (parameterize ([disable-context-check? #t])
                         (myexpand orig))]
+            [rewritten expanded]
+            [area-accum (box (list))]
+            [_ (collect-areas rewritten area-accum)]
             [lift-accum (box (list))]
-            [rewritten (rewrite expanded lift-accum)])
+            [rewritten (rewrite rewritten lift-accum)])
        (with-syntax ([(lifted-id ...) (map car (unbox lift-accum))]
-                     [(lifted-expr ...) (map cdr (unbox lift-accum))])
+                     [(lifted-expr ...) (map cdr (unbox lift-accum))]
+                     [(collected-area ...) (unbox area-accum)])
          (quasisyntax/loc stx
            (unsafe:make-traversal
             (lambda (args)
@@ -198,6 +246,7 @@
               (let ([lifted-id lifted-expr]
                     ...)
                 (lambda () (callback-body args #,rewritten))))
+            (list collected-area ...)
             #'#,expanded
             #'#,rewritten
             ))))]))
