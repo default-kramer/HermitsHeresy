@@ -106,25 +106,6 @@
           (xz x (ufx+ 1 z))
           (xz x (ufx+ -1 z)))))
 
-(define (rect-intersection [rects : (Listof Rect)])
-  (when (empty? rects)
-    ; Maybe it would make sense to return a zero-sized rect...?
-    ; Wait until you have at least one motivating example.
-    (error "rects cannot be empty"))
-  (define-values (min-x max-x min-z max-z)
-    (for/fold : (Values Fixnum Fixnum Fixnum Fixnum)
-      ([min-x : Fixnum (xz-x (rect-start (first rects)))]
-       [max-x : Fixnum (xz-x (rect-end (first rects)))]
-       [min-z : Fixnum (xz-z (rect-start (first rects)))]
-       [max-z : Fixnum (xz-z (rect-end (first rects)))])
-      ([r (cdr rects)])
-      (values (max min-x (xz-x (rect-start r)))
-              (min max-x (xz-x (rect-end r)))
-              (max min-z (xz-z (rect-start r)))
-              (min max-z (xz-z (rect-end r))))))
-  (rect (xz min-x min-z)
-        (xz max-x max-z)))
-
 (define-syntax-rule (in-rect/x rect)
   (ufx-in-range (xz-x (rect-start rect))
                 (xz-x (rect-end rect))))
