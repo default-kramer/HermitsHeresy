@@ -142,13 +142,6 @@
           (when (contains? xz-id)
             body ...))))))
 
-(define (area-dimensions [area : Area])
-  (let* ([bounds (area-bounds area)]
-         [start (rect-start bounds)]
-         [end (rect-end bounds)])
-    (values (ufx- (xz-x end) (xz-x start))
-            (ufx- (xz-z end) (xz-z start)))))
-
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->area arg)
   (bitmap->chunky-area arg))
@@ -427,8 +420,8 @@
   (define (get-argb [block : Fixnum])
     (hash-ref colorizers block (lambda () #f)))
   (define chunk-layout (stage-chunk-layout stage))
-  (define area (stage-full-area chunk-layout))
-  (define-values (width depth) (area-dimensions area))
+  (define width (ufx* 32 (vector-length (vector-ref chunk-layout 0))))
+  (define depth (ufx* 32 (vector-length chunk-layout)))
   (define bytes-per-pixel 4)
   (define pict-bytes (make-bytes (* bytes-per-pixel width depth)))
   (define chunks-per-row (ufxquotient width 32))
