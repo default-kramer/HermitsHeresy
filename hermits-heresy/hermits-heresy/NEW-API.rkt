@@ -20,8 +20,7 @@
          print-column
          repair-sea!
          clear-area!
-         stage->pict stage->pictOLD
-         TODO
+         stage->pict
          create-golem-platforms!
          copy-all-save-files!
          save-stage!
@@ -486,48 +485,6 @@
               (loop (ufx+ 1 x) z))]))]))
   ; loop done, return
   (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
-
-; Keeping this for the destroy-everything project. Passes the whole column back to the caller
-(define (stage->pictOLD [stage : Stage]
-                        [argb-callback : (-> XZ (Mutable-Vectorof Integer) Integer)])
-  (define area (stage-full-area (stage-chunk-layout stage)))
-  (define-values (width depth) (area-dimensions area))
-  (define pict-bytes (make-bytes (* 4 width depth))) ; 4 bytes per pixel
-  (define index : Integer 0)
-  (define-syntax-rule (++! i) (let ([val i])
-                                (set! i (+ 1 i))
-                                val))
-  (define column (ann (make-vector 96) (Mutable-Vectorof Integer)))
-  (for ([z : Fixnum (ufx-in-range depth)])
-    (for ([x : Fixnum (ufx-in-range width)])
-      (for ([y : Fixnum (ufx-in-range 96)])
-        (let ([block (stage-read stage (make-point (xz x z) y))])
-          (vector-set! column y (or block 0))))
-      (let ([argb (argb-callback (xz x z) column)])
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 24 32))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 16 24))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 08 16))
-        (bytes-set! pict-bytes (++! index) (bitwise-bit-field argb 00 08)))))
-  (argb-pixels->pict pict-bytes (cast width Nonnegative-Integer)))
-
-
-; Anywhere `peak-block` occurs in the given area, fill that column up to that peak
-; with the `fill-block`.
-; Is this proc too specific to my use case?
-; Maybe I should (provide stage-read stage-write! for/area) and let user code do this:
-(define (TODO [stage : Stage] [area : Area] [peak-block : Fixnum] [fill-block : Integer])
-  (define protected-area (unbox (stage-protected-area stage)))
-  (for/area ([xz area])
-    (define proof (unprotected? protected-area xz))
-    (when proof
-      (define peak : Fixnum -1)
-      (for ([y : Fixnum (ufx-in-range 95 -1 -1)])
-        (when (ufx= peak-block (or (stage-read stage (make-point xz y)) 0))
-          (set! peak y)))
-      (when peak
-        (for ([y : Fixnum (ufx-in-range 1 peak)])
-          (stage-write! stage proof (make-point xz y) fill-block)))))
-  (void))
 
 ; For me, probably irrelevant for the world at large:
 (define (create-golem-platforms! [stage : Stage] [area : Area] [block : Integer])
