@@ -67,9 +67,12 @@
 (define empty-bytes (make-bytes bytes-per-chunk 0))
 (define full-bytes (make-bytes bytes-per-chunk 255))
 
+(define empty-rect (make-rect (xz 0 0)
+                              (xz 0 0)))
+
 (define empty-chunky-area (chunky-area (vector->immutable-vector (make-vector 0 empty-bytes))
                                        0
-                                       (make-rect (xz 0 0) (xz 0 0))
+                                       empty-rect
                                        0))
 
 (define (deduplicate [bytes : Bytes])
@@ -112,12 +115,12 @@
         (vector-set! bytevec i full-bytes)
         (set! xz-count (ufx+ xz-count (ufx* 32 32))))
       (set! i (ufx+ 1 i))))
-  (define max-x (ufx* 32 W32))
-  (define max-z (ufx* 32 H32))
+  (define end-x (ufx* 32 W32))
+  (define end-z (ufx* 32 H32))
   (chunky-area (vector->immutable-vector bytevec)
                W32
                (make-rect (xz 0 0)
-                          (xz max-x max-z))
+                          (xz end-x end-z))
                xz-count))
 
 (: build-chunky-area (-> Fixnum Fixnum
@@ -175,10 +178,13 @@
        (loopz (ufx+ 32 z-start))]))
 
   (on-done-callback all-empty? all-full?)
+  (define bounds (cond
+                   [all-empty? empty-rect]
+                   [else (make-rect (xz min-x min-z)
+                                    (xz (ufx+ 1 max-x) (ufx+ 1 max-z)))]))
   (chunky-area (vector->immutable-vector bytevec)
                W32
-               (make-rect (xz min-x min-z)
-                          (xz max-x max-z))
+               bounds
                xz-count))
 
 (: bitmap->chunky-area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
@@ -224,8 +230,8 @@
   (define orig-bounds (chunky-area-bounds area))
 
   ; These are needed to apply the transformer:
-  (define W (rect-width orig-bounds))
-  (define H (rect-height orig-bounds))
+  (define WW (ufx+ -1 (rect-width orig-bounds)))
+  (define HH (ufx+ -1 (rect-height orig-bounds)))
   (define-values (orig-x-offset orig-z-offset)
     (xz->values (rect-start orig-bounds)))
   (define-values (new-x-offset new-z-offset)
@@ -238,7 +244,7 @@
                        [(x) (ufx- x new-x-offset)]
                        [(z) (ufx- z new-z-offset)]
                        ; apply transformer
-                       [(x z) (transformer x z W H)]
+                       [(x z) (transformer x z WW HH)]
                        ; translate from 0,0 to old space
                        [(x) (ufx+ x orig-x-offset)]
                        [(z) (ufx+ z orig-z-offset)])

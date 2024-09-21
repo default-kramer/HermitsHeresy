@@ -61,6 +61,8 @@
       (when cell (set! count (ufx+ 1 count)))))
   count)
 
+; Note: `start is inclusive, `end` is exclusive.
+; Otherwise a zero-size rect would need end < start which would be weird.
 (struct rect ([start : XZ]
               [end : XZ])
   #:type-name Rect #:transparent)
@@ -80,13 +82,11 @@
   (ufx- (xz-z (rect-end rect))
         (xz-z (rect-start rect))))
 
-;; TODO NOMERGE - oh no, look at rect-width and rect-height!
-;; I wonder how many off-by-one errors I have...
 (define (rect-contains? [rect : Rect] [xz : XZ])
   (define-values (x z) (xz->values xz))
   (define-values (x1 z1) (xz->values (rect-start rect)))
   (define-values (x2 z2) (xz->values (rect-end rect)))
   (and (ufx>= x x1)
        (ufx>= z z1)
-       (ufx<= x x2)
-       (ufx<= z z2)))
+       (ufx< x x2)
+       (ufx< z z2)))

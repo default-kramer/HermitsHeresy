@@ -2,7 +2,7 @@
 
 {module+ test
   (require hermits-heresy
-           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" bitmap->area area-contains?)
+           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" area-contains?)
            (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 
@@ -38,7 +38,7 @@
 
   (let ([area (bitmap->area "images/STB-manual-build.bmp")])
     (check-equal? (area-bounds area)
-                  (make-rect (xz 329 30) (xz 419 127)))
+                  (make-rect (xz 329 30) (xz 420 128)))
     (check-true (area-contains? area (xz 329 30)))
     (check-true (area-contains? area (xz 387 30)))
     (check-false (area-contains? area (xz 388 30)))
