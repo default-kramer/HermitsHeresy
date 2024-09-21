@@ -9,7 +9,7 @@
          )
 
 (require typed/pict
-         (only-in typed/racket/draw Bitmap%)
+         (only-in typed/racket/draw Bitmap% read-bitmap)
          typed/racket/unsafe
          "basics.rkt"
          "transformer2d.rkt"
@@ -54,7 +54,9 @@
   (define-values (x z) (xz->values xz-in))
   (define chunk-num (ufx+ (ufx* W32 (ufxquotient z 32))
                           (ufxquotient x 32)))
-  (and (ufx>= chunk-num 0)
+  ; Negative x or z is always out of bounds!
+  (and (ufx>= x 0)
+       (ufx>= z 0)
        (ufx< chunk-num (vector-length bytevec))
        (chunky chunk-num (xz (ufxmodulo x 32)
                              (ufxmodulo z 32)))))
@@ -151,6 +153,8 @@
               (for ([fine-x (ufx-in-range 32)])
                 (define x (ufx+ x-start fine-x))
                 (cond
+                  [(ufx>= x width) #f]
+                  [(ufx>= z depth) #f]
                   [(in-area? (xz x z))
                    (set! xz-count (ufx+ 1 xz-count))
                    (set! all-empty? #f)
@@ -176,7 +180,12 @@
 
 (: bitmap->chunky-area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->chunky-area arg)
-  (define bmp (bitmap arg))
+  (define bmp
+    ; Don't pass a path-string into `bitmap` as it will return a pict
+    ; containing an error message! Use read-bitmap instead.
+    (if (path-string? arg)
+        (bitmap (read-bitmap arg))
+        (bitmap arg)))
   (define width : Fixnum
     (let ([w (pict-width bmp)])
       (or (and (fixnum? w) (cast w Fixnum))

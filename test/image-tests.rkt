@@ -51,4 +51,9 @@
     (check-true (area-contains? area (xz 405 94)))
     (check-true (area-contains? area (xz 406 93)))
     (check-false (area-contains? area (xz 406 94))))
+
+  ; Make sure bitmap->area produces a decent error message when the file does not exist:
+  (check-exn
+   #rx"open-input-file: cannot open input file"
+   (lambda () (bitmap->area "does-not-exist.bmp")))
   }

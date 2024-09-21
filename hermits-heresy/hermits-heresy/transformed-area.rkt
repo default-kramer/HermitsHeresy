@@ -43,7 +43,10 @@
       (values rotation mirror-x? abs-x abs-z)
       (match transforms
         [(list (list 'rotate arg) more ...)
-         (let ([rotation (remainder (+ rotation arg) 360)])
+         (let* ([rotation (remainder (+ rotation arg) 360)]
+                [rotation (if (ufx< rotation 0)
+                              (ufx+ rotation 360)
+                              rotation)])
            (when (not (member rotation '(0 90 180 270)))
              (error "Invalid rotation:" arg))
            (standardize rotation
@@ -75,8 +78,8 @@
 (: make-xarea (-> Chunky-Area (Listof Transform) Transformed-Area))
 (define (make-xarea area transforms)
   (define src-rect (chunky-area-bounds area))
-  (define WW (ufx+ -1 (rect-width src-rect)))
-  (define HH (ufx+ -1 (rect-height src-rect)))
+  (define WW (ufx+ 0 #;-1 (rect-width src-rect))) ; TODO
+  (define HH (ufx+ 0 #;-1 (rect-height src-rect))) ; TODO
   (define top-left (rect-start src-rect))
   (define-values (start-x start-z)
     (xz->values top-left))
