@@ -1,7 +1,8 @@
 #lang racket
 
 (require hermits-heresy
-         "../hermits-heresy/hermits-heresy/transformed-area.rkt"
+         (only-in "../hermits-heresy/hermits-heresy/transformed-area.rkt"
+                  make-xarea xarea-ref)
          (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt"
                   area-contains? xz)
          pict

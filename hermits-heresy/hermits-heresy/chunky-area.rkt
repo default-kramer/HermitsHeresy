@@ -38,6 +38,9 @@
 ; (Wait, why not? Because)
 ; The bytevec is relative to a 0,0 top left corner and W32;
 ; the bounds is irrelevant to finding which bit corresponds to a given coordinate.
+; This means that translating an area southeast will likely require a larger bytevec
+; to represent the new area even though it is the same size. (This is "likely", not certain,
+; because a small translation could be contained by the same chunks as the original.)
 ;
 ; Note: This might be a questionable optimization. I measured that it performed better
 ; than a HashTable. Then after some more time I realized that most call sites should only test
