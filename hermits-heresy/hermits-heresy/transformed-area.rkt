@@ -110,9 +110,9 @@
                           [(0 180) (values (rect-width src-rect)
                                            (rect-height src-rect))]
                           [else (error "assert fail")])])
-      (define new-bounds (rect (xz abs-x abs-z)
-                               (xz (ufx+ w abs-x)
-                                   (ufx+ h abs-z))))
+      (define new-bounds (make-rect (xz abs-x abs-z)
+                                    (xz (ufx+ w abs-x)
+                                        (ufx+ h abs-z))))
       (chunky-area-transform area transformer new-bounds)))
   (xarea area
          WW HH

@@ -2,7 +2,7 @@
 
 (provide Chunky (struct-out chunky)
          XZ (struct-out xz) xz->values
-         Rect (rename-out [make-rect rect])
+         Rect make-rect
          rect-start rect-end rect-width rect-height rect-contains?
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count

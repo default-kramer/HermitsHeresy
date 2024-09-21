@@ -36,7 +36,7 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide get-bedrock-chunks blocks-hash hill-ref rect area-bounds xz)
+  (provide get-bedrock-chunks blocks-hash hill-ref make-rect area-bounds xz)
   (require (only-in (submod "stage.rkt" for-testing)
                     get-bedrock-chunks))
 
@@ -235,7 +235,7 @@
     (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                    (if all-empty? "all" "zero"))))
   (define the-area
-    (area (rect (xz 0 0) (xz width depth))
+    (area (make-rect (xz 0 0) (xz width depth))
           (lambda ([xz : XZ])
             (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
           #f))
@@ -327,7 +327,7 @@
 (define (stage-full-area [chunk-layout : Chunk-Layout])
   (let* ([depth (ufx* 32 (vector-length chunk-layout))]
          [width (ufx* 32 (vector-length (vector-ref chunk-layout 0)))]
-         [bounds (rect (xz 0 0) (xz width depth))])
+         [bounds (make-rect (xz 0 0) (xz width depth))])
     (define (contains? [xz : XZ])
       (chunk-translate chunk-layout xz))
     (area bounds contains? #f)))

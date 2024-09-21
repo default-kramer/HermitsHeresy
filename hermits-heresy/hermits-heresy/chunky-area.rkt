@@ -69,7 +69,7 @@
 
 (define empty-chunky-area (chunky-area (vector->immutable-vector (make-vector 0 empty-bytes))
                                        0
-                                       (rect (xz 0 0) (xz 0 0))
+                                       (make-rect (xz 0 0) (xz 0 0))
                                        0))
 
 (define (deduplicate [bytes : Bytes])
@@ -116,8 +116,8 @@
   (define max-z (ufx* 32 H32))
   (chunky-area (vector->immutable-vector bytevec)
                W32
-               (rect (xz 0 0)
-                     (xz max-x max-z))
+               (make-rect (xz 0 0)
+                          (xz max-x max-z))
                xz-count))
 
 (: build-chunky-area (-> Fixnum Fixnum
@@ -177,8 +177,8 @@
   (on-done-callback all-empty? all-full?)
   (chunky-area (vector->immutable-vector bytevec)
                W32
-               (rect (xz min-x min-z)
-                     (xz max-x max-z))
+               (make-rect (xz min-x min-z)
+                          (xz max-x max-z))
                xz-count))
 
 (: bitmap->chunky-area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
