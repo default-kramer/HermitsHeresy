@@ -1,6 +1,6 @@
 #lang racket
 
-(provide compile-traversal area-key-param area-proc-param
+(provide compile-traversal in-area-vector in-area-index-assigner
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
          lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
@@ -15,6 +15,7 @@
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam
+         racket/unsafe/ops
          (for-syntax "compile-block-ids.rkt"
                      racket/match
                      racket/list))
@@ -101,18 +102,26 @@
      (syntax/loc stx
        (HHEXPR (do! (::set-block! val))))]))
 
-(define area-key-param (make-parameter #f))
-(define area-proc-param (make-parameter #f))
+(define in-area-vector (make-parameter #f))
+(define in-area-index-assigner (make-parameter #f))
 
-(define (get-area-key area)
-  (let ([key ((area-key-param) area)])
-    #;(println (list "got area key:" key))
-    key))
+(define (make-in-area-proc area)
+  ; The `in-area?` status is communicated from typed to untyped code via a vector.
+  ; This validation code will be lifted (only called once per traversal):
+  (define vec (in-area-vector))
+  (define idx ((in-area-index-assigner) area))
+  (when (not (and (vector? vec)
+                  (not (impersonator? vec))))
+    (error "assert fail: bad result from in-area-vector:" vec))
+  (when (not (and (fixnum? idx)
+                  (>= idx 0)
+                  (< idx (vector-length vec))))
+    (error "assert fail: bad result from in-area-index-assigner:" idx))
 
-(define (get-area-proc)
-  (let ([proc (area-proc-param)])
-    (println (list "got area proc:" proc (impersonator? proc)))
-    proc))
+  ; But this proc will be called for (potentially) every single cell
+  ; of the traversal, so we want it to be as fast as possible:
+  (lambda ()
+    (unsafe-vector*-ref vec idx)))
 
 (define-syntax (in-area? stx)
   (check-context stx)
@@ -120,9 +129,8 @@
     [(_ area)
      (syntax/loc stx
        (HHEXPR
-        (let ([:in-area? (lift (get-area-proc))]
-              [:area (lift (get-area-key area))])
-          (:in-area? :area))))]))
+        (let ([:in-area? (lift (make-in-area-proc area))])
+          (:in-area?))))]))
 
 (define-syntax (YYY stx)
   (check-context stx)
@@ -168,14 +176,14 @@
     [anything stx]))
 
 ; = collect-areas =
-; Finds all (get-area-key area) forms and collect them into area-accum,
+; Finds all (make-in-area-proc area) forms and collect them into area-accum,
 ; a boxed list of areas.
 (define-for-syntax (collect-areas orig-stx area-accum)
   (define (recurse stx)
     ;(println (list "recursing" stx))
     (collect-areas stx area-accum))
-  (syntax-case orig-stx (get-area-key)
-    [(get-area-key area)
+  (syntax-case orig-stx (make-in-area-proc)
+    [(make-in-area-proc area)
      (let ()
        (set-box! area-accum (cons #'area (unbox area-accum)))
        (void))]

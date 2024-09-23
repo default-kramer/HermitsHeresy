@@ -64,8 +64,8 @@
                                Any)])
 
 (unsafe-require/typed (prefix-in ut: "traversal/untyped-traversal.rkt")
-                      [ut:area-key-param (Parameterof Any)]
-                      [ut:area-proc-param (Parameterof Any)])
+                      [ut:in-area-vector (Parameterof Any)]
+                      [ut:in-area-index-assigner (Parameterof Any)])
 
 {module+ test
   (require typed/rackunit)
@@ -631,14 +631,8 @@
     (ann (make-vector (length areas) #f)
          (Mutable-Vectorof Boolean)))
 
-  ; Returns whether the area assigned to the given index contains
-  ; the current XZ coordinate. This proc can be called many times
-  ; in the traversal so we want it to be as fast as possible.
-  (define (get-area-contains-flag [index : Integer])
-    (vector-ref area-contains-vec index))
-
-  (parameterize ([ut:area-key-param traversal-area->index]
-                 [ut:area-proc-param get-area-contains-flag])
+  (parameterize ([ut:in-area-index-assigner traversal-area->index]
+                 [ut:in-area-vector area-contains-vec])
     (define args (t:make-empty-argbox))
     (define callback ((t:traversal-callback-maker trav) args))
     (when (impersonator? callback)
