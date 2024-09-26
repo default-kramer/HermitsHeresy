@@ -84,8 +84,7 @@
   ;    fail with a "wrong arity" exception at runtime.
   (when (not (and (list? areas)
                   (andmap chunky-area? areas)))
-    (error "TODO"))
-  (println (list "got some areas" (length areas)))
+    (error "assert fail - bad area list"))
   (when (not (syntax? expanded))
     (error "assert fail - expanded was not syntax"))
   (when (not (syntax? rewritten))

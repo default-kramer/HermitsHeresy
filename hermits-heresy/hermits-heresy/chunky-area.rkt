@@ -251,6 +251,6 @@
            (chunky-area-contains? area (xz x z)))))
 
   (define (on-done all-empty? all-full?)
-    (println (list "TODO empty/full flags:" all-empty? all-full?)))
+    (void))
 
   (build-chunky-area width depth in-area? on-done))
