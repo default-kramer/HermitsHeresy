@@ -2,7 +2,8 @@
 
 (provide Chunky (struct-out chunky)
          XZ (struct-out xz) xz->values
-         Rect (struct-out rect)
+         Rect make-rect
+         rect-start rect-end rect-width rect-height rect-contains?
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
@@ -60,6 +61,32 @@
       (when cell (set! count (ufx+ 1 count)))))
   count)
 
+; Note: `start is inclusive, `end` is exclusive.
+; Otherwise a zero-size rect would need end < start which would be weird.
 (struct rect ([start : XZ]
               [end : XZ])
   #:type-name Rect #:transparent)
+
+(define (make-rect [a : XZ] [b : XZ])
+  ; Ensure that `start` is always the upper left and `end` the lower right
+  (define-values (x1 z1) (xz->values a))
+  (define-values (x2 z2) (xz->values b))
+  (rect (xz (min x1 x2) (min z1 z2))
+        (xz (max x1 x2) (max z1 z2))))
+
+(define (rect-width [rect : Rect])
+  (ufx- (xz-x (rect-end rect))
+        (xz-x (rect-start rect))))
+
+(define (rect-height [rect : Rect])
+  (ufx- (xz-z (rect-end rect))
+        (xz-z (rect-start rect))))
+
+(define (rect-contains? [rect : Rect] [xz : XZ])
+  (define-values (x z) (xz->values xz))
+  (define-values (x1 z1) (xz->values (rect-start rect)))
+  (define-values (x2 z2) (xz->values (rect-end rect)))
+  (and (ufx>= x x1)
+       (ufx>= z z1)
+       (ufx< x x2)
+       (ufx< z z2)))

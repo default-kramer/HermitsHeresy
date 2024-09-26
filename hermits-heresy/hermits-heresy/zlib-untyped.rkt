@@ -2,10 +2,9 @@
 
 (provide compress uncompress)
 
-; If you don't use the right compression settings, DQB2 can misread the save file.
-; For example, using System.IO.Compression.CompressionLevel.Fastest from dotnet will sometimes
-; cause this error: https://github.com/turtle-insect/DQB2/pull/16
-; Fortunately, it seems like the zlib default settings work reliably.
+; If the STGDAT file increases it can cause problems.
+; See https://github.com/default-kramer/HermitsHeresy/issues/12
+; So we want to use the best compression level possible.
 ;
 ;
 ; = Notes to self =

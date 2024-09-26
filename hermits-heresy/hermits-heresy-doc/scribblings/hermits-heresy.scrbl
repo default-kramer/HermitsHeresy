@@ -394,9 +394,47 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
                     'Grassy-Earth (code:comment "weight 1 by default")
                     '[Earth 1] (code:comment "weight 1")
                     '[Stony-Soil 2]))
-   (code:comment "c'mon RNG, please don't embarass me here:")
+   (code:comment "c'mon RNG, please don't embarrass me here:")
    (for/list ([i (in-range 25)])
      (my-grassy-mottler)))
+}
+
+@defproc[(selection [stage stage?]
+                    [area area?]
+                    [transforms (listof (or/c (list/c 'translate fixnum? fixnum?)
+                                              (list/c 'translate-to fixnum? fixnum?)
+                                              'mirror-x
+                                              'mirror-z
+                                              (list/c 'rotate integer?)
+                                              (list/c 'adjust-y fixnum?)))])
+         selection?]{
+ Creates a selection.
+ The combination of the given @(racket stage) and @(racket area) defines the
+ blockspace to select from.
+ The @(racket transforms) do not cause different blocks to be selected; instead, they
+ shift the original blockspace to appear as if it is in a different location.
+ See also @(racket with-selection).
+
+ The meaning of the transforms is as follows.
+ Some of the transformations depend on the "bounding rectangle", which is the
+ smallest possible rectangle which includes all XZ coordinates inside the selection.
+ @(itemlist
+   @item{@(racket (list 'translate dx dz)) -- Shifts the X and Z
+  coordinates by the given dx and dz values.}
+   @item{@(racket (list 'translate-to X Z)) -- Sets the X and Z coordinates
+  of the northwest/top-left corner of the bounding rectangle.}
+   @item{@(racket 'mirror-x) -- Reflects such that east and west are swapped.
+  The bounding rectangle remains in the same place.}
+   @item{@(racket 'mirror-z) -- Reflects such that north and south are swapped.
+  The bounding rectangle remains in the same place.}
+   @item{@(racket (list 'rotate N)) -- Rotates the selection by N degrees.
+  N must be a multiple of 90.
+  The post-rotation bounding rectangle will be located such that the XZ coordinate
+  of the northwest/top-left corner matches the pre-rotation bounding rectangle.
+  For example, if the rectangle goes from (10,10) to (100,20) a 90-degree
+  rotation would produce a rectangle that goes from (10,10) to (20,100).}
+   @item{@(racket (list 'adjust-y dy)) -- Shifts the Y coordinate up or down by the
+  given dy value. Positive values raise the selection; negative values lower it.})
 }
 
 @subsection{Traversal}
@@ -460,4 +498,15 @@ For example, here is how a traversal could be used to replace certain blocks wit
  Otherwise @(racket block-expr) must produce a @(racket fixnum?).
 
  @tech{Simple} blocks are overwritten, but @tech[#:key "item"]{items} are left intact.
+}
+
+@defform[(with-selection [block-id selection-expr] body ...)]{
+ Can only be used inside a @(racket traversal).
+
+ Executes the @(racket body) when the given @(racket selection) produces
+ a @tech{simple} block (including vacancy) at the current coordinate.
+ Within the @(racket body), the @(racket block-id) will contain that block's value.
+
+ In other words, the @(racket body) will not be executed if the current coordinate
+ lies outside of the selection or if the selection produces an @tech{item}.
 }

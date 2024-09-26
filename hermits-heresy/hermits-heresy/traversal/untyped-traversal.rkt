@@ -1,16 +1,21 @@
 #lang racket
 
-(provide compile-traversal
+(provide compile-traversal in-area-vector in-area-index-assigner
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
          lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
+         in-area?
          )
 
 (require "traversal.rkt"
          "../block.rkt"
+         "../selection.rkt"
+         "../chunky-area.rkt"
+         "../basics.rkt"
          (prefix-in unsafe: (submod "traversal.rkt" unsafe))
          racket/fixnum
          racket/stxparam
+         racket/unsafe/ops
          (for-syntax "compile-block-ids.rkt"
                      racket/match
                      racket/list))
@@ -97,6 +102,36 @@
      (syntax/loc stx
        (HHEXPR (do! (::set-block! val))))]))
 
+(define in-area-vector (make-parameter #f))
+(define in-area-index-assigner (make-parameter #f))
+
+(define (make-in-area-proc area)
+  ; The `in-area?` status is communicated from typed to untyped code via a vector.
+  ; This validation code will be lifted (only called once per traversal):
+  (define vec (in-area-vector))
+  (define idx ((in-area-index-assigner) area))
+  (when (not (and (vector? vec)
+                  (not (impersonator? vec))))
+    (error "assert fail: bad result from in-area-vector:" vec))
+  (when (not (and (fixnum? idx)
+                  (>= idx 0)
+                  (< idx (vector-length vec))))
+    (error "assert fail: bad result from in-area-index-assigner:" idx))
+
+  ; But this proc will be called for (potentially) every single cell
+  ; of the traversal, so we want it to be as fast as possible:
+  (lambda ()
+    (unsafe-vector*-ref vec idx)))
+
+(define-syntax (in-area? stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [(_ area)
+     (syntax/loc stx
+       (HHEXPR
+        (let ([:in-area? (lift (make-in-area-proc area))])
+          (:in-area?))))]))
+
 (define-syntax (YYY stx)
   (check-context stx)
   (syntax-case stx ()
@@ -139,6 +174,24 @@
          [anything
           (datum->syntax stx (map myexpand (syntax->list stx)) stx stx)]))]
     [anything stx]))
+
+; = collect-areas =
+; Finds all (make-in-area-proc area) forms and collect them into area-accum,
+; a boxed list of areas.
+(define-for-syntax (collect-areas orig-stx area-accum)
+  (define (recurse stx)
+    ;(println (list "recursing" stx))
+    (collect-areas stx area-accum))
+  (syntax-case orig-stx (make-in-area-proc)
+    [(make-in-area-proc area)
+     (let ()
+       (set-box! area-accum (cons #'area (unbox area-accum)))
+       (void))]
+    [(stuff ...)
+     (let ([items (syntax->list orig-stx)])
+       (map recurse items)
+       (void))]
+    [_ (void)]))
 
 ; = rewrite =
 ; Replaces each (lift expr) with a generated identifier.
@@ -183,10 +236,14 @@
      (let* ([orig #'(let () expr ...)]
             [expanded (parameterize ([disable-context-check? #t])
                         (myexpand orig))]
+            [rewritten expanded]
+            [area-accum (box (list))]
+            [_ (collect-areas rewritten area-accum)]
             [lift-accum (box (list))]
-            [rewritten (rewrite expanded lift-accum)])
+            [rewritten (rewrite rewritten lift-accum)])
        (with-syntax ([(lifted-id ...) (map car (unbox lift-accum))]
-                     [(lifted-expr ...) (map cdr (unbox lift-accum))])
+                     [(lifted-expr ...) (map cdr (unbox lift-accum))]
+                     [(collected-area ...) (unbox area-accum)])
          (quasisyntax/loc stx
            (unsafe:make-traversal
             (lambda (args)
@@ -197,6 +254,7 @@
               (let ([lifted-id lifted-expr]
                     ...)
                 (lambda () (callback-body args #,rewritten))))
+            (list collected-area ...)
             #'#,expanded
             #'#,rewritten
             ))))]))

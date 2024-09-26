@@ -10,7 +10,7 @@
   (let* ([path (build-path "fresh-topias" filename)]
          [chunks (get-bedrock-chunks path)]
          [layout (get-layout chunks)])
-    (check-equal? expect layout)))
+    (check-equal? layout expect)))
 
 (define (show-runs filename)
   (let* ([path (build-path "fresh-topias" filename)]
@@ -18,6 +18,7 @@
     (print-runs chunks)))
 
 ; Filename is the code you can give to Brownbeard to recreate the island.
+
 
 ; Large Coral Cay
 (check-layout "4pvf1r91tm1.BIN" '((X X X X X X X X X X X)
@@ -193,3 +194,20 @@
                                  (X X X X X X X)
                                  (_ X X _ _ _ _)
                                  (_ X X _ _ _ _)))
+
+; Medium Iridescent
+; Regression - This was the first layout I saw that proves you can
+; have two adjacent runs with no spacer. The top row is a run of 3
+; immediately adjacent to a run of 7.
+(check-layout "13iapcevmr.BIN"   '((X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (_ X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (X X X X X X X X X X)
+                                   (_ _ _ X X X _ _ _ _)
+                                   (_ X X _ _ _ _ _ _ _)
+                                   (_ X X _ _ _ _ _ _ _)))

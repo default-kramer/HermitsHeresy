@@ -133,6 +133,7 @@
 ; Given some runs, returns all possible rows such that:
 ; * The row contains all of the given runs in the same order
 ; * The width of each row equals the requested width
+; I have confirmed that the following condition is NOT TRUE for at least one topia:
 ; * There is at least one #f ("spacer") between any two runs
 (: run-combiner (All (A) (-> (Listof (Listof A)) Integer (Listof (Listof (U #f A))))))
 ; The generic type is for testability.
@@ -141,26 +142,27 @@
   (: recurse (-> ROW (Listof (Listof A)) (Listof #f) (Listof ROW)))
   (define (recurse row-accum runs spacers)
     (match (list runs spacers)
-      [(list (list)
-             leftover-spacers)
-       (let ([row (ann (append row-accum leftover-spacers) ROW)])
+      [(list (list) (list))
+       ; no more runs or spacers, done
+       (list)]
+      [(list (list) spacers)
+       ; have spacers but no runs
+       (let ([row (ann (append row-accum spacers) ROW)])
          (list row))]
-      [(list (list run)
-             (list))
-       ; Final run without any trailing spacers is the special case.
-       ; (During normal recursion we require at least one trailing spacer)
-       (let ([row (ann (append row-accum run) ROW)])
+      [(list runs (list))
+       ; have runs but no spacers
+       (let ([row (ann (apply append (cons row-accum runs)) ROW)])
          (list row))]
       [(list (list run more-runs ...)
              (list spacer more-spacers ...))
-       (let ([expanded-row (ann (append row-accum run (list spacer)) ROW)])
-         (append
-          ; recursion option 1: actually build a new row
-          (recurse expanded-row more-runs more-spacers)
-          ; recursion option 2: just consume one spacer
-          (recurse (append row-accum (list spacer)) runs more-spacers)))]
-      [else ; need a spacer but we need one
-       (list)]))
+       (append
+        ; recursion option 1: consume a run
+        (recurse (ann (append row-accum run) ROW)
+                 more-runs spacers)
+        ; recursion option 2: consume a spacer
+        (recurse (ann (append row-accum (list spacer)) ROW)
+                 runs more-spacers))]
+      [else (error "assert fail")]))
   (define num-spacers-needed (- width (length (flatten runs))))
   (cond
     [(< num-spacers-needed 0) (list)]
@@ -175,21 +177,29 @@
 
 {module+ test
   (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 8)
-                '([x1 x2 x3 #f x4 x5 x6 #f]
+                '([x1 x2 x3 x4 x5 x6 #f #f]
+                  [x1 x2 x3 #f x4 x5 x6 #f]
                   [x1 x2 x3 #f #f x4 x5 x6]
-                  [#f x1 x2 x3 #f x4 x5 x6]))
+                  [#f x1 x2 x3 x4 x5 x6 #f]
+                  [#f x1 x2 x3 #f x4 x5 x6]
+                  [#f #f x1 x2 x3 x4 x5 x6]))
 
   (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 7)
-                '([x1 x2 x3 #f x4 x5 x6]))
+                '([x1 x2 x3 x4 x5 x6 #f]
+                  [x1 x2 x3 #f x4 x5 x6]
+                  [#f x1 x2 x3 x4 x5 x6]))
 
   (check-equal? (run-combiner '((x1 x2 x3) (x4 x5 x6)) 6)
-                (list))
+                '([x1 x2 x3 x4 x5 x6]))
 
   (check-equal? (run-combiner '((x1 x2)) 5)
                 '([x1 x2 #f #f #f]
                   [#f x1 x2 #f #f]
                   [#f #f x1 x2 #f]
                   [#f #f #f x1 x2]))
+
+  (check-equal? (run-combiner '((x1 x2)) 1)
+                (list))
   }
 
 (define (show-row [row : Row])

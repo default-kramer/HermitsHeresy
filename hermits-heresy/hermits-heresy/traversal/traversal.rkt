@@ -13,6 +13,7 @@
            make-traversal))
 
 (require "../basics.rkt"
+         "../chunky-area.rkt"
          "../ufx.rkt")
 
 (require/typed racket/base [prop:authentic Struct-Type-Property])
@@ -63,12 +64,14 @@
 (define-type Callback (-> AnyValues))
 
 (struct traversal ([callback-maker : (-> Argbox Callback)]
+                   [areas : (Listof Chunky-Area)]
                    [expanded : (Syntaxof Any)]
                    [rewritten : (Syntaxof Any)])
   #:transparent #:type-name Traversal
   #:property prop:authentic #t)
 
 (define (make-traversal [callback-maker : (-> Argbox Callback)]
+                        [areas : Any]
                         [expanded : Any]
                         [rewritten : Any])
   ; This proc will be provided unsafely (internally, not to the world).
@@ -79,11 +82,14 @@
   ; 2) the type (-> AnyValues) needs no impersonation -- the only thing
   ;    that could go wrong is passing in >0 arguments which will safely
   ;    fail with a "wrong arity" exception at runtime.
+  (when (not (and (list? areas)
+                  (andmap chunky-area? areas)))
+    (error "assert fail - bad area list"))
   (when (not (syntax? expanded))
     (error "assert fail - expanded was not syntax"))
   (when (not (syntax? rewritten))
     (error "assert fail - rewritten was not syntax"))
-  (traversal callback-maker expanded rewritten))
+  (traversal callback-maker (remove-duplicates areas) expanded rewritten))
 
 
 {module+ for-testing

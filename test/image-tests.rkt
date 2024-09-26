@@ -2,7 +2,7 @@
 
 {module+ test
   (require hermits-heresy
-           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" bitmap->area area-contains?)
+           (only-in "../hermits-heresy/hermits-heresy/NEW-API.rkt" area-contains?)
            (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
            rackunit)
 
@@ -38,7 +38,7 @@
 
   (let ([area (bitmap->area "images/STB-manual-build.bmp")])
     (check-equal? (area-bounds area)
-                  (rect (xz 329 30) (xz 419 127)))
+                  (make-rect (xz 329 30) (xz 420 128)))
     (check-true (area-contains? area (xz 329 30)))
     (check-true (area-contains? area (xz 387 30)))
     (check-false (area-contains? area (xz 388 30)))
@@ -51,4 +51,9 @@
     (check-true (area-contains? area (xz 405 94)))
     (check-true (area-contains? area (xz 406 93)))
     (check-false (area-contains? area (xz 406 94))))
+
+  ; Make sure bitmap->area produces a decent error message when the file does not exist:
+  (check-exn
+   #rx"open-input-file: cannot open input file"
+   (lambda () (bitmap->area "does-not-exist.bmp")))
   }

@@ -14,10 +14,12 @@
          protect-area!
          traverse
          build-mottler
+         (rename-out [make-selection selection])
 
          ; Traversal lang
          (rename-out [compile-traversal traversal])
          block-matches? set-block!
+         with-selection
          )
 
 (module+ undocumented
@@ -37,9 +39,11 @@
            ))
 
 (require "NEW-API.rkt"
+         "selection.rkt"
          "build-mottler.rkt"
          (only-in "traversal/untyped-traversal.rkt"
                   compile-traversal block-matches? set-block! HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)
+         "traversal/trav-macros.rkt"
          "images.rkt")
