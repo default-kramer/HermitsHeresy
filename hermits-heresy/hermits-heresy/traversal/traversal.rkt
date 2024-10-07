@@ -14,6 +14,7 @@
 
 (require "../basics.rkt"
          "../chunky-area.rkt"
+         "../hill.rkt"
          "../ufx.rkt")
 
 (require/typed racket/base [prop:authentic Struct-Type-Property])
@@ -64,7 +65,7 @@
 (define-type Callback (-> AnyValues))
 
 (struct traversal ([callback-maker : (-> Argbox Callback)]
-                   [areas : (Listof Chunky-Area)]
+                   [areas : (Listof (U Chunky-Area Hill))]
                    [expanded : (Syntaxof Any)]
                    [rewritten : (Syntaxof Any)])
   #:transparent #:type-name Traversal
@@ -82,8 +83,11 @@
   ; 2) the type (-> AnyValues) needs no impersonation -- the only thing
   ;    that could go wrong is passing in >0 arguments which will safely
   ;    fail with a "wrong arity" exception at runtime.
+  (define (valid-area? x)
+    (or (chunky-area? x)
+        (hill? x)))
   (when (not (and (list? areas)
-                  (andmap chunky-area? areas)))
+                  (andmap valid-area? areas)))
     (error "assert fail - bad area list"))
   (when (not (syntax? expanded))
     (error "assert fail - expanded was not syntax"))
