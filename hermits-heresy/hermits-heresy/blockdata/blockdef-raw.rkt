@@ -35,6 +35,9 @@
 
 ; From generate-case-expr.rkt
 (define-stuff [symbol->blockdef fixnum->blockdef]
+  (128 Clear-water-full-block "clear water full block" #t #f ())
+  (341 Sea-water-full-block "sea water full block" #t #f ())
+  (349 Sea-water-shallow-block "sea water shallow block" #t #f ())
   (1 Bedrock "bedrock" #f #f ())
   (2 Earth "earth" #f #f ())
   (3 Grassy-Earth "grassy earth" #f #f ())
@@ -149,7 +152,6 @@
   (125 Lemongrassy-Block "lemongrassy block*" #f #t ())
   (126 Grassy-Block "grassy block*" #f #t ())
   (127 Limegrassy-Block "limegrassy block*" #f #t ())
-  (128 Clear-water-full-block "clear water full block" #t #f ())
   (130 Light-Dolomite "light dolomite" #f #f ())
   (131 Dark-Dolomite "dark dolomite" #f #f ())
   (132 Stony-Sand "stony sand" #f #f ())
@@ -256,14 +258,12 @@
   (338 Sea-water-surface-block "sea water surface block" #t #f ())
   (339 Sea-water-surface-block "sea water surface block" #t #f ())
   (340 Sea-water-full-block "sea water full block" #t #f ())
-  (341 Sea-water-full-block "sea water full block" #t #f ())
   (343 Clear-water-shallow-block "clear water shallow block" #t #f ())
   (344 Hot-water-shallow-block "hot water shallow block" #t #f ())
   (345 Poison-shallow-block "poison shallow block" #t #f ())
   (346 Lava-shallow-block "lava shallow block" #t #f ())
   (347 Bottomless-Swamp-shallow-block "bottomless swamp shallow block" #t #f ())
   (348 Muddy-Water-shallow-block "muddy water shallow block" #t #f ())
-  (349 Sea-water-shallow-block "sea water shallow block" #t #f ())
   (383 Clear-water-surface-block "clear water surface block" #t #f ())
   (384 Hot-water-surface-block "hot water surface block" #t #f ())
   (385 Poison-surface-block "poison surface block" #t #f ())

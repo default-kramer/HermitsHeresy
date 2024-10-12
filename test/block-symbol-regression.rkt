@@ -333,4 +333,14 @@
   ; and not one of the item ID variants of that liquid.
   (for ([sym historically-defined-symbols])
     (check-true (simple? (block sym))))
+
+
+  ; I've found some strange stuff about the liquids I don't understand yet.
+  ; For example, 'Clear-water-full-block was originally defined as 120 or 128,
+  ; and 120 was chosen arbitrarily. But when I filled my aquarium with 120
+  ; and placed an item in it, the aquarium emptied itself like when a flowing
+  ; water source is cut off. Using block 128 behaved more like I expected.
+  (check-equal? (block 'Clear-water-full-block) 128)
+  (check-equal? (block 'Sea-water-full-block) 341)
+  (check-equal? (block 'Sea-water-shallow-block) 349)
   }
