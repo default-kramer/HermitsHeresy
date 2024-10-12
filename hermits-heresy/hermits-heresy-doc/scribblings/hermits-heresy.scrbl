@@ -5,8 +5,11 @@
           scribble/example)
 
 @(begin
-   (define default-eval (make-base-eval))
-   (default-eval '(require hermits-heresy))
+   (define (make-fresh-eval)
+     (let ([e (make-base-eval)])
+       (e '(require hermits-heresy))
+       e))
+   (define default-eval (make-fresh-eval))
    )
 
 @title{Hermit's Heresy: DQB2 Power Tools}
@@ -280,6 +283,7 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
 }
 
 @defproc[(bitmap->hill [path path-string?]
+                       [#:adjust-y adjust-y fixnum? 0]
                        [#:semitransparent-handling semitransparent-handling
                         (or/c 'adjust 'ignore) 'adjust])
          hill?]{
@@ -299,6 +303,9 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
 
 This version discards the remainder of the division by 2.
 A future version may decide to respect it via the flat chisel.
+
+The @(racket adjust-y) can be used to raise or lower the entire hill.
+Positive values raise; negative values lower.
 
 For the most accurate results, you should avoid semitransparent pixels in your hill.
 (In other words, alpha should always be either 0 or 255, no in-between values.)
@@ -486,7 +493,8 @@ For example, here is how a traversal could be used to replace certain blocks wit
  is 2 or 414 because both of those values are mapped to Earth, as the following
  log message proves:
  @(examples
-   #:eval default-eval #:label #f
+   ; Need a fresh eval to ensure the disambiguation appears
+   #:eval (make-fresh-eval) #:label #f
    (block 'Earth))
 }
 
@@ -509,4 +517,12 @@ For example, here is how a traversal could be used to replace certain blocks wit
 
  In other words, the @(racket body) will not be executed if the current coordinate
  lies outside of the selection or if the selection produces an @tech{item}.
+}
+
+@defform[(in-hill? hill)]{
+ Can only be used inside a @(racket traversal).
+
+ Returns true if the current xzy coordinate is inside the given @(racket hill),
+ false otherwise.
+ Hills can be created using @(racket bitmap->hill).
 }
