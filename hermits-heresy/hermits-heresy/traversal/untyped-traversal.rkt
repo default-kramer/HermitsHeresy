@@ -4,7 +4,7 @@
          ; Try to provide as little as possible here, and build
          ; more complex things elsewhere using these primitives:
          lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
-         in-area?
+         in-area? in-hill?
          )
 
 (require "traversal.rkt"
@@ -131,6 +131,15 @@
        (HHEXPR
         (let ([:in-area? (lift (make-in-area-proc area))])
           (:in-area?))))]))
+
+(define-syntax (in-hill? stx)
+  (check-context stx)
+  (syntax-case stx ()
+    [(_ hill)
+     (syntax/loc stx
+       ; The typed side will accept areas or hills via the same mechanism.
+       ; When it receives a hill, it knows it needs to also test the y-coordinate.
+       (HHEXPR (in-area? hill)))]))
 
 (define-syntax (YYY stx)
   (check-context stx)

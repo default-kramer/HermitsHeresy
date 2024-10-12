@@ -80,6 +80,22 @@
                      blocks))
 
 
+(define (preference val)
+  ; Define IDs that we want to move to the front of the list
+  ; for when there is ambiguity. All of these special cases should
+  ; be protected by a test (currently block-symbol-regression.rkt)
+  (case val
+    [(128) 0]
+    [(341) 0]
+    [(349) 0]
+    [else 9999]))
+
+(set! blocks (sort blocks
+                   (lambda (a b)
+                     (< (+ a (preference a))
+                        (+ b (preference b))))
+                   #:key block-id))
+
 (define (get-name+dye lower-name)
   (define patterns '(("{green}" . green)
                      ("{blue}" . blue)

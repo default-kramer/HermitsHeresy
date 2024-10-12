@@ -49,6 +49,7 @@
          "chunk.rkt"
          "chunky-area.rkt"
          "area.rkt"
+         "hill.rkt"
          "basics.rkt"
          "ufx.rkt"
          "config-util.rkt"
@@ -105,133 +106,10 @@
           (xz x (ufx+ 1 z))
           (xz x (ufx+ -1 z)))))
 
-(define-syntax-rule (in-rect/x rect)
-  (ufx-in-range (xz-x (rect-start rect))
-                (xz-x (rect-end rect))))
-(define-syntax-rule (in-rect/z rect)
-  (ufx-in-range (xz-z (rect-start rect))
-                (xz-z (rect-end rect))))
-
-(define (area-bounds [area : Area])
-  (cond
-    [(area? area) (area-bounds2 area)]
-    [else (chunky-area-bounds area)]))
-
-(: area->contains-func (-> Area (-> XZ Any)))
-(define (area->contains-func area)
-  (cond
-    [(area? area) (area-contains-func area)]
-    [else (lambda ([xz : XZ]) (chunky-area-contains? area xz))]))
-
-(: area-contains? (-> Area XZ Any))
-(define (area-contains? area xz)
-  ((area->contains-func area) xz))
-
-(define-syntax-rule (for/area ([xz-id area-expr])
-                      body ...)
-  (let* ([area (ann area-expr Area)]
-         [bounds (area-bounds area)]
-         [contains? (cond
-                      [(area? area)
-                       (lambda ([xz : XZ]) ((area-contains-func area) xz))]
-                      [else
-                       (lambda ([xz : XZ]) (chunky-area-contains? area xz))])])
-    (for ([z : Fixnum (in-rect/z bounds)])
-      (for ([x : Fixnum (in-rect/x bounds)])
-        (let ([xz-id (xz x z)])
-          (when (contains? xz-id)
-            body ...))))))
 
 (: bitmap->area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->area arg)
   (bitmap->chunky-area arg))
-
-(struct hill ([area : Area]
-              [elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)])
-  #:type-name Hill #:transparent)
-
-(define (area->hill [area : Area] [elevation-func : (-> XZ Fixnum)])
-  (define elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)
-    (hash))
-  (for/area ([xz area])
-    (let ([elevation (elevation-func xz)])
-      (set! elevations (hash-set elevations (cons (xz-x xz) (xz-z xz)) elevation))))
-  (hill area
-        elevations))
-
-(define (area->hill2 [area : Area] [bumps : Hill])
-  (define (elevation-func [xz : XZ])
-    (hash-ref (hill-elevations bumps)
-              (cons (xz-x xz) (xz-z xz))
-              (lambda () 0)))
-  (area->hill area elevation-func))
-
-(: bitmap->hill (->* ((U (Instance Bitmap%) Path-String))
-                     (#:semitransparent-handling (U 'ignore 'adjust))
-                     Hill))
-(define (bitmap->hill arg #:semitransparent-handling [semitransparent-handling 'adjust])
-  ; Semi-transparent pixels were a pain point for the first two users (one of them was me),
-  ; so I think it's best that adjusting for this is the default behavior.
-  (define bmp (bitmap arg))
-  (define width : Fixnum
-    (let ([w (pict-width bmp)])
-      (or (and (fixnum? w) (cast w Fixnum))
-          (error "bad width" w))))
-  (define depth : Fixnum
-    (let ([h (pict-height bmp)])
-      (or (and (fixnum? h) (cast h Fixnum))
-          (error "bad height" h))))
-  (define pixels (pict->argb-pixels bmp))
-  ; Use Pairof here to make sure XZ and Point are handled correctly
-  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
-  (define all-empty? : Boolean #t)
-  (define all-full? : Boolean #t)
-  (define semitransparent-warned? : Boolean #f)
-  (let ([index 0])
-    (for ([z (in-range depth)])
-      (for ([x (in-range width)])
-        (let* ([alpha (bytes-ref pixels index)]
-               [red (bytes-ref pixels (+ 1 index))]
-               [green (bytes-ref pixels (+ 2 index))]
-               [blue (bytes-ref pixels (+ 3 index))]
-               [total (+ red green blue)])
-          (set! index (+ 4 index)) ; 4 bytes per pixel
-          (cond
-            [(> alpha 0)
-             (define raw-elevation : Fixnum
-               (max 0 (- 95 (quotient (max red green blue) 2))))
-             (define adjusted-elevation : Fixnum
-               (cond
-                 [(= alpha 255) raw-elevation]
-                 [else
-                  (when (not semitransparent-warned?)
-                    (set! semitransparent-warned? #t)
-                    (show-msg "!! WARNING !! Your hill bitmap contains at least 1 semi-transparent pixel (alpha=~a at ~a,~a).
-* ~a
-* In file: ~a"
-                              alpha x z
-                              (ann (case semitransparent-handling
-                                     [(adjust) "Elevation is being adjusted, but may not be exactly what you wanted."]
-                                     [(ignore) "Elevation is not being adjusted. If you see spikes, this is the most likely cause."])
-                                   String)
-                              arg))
-                  (case semitransparent-handling
-                    ; This adjustment formula looks good to me...
-                    [(adjust) (cast (round (/ (* raw-elevation alpha) 255)) Fixnum)]
-                    [(ignore) raw-elevation])]))
-             (set! all-empty? #f)
-             (hash-set! elevations (cons x z) adjusted-elevation)]
-            [else
-             (set! all-full? #f)])))))
-  (when (or all-empty? all-full?)
-    (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
-                   (if all-empty? "all" "zero"))))
-  (define the-area
-    (area (make-rect (xz 0 0) (xz width depth))
-          (lambda ([xz : XZ])
-            (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
-          #f))
-  (hill the-area (make-immutable-hash (hash->list elevations))))
 
 ; adjust-y is undocumented, not sure if it belongs here
 (define (put-hill! [stage : Stage] [hill : Hill] [block : Integer] #:adjust-y [adjust-y : Fixnum 0])
@@ -244,6 +122,9 @@
     (define proof (unprotected? protected-area xz))
     (when proof
       (let* ([end-y (hash-ref elevations (cons (xz-x xz) (xz-z xz)))]
+             ; Are we missing a +1 here?
+             ; I don't think so, because y is 0-based so when hill-elevation is 96
+             ; we will fill up to 95 which is correct... I think.
              [end-y (ufx+ end-y adjust-y)])
         (for ([y : Fixnum (ufx-in-range 1 end-y)])
           (let* ([p (make-point xz y)]
@@ -603,15 +484,42 @@
      (displayln (format "No matches found for ~a" name))])
   (void))
 
-(: traverse (-> Stage t:Traversal [#:force-unsound-optimization? Boolean] Any))
-(define (traverse stage trav #:force-unsound-optimization? [optimize? #f])
+(: traverse (-> Stage t:Traversal
+                [#:force-unsound-optimization? Boolean]
+                [#:respect-bedrock? Boolean]
+                Any))
+(define (traverse stage trav
+                  #:force-unsound-optimization? [optimize? #f]
+                  #:respect-bedrock? [respect-bedrock? #t])
   ; In the future, I should be able to analyze the code and determine the areas that
   ; are relevant to optimization. For now, I'll just add this secret optional arg
   ; which allows the caller to say "you can skip any XZ that is not contained by
   ; any of the areas appearing in this traversal."
   (define cannot-optimize? : Boolean (not optimize?))
 
-  (define areas (t:traversal-areas trav))
+  (define start-y : Fixnum (if respect-bedrock? 1 0))
+
+  (define areas (filter chunky-area? (t:traversal-areas trav)))
+  (define hills (filter hill? (t:traversal-areas trav)))
+  ; It's important that hills come before areas here. Read on...
+  (define hills-and-areas (append hills areas))
+
+  ; This vector will hold the boolean status for each area and hill.
+  ; This is what the untyped code will read from.
+  ; The areas can be tested once per xz, but hills need to test
+  ; the Y coordinate also (only when potentially inside the hill).
+  (define area-contains-vec
+    (ann (make-vector (length hills-and-areas) #f)
+         (Mutable-Vectorof Boolean)))
+
+  ; Once per xz, we will update this vector to hold the elevation of each hill.
+  ; This vector is not shared with untyped code; we use it internally to test
+  ; the Y coordinate and update the area-contains-vec for each hill.
+  ; The index of the hills should match in both of these vectors.
+  ; That's why we sorted the hills to come before areas.
+  (define hill-elevation-vec
+    (ann (make-vector (length hills) 0)
+         (Mutable-Vectorof Fixnum)))
 
   ; Assigns a zero-based index to each of the areas in the traversal.
   ; This should be lifted so it only gets called once per area before
@@ -623,13 +531,11 @@
         [(empty? areas) (error "assert fail: cannot assign key to" area)]
         [(eq? area (car areas)) i]
         [(go (+ 1 i) (cdr areas))]))
-    (go 0 areas))
+    (go 0 hills-and-areas))
 
-  ; This vector will hold the `area-contains?` status for each area.
-  ; We will update it for each xz, but can leave it unchanged for all 96 y.
-  (define area-contains-vec
-    (ann (make-vector (length areas) #f)
-         (Mutable-Vectorof Boolean)))
+  (define (check-bedrock [xz : XZ])
+    (or (not respect-bedrock?)
+        (ufx= 1 (or (stage-read stage (make-point xz 0)) -1))))
 
   (parameterize ([ut:in-area-index-assigner traversal-area->index]
                  [ut:in-area-vector area-contains-vec])
@@ -641,12 +547,20 @@
       (error "assert fail: callback is an impersonator"))
     (define protected-area (unbox (stage-protected-area stage)))
     (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
-      (define proof (unprotected? protected-area xz))
+      (define proof (and (check-bedrock xz)
+                         (unprotected? protected-area xz)))
       (when proof
 
         ; Update the area-contains? statuses for each area
         (define in-any-area? : Boolean #f)
         (let ([i : Fixnum 0])
+          (for ([hill hills])
+            (let* ([key (cons (xz-x xz) (xz-z xz))]
+                   [elevation (hash-ref (hill-elevations hill) key #f)])
+              ; Setting elevation to -1 means we will never be inside it
+              (vector-set! hill-elevation-vec i (or elevation -1))
+              (set! in-any-area? (or in-any-area? (and elevation #t)))
+              (set! i (ufx+ 1 i))))
           (for ([area areas])
             (let ([result (chunky-area-contains? area xz)])
               (vector-set! area-contains-vec i result)
@@ -657,7 +571,13 @@
           (define-values (x z) (xz->values xz))
           (t:set-argbox-x! args x)
           (t:set-argbox-z! args z)
-          (for ([y : Fixnum (ufx-in-range 96)])
+          (for ([y : Fixnum (ufx-in-range start-y 96)])
+            (let ([i : Fixnum 0])
+              (for ([hill hills])
+                (let ([elev (vector-ref hill-elevation-vec i)])
+                  ; y is zero-based, elevation is 1-based, I think?? Confirm
+                  (vector-set! area-contains-vec i (ufx< y elev)))
+                (set! i (ufx+ 1 i))))
             (define p (make-point xz y))
             (define block : Fixnum
               (or (stage-read stage p)

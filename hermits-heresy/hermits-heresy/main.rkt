@@ -20,6 +20,7 @@
          (rename-out [compile-traversal traversal])
          block-matches? set-block!
          with-selection
+         in-hill?
          )
 
 (module+ undocumented
@@ -42,7 +43,8 @@
          "selection.rkt"
          "build-mottler.rkt"
          (only-in "traversal/untyped-traversal.rkt"
-                  compile-traversal block-matches? set-block! HHEXPR YYY XXX ZZZ)
+                  compile-traversal block-matches? set-block! in-hill?
+                  HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)
          "traversal/trav-macros.rkt"
