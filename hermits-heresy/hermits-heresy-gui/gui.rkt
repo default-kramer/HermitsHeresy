@@ -167,4 +167,6 @@
        [init-value "0"]
        [parent node-detail-editor]))
 
-(send frame show #t)
+{module+ main ; Don't cause `raco test` to hang
+  (send frame show #t)
+  }
