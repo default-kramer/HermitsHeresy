@@ -35,9 +35,7 @@
            add-chunk-ids!))
 
 (module+ for-testing
-  (provide get-bedrock-chunks blocks-hash hill-ref make-rect area-bounds xz)
-  (require (only-in (submod "stage.rkt" for-testing)
-                    get-bedrock-chunks))
+  (provide blocks-hash hill-ref make-rect area-bounds xz)
 
   (define (hill-ref [hill : Hill] [loc : (Pairof Fixnum Fixnum)])
     (define locxz (xz (car loc) (cdr loc)))

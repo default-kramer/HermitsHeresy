@@ -14,9 +14,7 @@
          "area.rkt"
          "chunky-area.rkt"
          "ufx.rkt"
-         "infer-topia-layout.rkt"
          "config-util.rkt"
-         (prefix-in layout: "layouts.rkt")
          (prefix-in zlib: "zlib.rkt"))
 
 (define-type Stgdat-Kind (U 'IoA
@@ -43,18 +41,6 @@
     [(BT1) "STGDAT12.BIN"]
     [(BT2) "STGDAT13.BIN"]
     [(BT3) "STGDAT16.BIN"]))
-
-(: get-chunk-layout (-> Stgdat-Kind (U #f Chunk-Layout)))
-(define (get-chunk-layout kind)
-  (case kind
-    [(BT1 BT2 BT3) #f]
-    [(IoA) layout:IoA]
-    [(Furrowfield) layout:Furrowfield]
-    [(Khrumbul-Dun) layout:Khrumbul-Dun]
-    [(Moonbrooke) layout:Moonbrooke]
-    [(Malhalla) layout:Malhalla]
-    [(Anglers-Isle) layout:Anglers-Isle]
-    [(Skelkatraz) layout:Skelkatraz]))
 
 (define header-length #x110)
 
@@ -129,16 +115,42 @@
   (define buffer (zlib:uncompress compressed buffer-size))
   (values header buffer orig-size))
 
-{module+ for-testing
-  (provide get-bedrock-chunks)
-  (: get-bedrock-chunks (-> Path-String (Listof Chunk)))
-  ; Loads chunks but just y=0 to save time. For BT layout tests.
-  (define (get-bedrock-chunks path)
-    (define-values (header buffer file-size)
-      (read-stgdat path))
-    (define chunk-length-bytes (:ufx* 2 32 32)) ; just read y=0
-    (read-chunks buffer #f chunk-length-bytes))
-  }
+(: read-chunk-layout (-> Bytes Chunk-Layout))
+; Sapphire: The chunk grid starts at 0x24C7C1. Empty chunks are 0xFFFF.
+; Valid chunks have the value be their index in the block data area.
+; There's space for 0x1000 chunks, or a grid of 64x64 chunks.
+(define (read-chunk-layout buffer)
+  ; This hash will collect all mappings from (cons x-offset z-offset) to chunk-id.
+  (define chunks : (Mutable-HashTable (Pairof Integer Integer) Integer)
+    (make-hash))
+  (define min-x : Fixnum 9999)
+  (define max-x : Fixnum -1)
+  (define min-z : Fixnum 9999)
+  (define max-z : Fixnum -1)
+  (let ([addr : Fixnum #x24C7C1])
+    (for ([i : Fixnum (ufx-in-range #x1000)])
+      (let* ([lo (bytes-ref buffer addr)]
+             [_ (set! addr (ufx+ 1 addr))]
+             [hi (bytes-ref buffer addr)]
+             [_ (set! addr (ufx+ 1 addr))]
+             [chunk-id (ufxior lo (ufxlshift hi 8))])
+        (when (not (ufx= #xFFFF chunk-id))
+          (let ([x-offset (ufxmodulo i 64)]
+                [z-offset (ufxquotient i 64)])
+            (set! min-x (min x-offset min-x))
+            (set! min-z (min z-offset min-z))
+            (set! max-x (max x-offset max-x))
+            (set! max-z (max z-offset max-z))
+            (hash-set! chunks (cons x-offset z-offset) chunk-id))))))
+  (define layout : Chunk-Layout
+    (build-vector (ufx+ 1 (ufx- max-z min-z))
+                  (lambda ([z : Integer])
+                    (build-vector (ufx+ 1 (ufx- max-x min-x))
+                                  (lambda ([x : Integer])
+                                    (let ([x (ufx+ x min-x)]
+                                          [z (ufx+ z min-z)])
+                                      (hash-ref chunks (cons x z) #f)))))))
+  layout)
 
 (define chunk-length-bytes : Fixnum #x30000)
 
@@ -182,16 +194,11 @@
 (define (open-stgdat kind path)
   (define-values (header buffer orig-size)
     (read-stgdat path))
-  (define predefined-layout (get-chunk-layout kind))
-  (define expect-chunk-count (and predefined-layout
-                                  (chunk-count predefined-layout)))
-  (define chunk-list (read-chunks buffer expect-chunk-count chunk-length-bytes))
-  (define layout (or predefined-layout
-                     (infer-topia-layout chunk-list)))
-  (when (not layout)
-    (error "Failed to infer buildertopia layout from bedrock!
-  Assuming you have not modified the bedrock, please include
-  the island-generation password in a bug report."))
+  (define layout (read-chunk-layout buffer))
+  (define num-chunks (chunk-count layout))
+  (when (ufx< num-chunks 1)
+    (error "Stage contains zero chunks??"))
+  (define chunk-list (read-chunks buffer num-chunks chunk-length-bytes))
   (stage (stgdat-file kind path)
          orig-size
          header
@@ -199,6 +206,20 @@
          (apply vector-immutable chunk-list)
          (box empty-chunky-area)
          layout))
+
+{module+ for-testing
+  (provide file->chunk-layout)
+  (define (file->chunk-layout [path : Path])
+    (define-values (header buffer orig-size)
+      (read-stgdat path))
+    (define layout (read-chunk-layout buffer))
+    ; convert to format used by unit tests
+    (map (lambda ([row : VectorTop])
+           (map (lambda ([cell : Any])
+                  (if cell 'X '_))
+                (vector->list row)))
+         (vector->list layout)))
+  }
 
 (define (save-stage! [stage : Stage])
   (define orig-file (stgdat-file-path (stage-loaded-from stage)))

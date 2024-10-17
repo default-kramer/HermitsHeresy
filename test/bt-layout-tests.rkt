@@ -1,21 +1,19 @@
 #lang racket
 
+; I used to have somewhat-tricky logic to infer the chunk layout by looking at
+; the jaggedness of the bedrock. Then Sapphire figured out how to read the save file:
+; https://github.com/default-kramer/HermitsHeresy/discussions/3#discussioncomment-10959611
+;
+; But these tests are still useful even though the logic is much simpler now.
+
 (require rackunit
-         (only-in (submod "../hermits-heresy/hermits-heresy/infer-topia-layout.rkt" for-testing)
-                  get-layout print-runs)
-         (only-in (submod "../hermits-heresy/hermits-heresy/NEW-API.rkt" for-testing)
-                  get-bedrock-chunks))
+         (only-in (submod "../hermits-heresy/hermits-heresy/stage.rkt" for-testing)
+                  file->chunk-layout))
 
 (define-syntax-rule (check-layout filename expect)
   (let* ([path (build-path "fresh-topias" filename)]
-         [chunks (get-bedrock-chunks path)]
-         [layout (get-layout chunks)])
+         [layout (file->chunk-layout path)])
     (check-equal? layout expect)))
-
-(define (show-runs filename)
-  (let* ([path (build-path "fresh-topias" filename)]
-         [chunks (get-bedrock-chunks path)])
-    (print-runs chunks)))
 
 ; Filename is the code you can give to Brownbeard to recreate the island.
 
@@ -32,12 +30,11 @@
                                   (X X X X X X X X X X X)
                                   (X X X X X X X X X X X)
                                   (X X X X X X X X X X X)
-                                  (_ X X _ _ _ _ _ _ _ _)
-                                  (_ X X _ _ _ _ _ _ _ _)))
+                                  (_ _ _ _ _ _ _ _ _ _ _)
+                                  (X X _ _ _ _ _ _ _ _ _)
+                                  (X X _ _ _ _ _ _ _ _ _)))
 
 ; Medium Coral Cay
-; Okay, already we have a test case that needs us to put the first two runs,
-; which have length 5 and 4, into a single row like [X X X X X _ X X X X]
 (check-layout "9y1ckuju01.BIN" '((X X X X X _ X X X X)
                                  (X X X X X X X X X X)
                                  (X X X X X X X X X X)
@@ -52,15 +49,6 @@
                                  (_ X X _ _ _ _ _ _ _)))
 
 ; Small Coral Cay
-; Useful test case because the first chunk has a "jaggedness" of 4 relative
-; to the chunk below it. (I guessed that jaggedness > 2 was impossible.)
-; AHA, look closer! There is probably a way we can improve these calcluations.
-; Here are the top and bottom profiles, lined up:
-#;(#f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f X X X X X X X X X X X X X X X)
-#;(#f #f #f #f #f #f #f #f #f #f #f #f X  X  X  #f X  X X X X X X X X X X X X X X X)
-; The 3 lone Xs in the middle aren't actually that relevant to jaggedness here.
-; Maybe we should redefine profile to drop "islands" in the middle?
-; I think I need to see more test cases before I make that change.
 (check-layout "a1i60xvhuw.BIN" '((_ _ _ _ X X X)
                                  (X X X X X X X)
                                  (X X X X X X X)
@@ -125,8 +113,9 @@
                                  (X X X X X X X X X X X)
                                  (X X X X X X X X X X X)
                                  (X X X X X X X X X X X)
-                                 (_ X X _ _ _ _ _ _ _ _)
-                                 (_ X X _ _ _ _ _ _ _ _)))
+                                 (_ _ _ _ _ _ _ _ _ _ _)
+                                 (X X _ _ _ _ _ _ _ _ _)
+                                 (X X _ _ _ _ _ _ _ _ _)))
 
 ; Medium Unholy Helm
 (check-layout "uceruxa3ad.BIN" '((X X X X X X X X _ _)
@@ -196,9 +185,6 @@
                                  (_ X X _ _ _ _)))
 
 ; Medium Iridescent
-; Regression - This was the first layout I saw that proves you can
-; have two adjacent runs with no spacer. The top row is a run of 3
-; immediately adjacent to a run of 7.
 (check-layout "13iapcevmr.BIN"   '((X X X X X X X X X X)
                                    (X X X X X X X X X X)
                                    (X X X X X X X X X X)

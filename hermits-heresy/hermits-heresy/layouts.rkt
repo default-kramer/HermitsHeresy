@@ -15,6 +15,15 @@
 (module+ test
   (require typed/rackunit))
 
+; NOTE: These hard-coded maps are still used for things like
+#;(get-template-image 'IoA-chunk-mask)
+; which do not require you to load a stage.
+; If customizing the chunk layout becomes commonplace, these operations
+; should probably be deprecated or removed.
+;
+; These maps are no longer used when you load a stage.
+; Now we read the chunk layout from the save file.
+
 (define (parse-map [rows : (Listof (Listof (U '_ 'X)))])
   (let ([chunk-id -1])
     (for/vector : (Vectorof (Vectorof (U #f Integer)))
