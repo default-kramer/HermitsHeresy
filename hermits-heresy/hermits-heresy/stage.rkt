@@ -192,8 +192,12 @@
 
 (: open-stgdat (-> Stgdat-Kind Path Stage))
 (define (open-stgdat kind path)
-  (define-values (header buffer orig-size)
+  (define-values (header small-buffer orig-size)
     (read-stgdat path))
+  ; Just use all the memory:
+  (define buffer (make-bytes (dqb2-chunk-start-addr 700)))
+  (bytes-copy! buffer 0 small-buffer)
+  ;(define buffer small-buffer)
   (define layout (read-chunk-layout buffer))
   (define num-chunks (chunk-count layout))
   (when (ufx< num-chunks 1)
@@ -230,9 +234,9 @@
   (define header (stage-header stage))
   (define buffer (stage-buffer stage))
   (define chunks (stage-chunks stage))
-  (for ([i (in-range (vector-length chunks))])
-    (let ([chunk (vector-ref chunks i)])
-      (unload-chunk! chunk buffer (dqb2-chunk-start-addr i))))
+  #;(for ([i (in-range (vector-length chunks))])
+      (let ([chunk (vector-ref chunks i)])
+        (unload-chunk! chunk buffer (dqb2-chunk-start-addr i))))
   (define compressed (zlib:compress buffer))
   (with-output-to-file orig-file #:exists 'truncate
     (lambda ()
