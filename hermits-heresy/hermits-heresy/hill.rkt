@@ -4,6 +4,7 @@
          hill-area hill-elevations)
 
 (require "area.rkt"
+         "chunky-area.rkt"
          "basics.rkt"
          "block.rkt"
          "ufx.rkt"
@@ -96,8 +97,8 @@
     (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                    (if all-empty? "all" "zero"))))
   (define the-area
-    (area (make-rect (xz 0 0) (xz width depth))
-          (lambda ([xz : XZ])
-            (hash-ref elevations (cons (xz-x xz) (xz-z xz)) (lambda () #f)))
-          #f))
+    (build-chunky-area width depth
+                       (lambda ([xz : XZ])
+                         (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
+                       (lambda args #f)))
   (hill the-area (make-immutable-hash (hash->list elevations))))
