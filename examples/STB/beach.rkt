@@ -2,7 +2,7 @@
 
 (require hermits-heresy
          (submod hermits-heresy undocumented)
-         (only-in hermits-heresy/hill make-shell make-shell2))
+         (only-in hermits-heresy/hill make-shell make-shell2 hill-elevations))
 
 {begin
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
@@ -25,8 +25,21 @@
                                           ;#:cutoff-y 43
                                           ))
 
-  (define NOMERGE (time (make-shell2 beach-border-hill #:y 38)))
-  (define NOMERGE2 (make-shell2 NOMERGE #:y 35))
+  (define beach-border-fine (bitmap->hill "beach-border-fine.bmp"))
+  (define FINE (hill-elevations beach-border-fine))
+
+  (define (adjust x z)
+    (let* ([fine (hash-ref FINE (cons x z) 0)])
+      (cond
+        [(= fine 0) 0]
+        [(< fine 30) 1]
+        [(< fine 70) 2]
+        [#t 3])))
+
+  (define MAX_Y1 38)
+  (define NOMERGE (time (make-shell2 beach-border-hill #:y MAX_Y1 #:adjuster adjust)))
+  (define MAX_Y2 35)
+  (define NOMERGE2 (make-shell2 NOMERGE #:y MAX_Y2 #:adjuster adjust))
 
   (copy-all-save-files! #:from 'B02 #:to 'B00)
 

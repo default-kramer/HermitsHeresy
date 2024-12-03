@@ -7,9 +7,11 @@
 
 (require "area.rkt"
          "chunky-area.rkt"
+         "interpolator.rkt"
          "basics.rkt"
          "block.rkt"
          "ufx.rkt"
+         racket/flonum
          typed/pict
          (only-in typed/racket/draw Bitmap%))
 
@@ -138,7 +140,9 @@
   (println (list "shell" (hash-count new-elevations)))
   (hill new-area new-elevations))
 
-(define (make-shell2 [old-hill : Hill] #:y [y : Fixnum])
+(define (make-shell2 [old-hill : Hill]
+                     #:y [y : Fixnum]
+                     #:adjuster [adjuster : (-> Fixnum Fixnum Fixnum)])
   (define old-area (hill-area old-hill))
   (define (in-old-area? [xz : XZ])
     (area-contains? old-area xz))
@@ -150,16 +154,34 @@
       (let ([elev (hash-ref old-elevations (cons x z) #f)])
         (min y (or elev -1)))))
   (define new-area
-    (let-values ([(end-x end-z) (xz->values (rect-end (area-bounds old-area)))])
+    (let*-values ([(end-x end-z) (xz->values (rect-end (area-bounds old-area)))]
+                  [(start-x start-z) (xz->values (rect-start (area-bounds old-area)))]
+                  [(start-x) (ufx+ -3 start-x)]
+                  [(start-z) (ufx+ -3 start-z)]
+                  [(end-x) (ufx+ 3 end-x)]
+                  [(end-z) (ufx+ 3 end-z)]
+                  [(new-rect) (make-rect (xz start-x start-z) (xz end-x end-z))]
+                  [(foo) (make-sampler new-rect 6)]
+                  [(adjuster) (lambda ([x : Fixnum] [z : Fixnum])
+                                (let ([flo (or (sample foo (make-xz x z))
+                                               (error "assert fail"))])
+                                  (cond
+                                    [(fl< flo 0.33) 0]
+                                    [(fl< flo 0.66) -1]
+                                    [else -2])))])
       (build-chunky-area
-       (ufx+ 1 end-x)
-       (ufx+ 1 end-z)
+       (ufx+ 0 end-x)
+       (ufx+ 0 end-z)
        (lambda ([xz : XZ])
-         (and #t #;(not (in-old-area? xz))
+         (and #t #;(not (in-old-area? xz)) ; obviously wrong, would need to be an elevation test instead
               (let* ([elevs (map get-y (cons xz (neighbors xz)))]
-                     [elev (apply max elevs)])
+                     [elev (apply max elevs)]
+                     ; This ain't bad:
+                     #;[elev (ufx+ -1 (ufx+ (random 3) elev))])
                 (and (ufx> elev 0)
-                     (let-values ([(x z) (xz->values xz)])
+                     (let*-values ([(x z) (xz->values xz)]
+                                   ; but this is better:
+                                   [(elev) (ufx+ elev (adjuster x z))])
                        (set! new-elevations (hash-set new-elevations (cons x z) elev))
                        #t)))))
        (lambda args #f))))
