@@ -1,18 +1,27 @@
 #lang typed/racket
 
-(provide make-sampler sample) ; TODO rename?
+; I think I have implemented bilinear interpolation here.
+; https://en.wikipedia.org/wiki/Bilinear_interpolation
+; But the exact implementation is not guaranteed.
+
+(provide make-interpolator interpolate)
 
 (require "basics.rkt"
          "ufx.rkt"
          racket/flonum)
 
-(struct sampler ([big-rect : Rect]
-                 [scale : Positive-Fixnum]
-                 [small-values : FlVector]
-                 [width : Fixnum])
+; An interpolator is a rectangle that is divided into a grid.
+; Each point on the grid will have a value from 0.0 to 1.0 assigned.
+; To calculate a value for any given XZ, interpolate the 4 grid points that enclose it.
+; The scale defines how far apart each point of the grid is.
+; So, for example, if the scale is 12 then the grid will create 12x12 squares.
+(struct interpolator ([big-rect : Rect]
+                      [scale : Positive-Fixnum]
+                      [grid-values : FlVector]
+                      [width : Fixnum])
   #:transparent #:type-name Sampler)
 
-(define (make-sampler [big-rect : Rect] [scale : Positive-Fixnum])
+(define (make-interpolator [big-rect : Rect] [scale : Positive-Fixnum])
   (define big-w (rect-width big-rect))
   (define big-h (rect-height big-rect))
   ; add 1 so we can always sample a neighbor
@@ -23,18 +32,18 @@
   (define prng (current-pseudo-random-generator))
   (for ([i (in-range size)])
     (flvector-set! vec i (flrandom prng)))
-  (sampler big-rect scale vec width))
+  (interpolator big-rect scale vec width))
 
-(: sample (-> Sampler XZ (U #f Flonum)))
-(define (sample sampler big-xz-global)
-  (define big-rect (sampler-big-rect sampler))
+(: interpolate (-> Sampler XZ (U #f Flonum)))
+(define (interpolate interpolator big-xz-global)
+  (define big-rect (interpolator-big-rect interpolator))
   (define big-xz (rect-relative-xz big-rect big-xz-global))
   (and
    big-xz
    (let ()
-     (define scale (sampler-scale sampler))
-     (define small-values (sampler-small-values sampler))
-     (define width (sampler-width sampler))
+     (define scale (interpolator-scale interpolator))
+     (define grid-values (interpolator-grid-values interpolator))
+     (define width (interpolator-width interpolator))
      (define-values (x z rx rz)
        (let-values ([(big-x big-z) (xz->values big-xz)])
          (values (ufxquotient big-x scale)
@@ -44,10 +53,10 @@
 
      (define idxnorth (ufx+ x (ufx* z width)))
      (define idxsouth (ufx+ idxnorth width))
-     (define ne (flvector-ref small-values idxnorth))
-     (define nw (flvector-ref small-values (ufx+ 1 idxnorth)))
-     (define se (flvector-ref small-values idxsouth))
-     (define sw (flvector-ref small-values (ufx+ 1 idxsouth)))
+     (define ne (flvector-ref grid-values idxnorth))
+     (define nw (flvector-ref grid-values (ufx+ 1 idxnorth)))
+     (define se (flvector-ref grid-values idxsouth))
+     (define sw (flvector-ref grid-values (ufx+ 1 idxsouth)))
 
      (define flx (fl/ (->fl rx) (->fl scale)))
      (define flz (fl/ (->fl rz) (->fl scale)))
@@ -56,48 +65,3 @@
      (define WW (fl+ nw (fl* flz (fl- sw nw))))
      (fl+ EE (fl* flx (fl- WW EE)))
      )))
-
-#;{begin
-    (define s (make-sampler (make-rect (xz 0 0) (xz 300 300)) 10))
-    (for/list : (Listof (U #f Flonum)) ([i (in-range 30)])
-      (sample s (xz i 0)))
-
-    (define worst : Flonum 0.0)
-
-    (for ([x (ufx-in-range 299)])
-      (for ([z (ufx-in-range 299)])
-        (define (samp [dx : Fixnum] [dz : Fixnum])
-          (or (sample s (xz (ufx+ dx x) (ufx+ dz z)))
-              (error "assert fail")))
-        (let* ([me (samp 0 0)]
-               [east (samp 1 0)]
-               [south (samp 0 1)]
-               [se (samp 1 1)]
-               [minval (min me east south se)]
-               [maxval (max me east south se)]
-               [diff1 (- me minval)]
-               [diff2 (- maxval me)])
-          (set! worst (flmax diff1 worst))
-          (set! worst (flmax diff2 worst))
-          (when (> diff1 0.17)
-            (println (list "WHOA diff1" diff1 x z me east south se)))
-          (when (> diff2 0.17)
-            (println (list "WHOA diff2" diff2 x z me east south se))))))
-    }
-
-#;{begin
-    (let* ([rect (make-rect (xz 0 0) (xz 10 10))]
-           [scale 10]
-           [vec (flvector 0.0 1.0 1.0 1.0)]
-           [width 2]
-           [s (sampler rect scale vec width)])
-      (for ([z : Fixnum (ufx-in-range 10)])
-        (println (for/list : (Listof (U #f Flonum)) ([x (in-range 10)])
-                   (sample s (xz x z)))))
-      (println (for/list : (Listof (U #f Flonum)) ([i (in-range 10)])
-                 (sample s (xz 0 i))))
-      (println (for/list : (Listof (U #f Flonum)) ([i (in-range 10)])
-                 (sample s (xz i 0))))
-      (println (for/list : (Listof (U #f Flonum)) ([i (in-range 10)])
-                 (sample s (xz i i)))))
-    }

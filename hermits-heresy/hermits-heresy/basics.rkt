@@ -92,6 +92,7 @@
        (ufx< z z2)))
 
 (: rect-relative-xz (-> Rect XZ (U #f XZ)))
+; If the given XZ is inside the given rect, returns its offset from the top left corner.
 (define (rect-relative-xz rect xz)
   (define-values (x z) (xz->values xz))
   (define-values (x1 z1) (xz->values (rect-start rect)))
