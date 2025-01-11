@@ -68,7 +68,11 @@ sealed class ProjectParamsViewmodel : INPC
 		var ofd = new Microsoft.Win32.OpenFolderDialog();
 		ofd.Multiselect = false;
 
-		string startDir = TryFindSD()?.FullName ?? SDPath;
+		string startDir = SDPath;
+		if (string.IsNullOrWhiteSpace(startDir))
+		{
+			startDir = TryFindSD()?.FullName ?? "";
+		}
 		if (startDir.Length > 0)
 		{
 			ofd.InitialDirectory = startDir;

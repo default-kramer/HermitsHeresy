@@ -11,7 +11,7 @@ namespace HH.Gui;
 
 sealed class ProjectManagementViewmodel : INPC
 {
-	private string lastSavedJson = "";
+	private string lastSavedJson = ""; // to detect whether we have unsaved changed
 
 	private ProjectViewmodel projectVM = new();
 	public ProjectViewmodel ProjectVM
@@ -53,6 +53,22 @@ sealed class ProjectManagementViewmodel : INPC
 			&& lastSavedJson != ProjectVM.ToSerializationModel().Serialize();
 	}
 
+	/// <summary>
+	/// Returns true if the project has no unsaved changes, or if the user confirms
+	/// it is OK to close the project without saving them.
+	/// </summary>
+	public bool CanCloseProject()
+	{
+		if (HasUnsavedChanges())
+		{
+			var result = MessageBox.Show("Close project without saving?", "Unsaved Changes", MessageBoxButton.OKCancel,
+				MessageBoxImage.Warning, defaultResult: MessageBoxResult.Cancel);
+
+			return result == MessageBoxResult.OK;
+		}
+		return true;
+	}
+
 	private void CloseProject(object? arg)
 	{
 		// This may not be great UX, but it's the best I can think of.
@@ -65,17 +81,7 @@ sealed class ProjectManagementViewmodel : INPC
 		// Then it is clear that the confirmation means "confirm you want to close this project without saving".
 		// Once the project is closed or saved, Open and Create New are no longer destructive and
 		// do not require any confirmation to proceed.
-
-		bool shouldClose = true;
-		if (HasUnsavedChanges())
-		{
-			var result = MessageBox.Show("Close project without saving?", "Discard Unsaved Changes", MessageBoxButton.OKCancel,
-				MessageBoxImage.Warning, defaultResult: MessageBoxResult.Cancel);
-
-			shouldClose = result == MessageBoxResult.OK;
-		}
-
-		if (shouldClose)
+		if (CanCloseProject())
 		{
 			ProjectVM = new();
 			ProjectFilename = "";
@@ -101,6 +107,12 @@ sealed class ProjectManagementViewmodel : INPC
 
 		var ofd = new Microsoft.Win32.OpenFileDialog();
 		ofd.Filter = projectFilter;
+
+		if (!string.IsNullOrEmpty(Properties.Settings.Default.HHProjDir))
+		{
+			ofd.InitialDirectory = Properties.Settings.Default.HHProjDir;
+		}
+
 		var result = ofd.ShowDialog();
 		if (result.GetValueOrDefault())
 		{
@@ -110,6 +122,7 @@ sealed class ProjectManagementViewmodel : INPC
 				ProjectVM = new ProjectViewmodel(project);
 				lastSavedJson = json;
 				ProjectFilename = ofd.FileName;
+				UpdateDefaultProjectDir(ofd.FileName);
 			}
 			else
 			{
@@ -125,7 +138,13 @@ sealed class ProjectManagementViewmodel : INPC
 			return;
 		}
 
-		DoSaveProject(_ => { });
+		DoSaveProject(sfd =>
+		{
+			if (!string.IsNullOrEmpty(Properties.Settings.Default.HHProjDir))
+			{
+				sfd.InitialDirectory = Properties.Settings.Default.HHProjDir;
+			}
+		});
 	}
 
 	private void SaveProject(object? arg)
@@ -150,6 +169,19 @@ sealed class ProjectManagementViewmodel : INPC
 			System.IO.File.WriteAllText(sfd.FileName, json);
 			ProjectFilename = sfd.FileName;
 			lastSavedJson = json;
+			UpdateDefaultProjectDir(sfd.FileName);
+		}
+	}
+
+	private void UpdateDefaultProjectDir(string path)
+	{
+		string dir = Path.GetDirectoryName(path)
+			?? throw new Exception("impossible!");
+
+		if (dir.ToLowerInvariant() != Properties.Settings.Default.HHProjDir?.ToLowerInvariant())
+		{
+			Properties.Settings.Default.HHProjDir = dir;
+			Properties.Settings.Default.Save();
 		}
 	}
 }

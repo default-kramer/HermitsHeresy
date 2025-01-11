@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.ComponentModel;
+using System.IO;
 using System.Windows;
 
 namespace HH.Gui
@@ -20,6 +21,16 @@ namespace HH.Gui
 		private void Rootse_SelectedNodeChanged(object? sender, ScriptEditorTreeNode.SelectedNodeChangedEventArgs e)
 		{
 			this.nodeDetailEditor.DataContext = e.SelectedItem;
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			base.OnClosing(e);
+
+			if (!projectManagementVM.CanCloseProject())
+			{
+				e.Cancel = true;
+			}
 		}
 	}
 }
