@@ -7,26 +7,23 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Open" Click="OnOpenClicked"></MenuItem>
-                <MenuItem Header="_Save"></MenuItem>
-            </MenuItem>
-        </Menu>
         <TabControl>
-            <TabItem Header="Images">
+            <TabItem Header="Project">
+                <local:ProjectParamsControl x:Name="paramsControl"></local:ProjectParamsControl>
+            </TabItem>
+            <TabItem Header="Images" IsEnabled="{Binding HasProject}">
                 <StackPanel Orientation="Vertical">
                     <TextBlock Text="Show images here, read-only"></TextBlock>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="Script">
+            <TabItem Header="Script" IsEnabled="{Binding HasProject}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Vertical" Background="DarkGray">
-                        <local:ScriptEditorTreeNode x:Name="rootse"></local:ScriptEditorTreeNode>
+                        <local:ScriptEditorTreeNode x:Name="rootse" DataContext="{Binding ProjectVM.ScriptRootNode}"></local:ScriptEditorTreeNode>
                     </StackPanel>
                     <local:ScriptNodeDetailEditor Grid.Column="1" x:Name="nodeDetailEditor"></local:ScriptNodeDetailEditor>
                 </Grid>

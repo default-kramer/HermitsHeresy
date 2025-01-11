@@ -28,6 +28,7 @@ public partial class ScriptEditorTreeNode : UserControl, ScriptNodeWrapper.IPare
 	public ScriptEditorTreeNode()
 	{
 		InitializeComponent();
+
 		CheckHover();
 		this.border.MouseEnter += (s, e) => OnMouseEnter();
 		this.border.MouseLeave += (s, e) => OnMouseLeave();

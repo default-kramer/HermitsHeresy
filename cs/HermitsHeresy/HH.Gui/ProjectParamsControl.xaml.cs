@@ -16,16 +16,13 @@ using System.Windows.Shapes;
 namespace HH.Gui
 {
 	/// <summary>
-	/// Interaction logic for ScriptNodeDetailEditor.xaml
+	/// Interaction logic for ProjectParamsControl.xaml
 	/// </summary>
-	public partial class ScriptNodeDetailEditor : UserControl
+	public partial class ProjectParamsControl : UserControl
 	{
-		public ScriptNodeDetailEditor()
+		public ProjectParamsControl()
 		{
 			InitializeComponent();
-
-			// Will be bound, but this is needed to prevent Binding Failures
-			this.DataContext = null;
 		}
 	}
 }
