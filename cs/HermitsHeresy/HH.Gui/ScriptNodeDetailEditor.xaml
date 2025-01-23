@@ -6,24 +6,59 @@
              xmlns:local="clr-namespace:HH.Gui"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Background="LightGoldenrodYellow">
-        <StackPanel Orientation="Vertical">
-            <TextBlock Text="{Binding}"></TextBlock>
-            <StackPanel Orientation="Horizontal">
-                <Button Command="{Binding CommandMoveUp}" FontFamily="Marlett" FontSize="20" Content="5"></Button>
-                <Button Command="{Binding CommandMoveDown}" FontFamily="Marlett" FontSize="20" Content="6"></Button>
-                <Button FontFamily="Marlett" FontSize="20" Content="r"></Button>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="1*"></RowDefinition>
+            <RowDefinition Height="2*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <DockPanel Background="AliceBlue">
+            <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Center">
+                <TextBlock>Move/Delete selected node:</TextBlock>
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Margin="5" Command="{Binding CommandMoveUp}" FontFamily="Marlett" FontSize="20" Content="5"></Button>
+                <Button Margin="5" Command="{Binding CommandMoveDown}" FontFamily="Marlett" FontSize="20" Content="6"></Button>
+                <Button Margin="5" FontFamily="Marlett" FontSize="20" Content="r"></Button>
             </StackPanel>
-            <ListView ItemsSource="{Binding KindChoices}" SelectedItem="{Binding SelectedKind}">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding ShortName}"></TextBlock>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-            <ContentControl Content="{Binding SelectedContent}">
-                
+        </DockPanel>
+        <DockPanel Grid.Row="1" Background="AntiqueWhite">
+            <StackPanel Margin="8" Orientation="Vertical">
+                <TextBlock>Replace selected node:</TextBlock>
+                <ListView ItemsSource="{Binding KindChoices}" SelectedItem="{Binding SelectedKind}">
+                    <ListView.Resources>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <ControlTemplate.Resources>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"></Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="LightGray"></Setter>
+                                                    </Trigger>
+                                                    <DataTrigger Value="True" Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}}">
+                                                        <Setter Property="Background" Value="LightBlue"></Setter>
+                                                        <Setter Property="BorderBrush" Value="Black"></Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ControlTemplate.Resources>
+                                        <Border Padding="4,1,1,1" BorderThickness="1" HorizontalAlignment="Stretch">
+                                            <TextBlock Text="{Binding ShortName}"></TextBlock>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.Resources>
+                </ListView>
+            </StackPanel>
+        </DockPanel>
+        <DockPanel Grid.Row="2" Background="AliceBlue">
+            <ContentControl Margin="8" Content="{Binding SelectedContent}">
             </ContentControl>
-        </StackPanel>
+        </DockPanel>
     </Grid>
 </UserControl>
