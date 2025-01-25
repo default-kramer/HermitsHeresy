@@ -30,6 +30,10 @@ sealed class ProjectViewmodel
 		{
 			this.ProjectParamsVM = new(model.ProjectParams);
 		}
+		if (model.ScriptRoot != null)
+		{
+			this.ScriptRootNode = model.ScriptRoot.Reconstruct();
+		}
 	}
 
 	public SerializationModel.Project ToSerializationModel()
@@ -37,6 +41,7 @@ sealed class ProjectViewmodel
 		return new SerializationModel.Project()
 		{
 			ProjectParams = ProjectParamsVM.ToSerializationModel(),
+			ScriptRoot = ScriptRootNode.SelectedContent.ToSerializationModel(),
 		};
 	}
 }

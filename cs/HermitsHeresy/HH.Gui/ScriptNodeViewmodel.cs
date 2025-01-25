@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HH.Gui.SerializationModel;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -151,6 +152,16 @@ public class ScriptNodeWrapper : INPC
 /// </summary>
 public abstract class ScriptNodeVM : INPC
 {
+	protected ScriptNodeVM() { }
+
+	protected ScriptNodeVM(NodeWithChildren node)
+	{
+		foreach (var kid in node.Children)
+		{
+			this.children.Add(kid.Reconstruct());
+		}
+	}
+
 	protected ObservableCollection<ScriptNodeWrapper> children = new();
 
 	public IList<ScriptNodeWrapper> Children => children;
@@ -168,10 +179,16 @@ public abstract class ScriptNodeVM : INPC
 	/// See <see cref="KindChoices"/>
 	/// </summary>
 	protected abstract IEnumerable<NodeKindVM> PossibleKinds();
+
+	public abstract ISerializedScriptNode ToSerializationModel();
 }
 
 public abstract class StatementVM : ScriptNodeVM
 {
+	protected StatementVM() { }
+
+	protected StatementVM(NodeWithChildren node) : base(node) { }
+
 	protected override IEnumerable<NodeKindVM> PossibleKinds()
 	{
 		yield return NodeKindVM.SetBlock;
@@ -197,16 +214,23 @@ public abstract class BooleanVM : ScriptNodeVM
 public class FalseVM : BooleanVM
 {
 	public override NodeKindVM Kind => NodeKindVM.False;
+
+	public override ISerializedScriptNode ToSerializationModel() => new SerializationModel.FalseNode();
 }
 
 public class TrueVM : BooleanVM
 {
 	public override NodeKindVM Kind => NodeKindVM.True;
+
+	public override ISerializedScriptNode ToSerializationModel() => new SerializationModel.TrueNode();
 }
 
 public class BeginVM : StatementVM
 {
 	public override NodeKindVM Kind => NodeKindVM.Begin;
+
+	public BeginVM() { }
+	public BeginVM(BeginNode node) : base(node) { }
 
 	public CondVM AddCond()
 	{
@@ -223,10 +247,18 @@ public class BeginVM : StatementVM
 		children.Add(wrapper);
 		return node;
 	}
+
+	public override ISerializedScriptNode ToSerializationModel() => new BeginNode
+	{
+		Children = this.children.Select(x => x.SelectedContent.ToSerializationModel()).ToList(),
+	};
 }
 
 public class CondVM : StatementVM
 {
+	public CondVM() { }
+	public CondVM(CondNode node) : base(node) { }
+
 	public CondItemVM AddCondItem()
 	{
 		var node = new CondItemVM();
@@ -236,11 +268,18 @@ public class CondVM : StatementVM
 	}
 
 	public override NodeKindVM Kind => NodeKindVM.Cond;
+
+	public override ISerializedScriptNode ToSerializationModel() => new CondNode
+	{
+		Children = this.children.Select(x => x.SelectedContent.ToSerializationModel()).ToList(),
+	};
 }
 
 public class DoNothingVM : StatementVM
 {
 	public override NodeKindVM Kind => NodeKindVM.DoNothing;
+
+	public override ISerializedScriptNode ToSerializationModel() => new DoNothingNode();
 }
 
 public class SetBlockVM : StatementVM
@@ -253,23 +292,46 @@ public class SetBlockVM : StatementVM
 	}
 
 	public override NodeKindVM Kind => NodeKindVM.SetBlock;
+
+	public override ISerializedScriptNode ToSerializationModel()
+	{
+		throw new NotImplementedException();
+	}
 }
 
 public class BlockMatchesVM : BooleanVM
 {
-	private int block = 11;
-	public int Block
-	{
-		get { return block; }
-		set { block = value; RaisePropertyChanged(); }
-	}
+	public BlockMultiselectViewmodel Selector { get; }
 
 	public override NodeKindVM Kind => NodeKindVM.BlockMatches;
+
+	public BlockMatchesVM()
+	{
+		Selector = new BlockMultiselectViewmodel();
+	}
+
+	public BlockMatchesVM(BlockMatchesNode node) : this()
+	{
+		Selector.RestoreFromSelectionLists(node.SelectedBlocks);
+	}
+
+	public override ISerializedScriptNode ToSerializationModel()
+	{
+		return new BlockMatchesNode()
+		{
+			SelectedBlocks = Selector.BuildSelectionLists(),
+		};
+	}
 }
 
 public class ChiselMatchesVM : BooleanVM
 {
 	public override NodeKindVM Kind => NodeKindVM.ChiselMatches;
+
+	public override ISerializedScriptNode ToSerializationModel()
+	{
+		throw new NotImplementedException();
+	}
 }
 
 public class CondItemVM : ScriptNodeVM
@@ -290,12 +352,24 @@ public class CondItemVM : ScriptNodeVM
 		BodyExpr = new ScriptNodeWrapper(begin);
 	}
 
+	public CondItemVM(CondItemNode node)
+	{
+		TestExpr = node.TestExpr.Reconstruct();
+		BodyExpr = node.BodyExpr.Reconstruct();
+	}
+
 	public override NodeKindVM Kind => NodeKindVM.CondItem;
 
 	protected override IEnumerable<NodeKindVM> PossibleKinds()
 	{
 		yield return NodeKindVM.CondItem;
 	}
+
+	public override ISerializedScriptNode ToSerializationModel() => new CondItemNode()
+	{
+		TestExpr = this.TestExpr.SelectedContent.ToSerializationModel(),
+		BodyExpr = this.BodyExpr.SelectedContent.ToSerializationModel(),
+	};
 }
 
 public class InHillVM : BooleanVM
@@ -308,6 +382,11 @@ public class InHillVM : BooleanVM
 	}
 
 	public override NodeKindVM Kind => NodeKindVM.InHill;
+
+	public override ISerializedScriptNode ToSerializationModel()
+	{
+		throw new NotImplementedException();
+	}
 }
 
 public class InAreaVM : BooleanVM
@@ -320,4 +399,9 @@ public class InAreaVM : BooleanVM
 	}
 
 	public override NodeKindVM Kind => NodeKindVM.InArea;
+
+	public override ISerializedScriptNode ToSerializationModel()
+	{
+		throw new NotImplementedException();
+	}
 }

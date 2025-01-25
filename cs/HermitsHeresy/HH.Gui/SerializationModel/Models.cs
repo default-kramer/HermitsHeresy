@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -10,15 +11,18 @@ namespace HH.Gui.SerializationModel;
 sealed class Project
 {
 	public required ProjectParams? ProjectParams { get; set; }
+	public required ISerializedScriptNode? ScriptRoot { get; set; }
+
+	private static JsonSerializerSettings MakeSettings() => new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
 
 	public static bool TryDeserialize(string json, [MaybeNullWhen(false)] out Project project)
 	{
 		try
 		{
-			project = Newtonsoft.Json.JsonConvert.DeserializeObject<Project>(json);
+			project = Newtonsoft.Json.JsonConvert.DeserializeObject<Project>(json, MakeSettings());
 			return project != null;
 		}
-		catch (Exception)
+		catch (Exception ex)
 		{
 			project = null;
 			return false;
@@ -27,7 +31,7 @@ sealed class Project
 
 	public string Serialize()
 	{
-		return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+		return Newtonsoft.Json.JsonConvert.SerializeObject(this, MakeSettings());
 	}
 }
 

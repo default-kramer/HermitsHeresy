@@ -7,6 +7,8 @@
 
 (module+ for-tests (provide all-symbols))
 
+(module+ for-json (provide all-symbols all-blockdefs))
+
 (require "blockdef-raw.rkt"
          "../ufx.rkt")
 

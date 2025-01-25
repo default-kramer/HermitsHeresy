@@ -68,6 +68,12 @@
                         </ItemsControl>
                     </StackPanel>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type local:BlockMatchesVM}">
+                    <TextBlock>
+                        <TextBlock>block-matches? </TextBlock>
+                        <TextBlock Text="{Binding Selector.SelectedBlocksString}"></TextBlock>
+                    </TextBlock>
+                </DataTemplate>
                 <DataTemplate DataType="{x:Type local:INPC}">
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="{Binding ShortName}"></TextBlock>
