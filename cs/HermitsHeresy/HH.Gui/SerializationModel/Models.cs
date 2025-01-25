@@ -22,7 +22,7 @@ sealed class Project
 			project = Newtonsoft.Json.JsonConvert.DeserializeObject<Project>(json, MakeSettings());
 			return project != null;
 		}
-		catch (Exception ex)
+		catch (Exception)
 		{
 			project = null;
 			return false;
