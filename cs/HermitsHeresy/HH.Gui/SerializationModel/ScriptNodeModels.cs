@@ -22,6 +22,13 @@ public sealed class TrueNode : ISerializedScriptNode
 	public ScriptNodeWrapper Reconstruct() => new ScriptNodeWrapper(new TrueVM());
 }
 
+public sealed class SetBlockNode : ISerializedScriptNode
+{
+	public required int? SelectedBlockId { get; init; }
+
+	public ScriptNodeWrapper Reconstruct() => new ScriptNodeWrapper(new SetBlockVM(this));
+}
+
 public sealed class DoNothingNode : ISerializedScriptNode
 {
 	public ScriptNodeWrapper Reconstruct() => new ScriptNodeWrapper(new DoNothingVM());

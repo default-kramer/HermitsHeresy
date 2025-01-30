@@ -84,6 +84,36 @@
                             </ListView>
                         </Grid>
                     </DataTemplate>
+                    <DataTemplate DataType="{x:Type local:SetBlockVM}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"></RowDefinition>
+                                <RowDefinition Height="Auto"></RowDefinition>
+                                <RowDefinition></RowDefinition>
+                                <RowDefinition Height="Auto"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock TextWrapping="Wrap"><Bold>set-block!</Bold> places the chosen block at the current cell</TextBlock>
+                            </StackPanel>
+                            <StackPanel Margin="0,10,0,3" Grid.Row="1" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,5,0">Filter:</TextBlock>
+                                <TextBox MinWidth="200" Text="{Binding Selector.SearchFilter, UpdateSourceTrigger=PropertyChanged}" MaxLength="50"></TextBox>
+                            </StackPanel>
+                            <ListView Grid.Row="2" ItemsSource="{Binding Selector.FilterBlocks.View}" IsEnabled="{Binding Selector.EnableListSelection}">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Vertical">
+                                            <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding DisplayName}"></CheckBox>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Advanced Entry:  "></TextBlock>
+                                <TextBox Text="{Binding Selector.DirectEntryBlockId, UpdateSourceTrigger=PropertyChanged}" MinWidth="40"></TextBox>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>
         </DockPanel>

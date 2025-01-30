@@ -284,18 +284,26 @@ public class DoNothingVM : StatementVM
 
 public class SetBlockVM : StatementVM
 {
-	private int block = 11;
-	public int Block
-	{
-		get { return block; }
-		set { block = value; RaisePropertyChanged(); }
-	}
+	public BlockSingleSelectViewmodel Selector { get; }
 
 	public override NodeKindVM Kind => NodeKindVM.SetBlock;
 
+	public SetBlockVM()
+	{
+		Selector = new BlockSingleSelectViewmodel();
+	}
+
+	public SetBlockVM(SetBlockNode node) : this()
+	{
+		if (node.SelectedBlockId.HasValue)
+		{
+			Selector.SetSelectedBlock(node.SelectedBlockId.Value);
+		}
+	}
+
 	public override ISerializedScriptNode ToSerializationModel()
 	{
-		throw new NotImplementedException();
+		return new SetBlockNode() { SelectedBlockId = Selector.SelectedBlockId };
 	}
 }
 

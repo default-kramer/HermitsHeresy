@@ -74,6 +74,12 @@
                         <TextBlock Text="{Binding Selector.SelectedBlocksString}"></TextBlock>
                     </TextBlock>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type local:SetBlockVM}">
+                    <TextBlock>
+                        <TextBlock>set-block! </TextBlock>
+                        <TextBlock Text="{Binding Selector.SelectedBlockString}"></TextBlock>
+                    </TextBlock>
+                </DataTemplate>
                 <DataTemplate DataType="{x:Type local:INPC}">
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="{Binding ShortName}"></TextBlock>
