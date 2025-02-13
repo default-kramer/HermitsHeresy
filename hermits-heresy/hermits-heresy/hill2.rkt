@@ -53,6 +53,38 @@
                 (linkage o d)
                 (loop (+ len w o))))])))
 
+(define (straighten plan max-depth)
+  #;(-> plan plan)
+  ; Randomly negates some linkage depths.
+  ; (It is assumed they are all positive and thus "drift" in a constant direction.)
+  ; Will never exceed the original bounding rectangle.
+  (let loop ([plan plan]
+             [depth 0])
+    (match plan
+      [(list) (list)]
+      [(list b more ...)
+       #:when (body? b)
+       (cons b (loop more depth))]
+      [(list (linkage oo dd) more ...)
+       (let ([depth-std (+ depth dd)]
+             [depth-neg (- depth dd)])
+         (define (recurse neg?)
+           (if neg?
+               (cons (linkage oo (- dd))
+                     (loop more depth-neg))
+               (cons (linkage oo dd)
+                     (loop more depth-std))))
+         (cond
+           [(< depth-neg 0)
+            ; absolutely cannot go negative
+            (recurse #f)]
+           [(> depth-std max-depth)
+            (recurse #t)]
+           [else
+            (recurse (= 0 (random 2)))]))]
+      [else
+       (error "assert fail")])))
+
 (struct slice (width tall short padding) #:transparent)
 
 (define (plan->slices plan)
@@ -118,7 +150,7 @@
 (define (slices->backstop slices)
   (define MIN 4) ; backstop must be at least this deep (relative to padding)
   (define TARGET 5) ; backstop should be, on average, this deep (relative to padding)
-  (define MAX 7) ; not a true max, but beyond this we always step towards the target
+  (define MAX 6) ; not a true max, but beyond this we always step towards the target
   (define (step slices current-depth leftover-width)
     (define-syntax-rule (retry body)
       ; If we reach a limit, we just try again hoping for luckier RNG.
@@ -301,7 +333,9 @@
              [(list) (list)]
              [else
               (error "assert fail:" plan)])])))
-    (let* ([plan (negate (generate-plan2 len) (/ len 2))])
+    (let* ([plan (generate-plan2 len)]
+           ;[plan (negate plan (/ len 2))]
+           [plan (straighten plan 7)])
       (plan->wall plan)))
   (define (sample i wall j)
     (let* ([slice (vector-ref wall j)]
