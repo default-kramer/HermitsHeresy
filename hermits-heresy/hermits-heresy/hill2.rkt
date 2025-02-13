@@ -233,50 +233,121 @@
 (scale (wall->pict (p2 -1)) 10)
 
 
+; Here all dimensions are distance from the edge of the bounding box.
+(struct pixel-slice (padding short tall backstop) #:transparent)
 
-(define (TODO w h)
-  (define (negate plan limit)
-    (let loop ([plan plan]
-               [limit limit])
-      (cond
-        [(<= limit 0)
-         plan]
-        [else
-         (match plan
-           [(list (linkage o d) more ...)
-            (cons (linkage o (- d))
-                  (loop more (- limit o)))]
-           [(list (body width) more ...)
-            (cons (body width)
-                  (loop more (- limit width)))]
-           [(list) (list)]
-           [else
-            (error "assert fail:" plan)])])))
+(define (wall->pixel-slices wall pixel-width)
+  (define WWW pixel-width)
+  (define vec (make-vector WWW #f))
+
+  (define slices (wall-slices wall))
+  (define backstop (wall-backstop wall))
+
+  (define current-backstop-w 0)
+  (define current-backstop-d 0)
+
+  (define current-slice-w 0)
+  (define current-slice-pad 0)
+  (define current-slice-short 0)
+  (define current-slice-tall 0)
+
+  (for ([i (in-range WWW)])
+    (when (= 0 current-backstop-w)
+      (match backstop
+        [(list (backstop-run w d) more ...)
+         (set! backstop more)
+         (set! current-backstop-w w)
+         (set! current-backstop-d d)]))
+    (when (= 0 current-slice-w)
+      (match slices
+        [(list (slice w tall short pad) more ...)
+         (set! slices more)
+         (set! current-slice-w w)
+         (set! current-slice-pad pad)
+         (set! current-slice-short (+ pad short))
+         (set! current-slice-tall (+ pad short tall))]))
+    (set! current-backstop-w (sub1 current-backstop-w))
+    (set! current-slice-w (sub1 current-slice-w))
+    (vector-set! vec i (pixel-slice current-slice-pad
+                                    current-slice-short
+                                    current-slice-tall
+                                    current-backstop-d)))
+  vec)
+
+
+; Corners aren't perfect, but sometimes they're good enough.
+(define (TODO2 w h)
+  (define EMPTY 255)
+  (define SHORT 52)
+  (define TALL 48)
+  (define PEAK 40)
+  (define pixelvec (make-bytes (* 4 w h)))
+
   (define (gen-wall len)
-    (let ([plan (negate (generate-plan2 len) (/ len 2))])
+    (define (negate plan limit)
+      (let loop ([plan plan]
+                 [limit limit])
+        (cond
+          [(<= limit 0)
+           plan]
+          [else
+           (match plan
+             [(list (linkage o d) more ...)
+              (cons (linkage o (- d))
+                    (loop more (- limit o)))]
+             [(list (body width) more ...)
+              (cons (body width)
+                    (loop more (- limit width)))]
+             [(list) (list)]
+             [else
+              (error "assert fail:" plan)])])))
+    (let* ([plan (negate (generate-plan2 len) (/ len 2))])
       (plan->wall plan)))
-  (define (picture wall)
-    (let* ([p (wall->pict wall)]
-           [w (pict-width p)])
-      (inset/clip p -10 0)))
-  (let* ([side-w1 (gen-wall w)]
-         [side-w2 (gen-wall w)]
-         [side-h1 (gen-wall h)]
-         [side-h2 (gen-wall h)]
-         [pict-w1 (picture side-w1)]
-         [pict-w2 (picture side-w2)]
-         [pict-h1 (picture side-h1)]
-         [pict-h2 (picture side-h2)]
-         [more-w (max w (pict-width pict-w1) (pict-width pict-w2))]
-         [more-h (max h (pict-height pict-h1) (pict-height pict-h2))]
-         [pic (blank more-w more-h)]
-         [pic (lc-superimpose pic (rotate pict-h1 (* pi 3/2)))]
-         [pic (rc-superimpose pic (rotate pict-h2 (* pi 1/2)))]
-         [pic (ct-superimpose pic (rotate pict-w1 (* pi 1)))]
-         [pic (cb-superimpose pic pict-w2)]
-         )
-    pic))
+  (define (sample i wall j)
+    (let* ([slice (vector-ref wall j)]
+           [backstop (pixel-slice-backstop slice)])
+      (and (< i backstop)
+           (cond
+             [(< i (pixel-slice-padding slice))
+              EMPTY]
+             [(< i (pixel-slice-short slice))
+              SHORT]
+             [(< i (pixel-slice-tall slice))
+              TALL]
+             [else
+              PEAK]))))
+  (let* ([wall-T (gen-wall w)]
+         [wall-B (gen-wall w)]
+         [wall-L (gen-wall h)]
+         [wall-R (gen-wall h)]
+         [vec-T (wall->pixel-slices wall-T w)]
+         [vec-B (wall->pixel-slices wall-B w)]
+         [vec-L (wall->pixel-slices wall-L h)]
+         [vec-R (wall->pixel-slices wall-R h)]
+         [idx 0])
+    (for ([y (in-range h)])
+      (for ([x (in-range w)])
+        (let* ([s1 (sample (+ 0 0 y) vec-T x)]
+               [s2 (sample (- h y 1) vec-B x)]
+               [s3 (sample (+ 0 0 x) vec-L y)]
+               [s4 (sample (- w x 1) vec-R y)]
+               ; filter out irrelevant samples
+               [samples (filter identity (list s1 s2 s3 s4))]
+               [s (if (empty? samples)
+                      PEAK
+                      (apply max samples))])
+          (let* ([gray s])
+            (define (put! byte)
+              (begin (bytes-set! pixelvec idx byte)
+                     (set! idx (+ 1 idx))))
+            (put! 255) ; a
+            (put! s) (put! s) (put! s) ; rgb
+            ))))
+    (argb-pixels->pict pixelvec w)))
 
-(scale (TODO 90 60) 5)
-
-(TODO 80 60)
+(define (save-img img name)
+  (cond
+    [(pict? img)
+     (save-img (pict->bitmap img 'unsmoothed) name)]
+    [else
+     (send img save-file name 'bmp)]))
