@@ -312,6 +312,7 @@
 ; Here all dimensions are distance from the edge of the bounding box.
 (struct pixel-slice ([padding : Fixnum]
                      [short : Fixnum]
+                     [short-counter : Fixnum] ; unused for now, could enable variable short platforms
                      [tall : Fixnum]
                      [backstop : Fixnum])
   #:transparent #:type-name Pixel-Slice)
@@ -320,7 +321,7 @@
 (define (wall->pixel-slices wall pixel-width)
   (define WWW pixel-width)
   (define vec : (Vectorof Pixel-Slice)
-    (make-vector WWW (pixel-slice 0 0 0 0)))
+    (make-vector WWW (pixel-slice 0 0 0 0 0)))
 
   (define slices (wall-slices wall))
   (define backstop (wall-backstop wall))
@@ -332,6 +333,8 @@
   (define current-slice-pad : Fixnum 0)
   (define current-slice-short : Fixnum 0)
   (define current-slice-tall : Fixnum 0)
+  (define short-flag? : Boolean #f)
+  (define short-counter : Fixnum 0)
 
   (for ([i (in-range WWW)])
     (when (ufx= 0 current-backstop-w)
@@ -343,6 +346,10 @@
     (when (ufx= 0 current-slice-w)
       (match slices
         [(list (slice w tall short pad) more ...)
+         (define has-short? (ufx> short 0))
+         (when (and (not short-flag?) has-short?)
+           (set! short-counter (ufx+ 1 short-counter)))
+         (set! short-flag? has-short?)
          (set! slices more)
          (set! current-slice-w w)
          (set! current-slice-pad pad)
@@ -352,60 +359,126 @@
     (set! current-slice-w (ufx+ -1 current-slice-w))
     (vector-set! vec i (pixel-slice current-slice-pad
                                     current-slice-short
+                                    short-counter
                                     current-slice-tall
                                     current-backstop-d)))
   vec)
 
 
-{MAIN
- ; Corners aren't perfect, but sometimes they're good enough.
- (define (TODO2 [w : Fixnum] [h : Fixnum])
-   (define EMPTY 255)
-   (define SHORT 150)
-   (define TALL 100)
-   (define PEAK 40)
-   (define pixelvec (make-bytes (:ufx* 4 w h)))
+(struct platform-hill ([width : Fixnum]
+                       [height : Fixnum]
+                       [array2d : Bytes])
+  #:transparent #:type-name Platform-Hill)
 
-   (define (gen-wall [len : Fixnum])
-     (let* ([plan (generate-plan2 len)]
-            [plan (straighten plan 7)])
-       (plan->wall plan)))
-   (define (sample [i : Integer] [wall : (Vectorof Pixel-Slice)] [j : Integer])
-     (let* ([slice (vector-ref wall j)]
-            [backstop (pixel-slice-backstop slice)])
-       (cond
-         [(not (< i backstop))
-          PEAK]
-         [(< i (pixel-slice-padding slice))
-          EMPTY]
-         [(< i (pixel-slice-short slice))
-          SHORT]
-         [(< i (pixel-slice-tall slice))
-          TALL]
-         [else
-          PEAK])))
-   (let* ([wall-T (gen-wall w)]
-          [wall-B (gen-wall w)]
-          [wall-L (gen-wall h)]
-          [wall-R (gen-wall h)]
-          [vec-T (wall->pixel-slices wall-T w)]
-          [vec-B (wall->pixel-slices wall-B w)]
-          [vec-L (wall->pixel-slices wall-L h)]
-          [vec-R (wall->pixel-slices wall-R h)]
-          [idx 0])
-     (for ([y (in-range h)])
-       (for ([x (in-range w)])
-         (let* ([s1 (sample (+ 0 0 y) vec-T x)]
-                [s2 (sample (- h y 1) vec-B x)]
-                [s3 (sample (+ 0 0 x) vec-L y)]
-                [s4 (sample (- w x 1) vec-R y)]
-                [rgb : Byte (apply max (list s1 s2 s3 s4))])
-           (define (put! [byte : Byte])
-             (begin (bytes-set! pixelvec idx byte)
-                    (set! idx (+ 1 idx))))
-           (put! 255) ; alpha
-           (put! rgb) (put! rgb) (put! rgb))))
+(: generate-platform-hill (-> Fixnum Fixnum Platform-Hill))
+(define (generate-platform-hill w h)
+  (define UNSET 0)
+  (define EMPTY 1)
+  (define SHORT 2)
+  (define SHORT-BORDER 3)
+  (define TALL 4)
+  (define TALL-BORDER 5)
+  (define PEAK 6)
+  (define PEAK-BORDER 7)
+  (define array2d (make-bytes (ufx* w h) UNSET))
+
+  (define (gen-wall [len : Fixnum])
+    (let* ([plan (generate-plan2 len)]
+           [plan (straighten plan 7)])
+      (plan->wall plan)))
+  (define (sample [i : Integer] [wall : (Vectorof Pixel-Slice)] [j : Integer])
+    (let* ([slice (vector-ref wall j)]
+           [backstop (pixel-slice-backstop slice)])
+      (cond
+        [(not (< i backstop))
+         PEAK]
+        [(< i (pixel-slice-padding slice))
+         EMPTY]
+        [(< i (pixel-slice-short slice))
+         SHORT]
+        [(< i (pixel-slice-tall slice))
+         TALL]
+        [else
+         PEAK])))
+  (let* ([wall-T (gen-wall w)]
+         [wall-B (gen-wall w)]
+         [wall-L (gen-wall h)]
+         [wall-R (gen-wall h)]
+         [vec-T (wall->pixel-slices wall-T w)]
+         [vec-B (wall->pixel-slices wall-B w)]
+         [vec-L (wall->pixel-slices wall-L h)]
+         [vec-R (wall->pixel-slices wall-R h)]
+         [idx 0])
+    ; Populate the array without border logic:
+    (define (samp [x : Fixnum] [y : Fixnum])
+      (let* ([s1 (sample (+ 0 0 y) vec-T x)]
+             [s2 (sample (- h y 1) vec-B x)]
+             [s3 (sample (+ 0 0 x) vec-L y)]
+             [s4 (sample (- w x 1) vec-R y)]
+             [s : Byte (apply min (list s1 s2 s3 s4))])
+        s))
+    (for ([y : Fixnum (ufx-in-range h)])
+      (for ([x : Fixnum (ufx-in-range w)])
+        (let* ([s (samp x y)])
+          (bytes-set! array2d idx s)
+          (set! idx (ufx+ 1 idx)))))
+    ; Now make another pass for border detection:
+    (define (border? [x : Fixnum] [y : Fixnum] [limit : Fixnum])
+      (define (in-bounds? [x : Fixnum] [y : Fixnum])
+        (and (ufx>= x 0)
+             (ufx>= y 0)
+             (ufx< x w)
+             (ufx< y h)))
+      (define (shorter? [x : Fixnum] [y : Fixnum])
+        (and (in-bounds? x y)
+             (ufx< (samp x y) limit)))
+      (or (shorter? (ufx+ 1 x) y)
+          (shorter? (ufx+ -1 x) y)
+          (shorter? x (ufx+ 1 y))
+          (shorter? x (ufx+ -1 y))))
+    (set! idx 0)
+    (for ([y : Fixnum (ufx-in-range h)])
+      (for ([x : Fixnum (ufx-in-range w)])
+        (let ([me (bytes-ref array2d idx)])
+          (cond
+            [(and (= me SHORT)
+                  (border? x y SHORT))
+             (bytes-set! array2d idx SHORT-BORDER)]
+            [(and (= me TALL)
+                  (border? x y TALL))
+             (bytes-set! array2d idx TALL-BORDER)]
+            [(and (= me PEAK)
+                  (border? x y PEAK))
+             (bytes-set! array2d idx PEAK-BORDER)]))
+        (set! idx (ufx+ 1 idx))))
+    ; Done
+    (platform-hill w h array2d)))
+
+{MAIN
+ (define (TODO3 [w : Fixnum] [h : Fixnum])
+   (let* ([ph (generate-platform-hill w h)]
+          [pixelvec (make-bytes (:ufx* 4 w h))]
+          [bytes (platform-hill-array2d ph)])
+     (define pixel-idx : Fixnum 0)
+     (for ([idx : Fixnum (ufx-in-range (ufx* w h))])
+       (let* ([val (bytes-ref bytes idx)]
+              [rgb (ufx- 255 (ufx* val 30))])
+         (define (put! [byte : Fixnum])
+           (bytes-set! pixelvec pixel-idx byte)
+           (set! pixel-idx (ufx+ 1 pixel-idx)))
+         (put! (case val
+                 [(1) 0] ; empty, alpha=0
+                 [else 255]))
+         (put! (case val
+                 [(3 5 7) 255] ; short/tall/peak borders, red=255
+                 [else rgb]))
+         (put! rgb)
+         (put! rgb)))
      (argb-pixels->pict pixelvec (cast w Nonnegative-Integer))))
+
+ (let ([big (TODO3 330 56)])
+   (values big
+           (cc-superimpose big (TODO3 300 30))))
 
  (: save-img (-> (U Pict (Instance Bitmap%)) (U Output-Port Path-String) Any))
  (define (save-img img name)
