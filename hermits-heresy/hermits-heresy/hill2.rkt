@@ -151,10 +151,13 @@
   (define MIN 4) ; backstop must be at least this deep (relative to padding)
   (define TARGET 5) ; backstop should be, on average, this deep (relative to padding)
   (define MAX 6) ; not a true max, but beyond this we always step towards the target
-  (define (step slices current-depth leftover-width)
-    (define-syntax-rule (retry body)
-      ; If we reach a limit, we just try again hoping for luckier RNG.
-      (or body body body))
+  (define-syntax-rule (retry (step arg ...))
+    (or (step arg ...)
+        (step arg ...)
+        (step arg ...)
+        ; Unlucky RNG, now we have to force the issue:
+        (step arg ... #:last-try? #t)))
+  (define (step slices current-depth leftover-width #:last-try? [last-try? #f])
     (match slices
       [(list) (list)]
       [(list the-slice more-slices ...)
@@ -183,9 +186,10 @@
                             [(2 3 4) 3]
                             [(5 6 7 8) 4]
                             [(9) 5])]
-                   [step-dir (if (< (random lo hi) current-depth)
-                                 -1
-                                 1)]
+                   [step-dir (cond
+                               [last-try? 1]
+                               [(< (random lo hi) current-depth) -1]
+                               [else 1])]
                    [run-d (+ current-depth step-dir)]
                    [results (retry (step (cons thinned-slice more-slices)
                                          run-d
@@ -194,11 +198,8 @@
                    (cons (backstop-run run-w run-d)
                          results)))]))]))
   (let ([start (+ TARGET (slice-padding (first slices)))])
-    (or (for/or ([i (in-range 10)])
-          (step slices start 0))
-        ; For more robustness, we should probably loosen the constraints each time...
-        ; But this is good enough for now.
-        (error "failed to generate backstop"))))
+    (or (retry (step slices start 0))
+        (error "failed to generate backstop, `last-try?` logic is broken?"))))
 
 #;(---
    plan     : (listof (or/c body? linkage?))
@@ -385,3 +386,27 @@
      (save-img (pict->bitmap img 'unsmoothed) name)]
     [else
      (send img save-file name 'bmp)]))
+
+
+; TRAVERSAL - expand to something like:
+#;(cond
+    [(and (in-area? (get-area foo 'lo-grass))
+          (< YYY 30))
+     (set-block! 'Grassy-Earth)
+     #t]
+    [(and (in-area? (get-area foo 'lo))
+          (< YYY 30))
+     (set-block! 'Umber)
+     (when (= YYY 29)
+       (set-chisel! 'flat-lo))
+     #t]
+    [(and (in-area? (get-area foo 'mid-grass))
+          (< YYY 31))
+     (set-block! 'Grassy-Earth)
+     #t]
+    [(and (in-area? (get-area foo 'mid))
+          (< YYY 31))
+     (set-block! 'Umber)
+     (when (= YYY 30)
+       (set-chisel! 'flat-lo))
+     #t])
