@@ -12,7 +12,8 @@
          "chisel.rkt"
          "chunky-area.rkt"
          "area.rkt"
-         "ufx.rkt")
+         "ufx.rkt"
+         (prefix-in magic: (submod "platform-layout.rkt" magic-numbers)))
 
 (struct phill ([area : Area]
                [y : Fixnum]
@@ -70,12 +71,12 @@
      (lambda args (void))))
 
   (define (target-val kind) (case kind
-                              [(peak-border) 7]
-                              [(peak) 6]
-                              [(tall-border) 5]
-                              [(tall) 4]
-                              [(short-border) 3]
-                              [(short) 2]
+                              [(peak-border) magic:PEAK-BORDER]
+                              [(peak) magic:PEAK]
+                              [(tall-border) magic:TALL-BORDER]
+                              [(tall) magic:TALL]
+                              [(short-border) magic:SHORT-BORDER]
+                              [(short) magic:SHORT]
                               [else
                                (error "invalid kind:" kind)]))
 

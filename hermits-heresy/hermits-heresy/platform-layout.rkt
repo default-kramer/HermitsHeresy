@@ -357,6 +357,24 @@
   vec)
 
 
+(define-syntax-rule (define-magic-numbers [id val] ...)
+  (begin
+    (define id : Byte val)
+    ...
+    (module+ magic-numbers
+      (provide id ...))))
+
+(define-magic-numbers
+  ; Warning - the order matters for border detection logic.
+  [UNSET 0]
+  [EMPTY 1]
+  [SHORT 2]
+  [SHORT-BORDER 3]
+  [TALL 4]
+  [TALL-BORDER 5]
+  [PEAK 6]
+  [PEAK-BORDER 7])
+
 ; A platform layout has no elevation or block information yet.
 ; It just has multiple areas represented in the Bytes array.
 (struct platform-layout ([width : Fixnum]
@@ -366,14 +384,6 @@
 
 (: generate-platform-layout (-> Fixnum Fixnum Platform-Layout))
 (define (generate-platform-layout w h)
-  (define UNSET 0)
-  (define EMPTY 1)
-  (define SHORT 2)
-  (define SHORT-BORDER 3)
-  (define TALL 4)
-  (define TALL-BORDER 5)
-  (define PEAK 6)
-  (define PEAK-BORDER 7)
   (define array2d (make-bytes (ufx* w h) UNSET))
 
   (define (gen-wall [len : Fixnum])
