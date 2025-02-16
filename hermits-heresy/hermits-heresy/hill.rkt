@@ -161,9 +161,9 @@
                   [(end-x) (ufx+ 3 end-x)]
                   [(end-z) (ufx+ 3 end-z)]
                   [(new-rect) (make-rect (xz start-x start-z) (xz end-x end-z))]
-                  [(foo) (make-sampler new-rect 6)]
+                  [(foo) (make-interpolator new-rect 6)]
                   [(adjuster) (lambda ([x : Fixnum] [z : Fixnum])
-                                (let ([flo (or (sample foo (make-xz x z))
+                                (let ([flo (or (interpolate foo (make-xz x z))
                                                (error "assert fail"))])
                                   (cond
                                     [(fl< flo 0.33) 0]

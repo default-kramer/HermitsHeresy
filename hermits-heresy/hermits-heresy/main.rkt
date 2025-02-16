@@ -32,6 +32,7 @@
 
            ; traversal
            HHEXPR YYY XXX ZZZ
+           in-area? set-chisel!
 
            ; For alternate traversal
            traverse-lambda
@@ -44,6 +45,7 @@
          "build-mottler.rkt"
          (only-in "traversal/untyped-traversal.rkt"
                   compile-traversal block-matches? set-block! in-hill?
+                  set-chisel! in-area?
                   HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)

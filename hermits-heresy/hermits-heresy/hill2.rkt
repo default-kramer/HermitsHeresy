@@ -21,12 +21,15 @@
 ; When (abs running-depth) reaches this limit, enforce that the linkage
 ; steers back towards the center (ignore the RNG for this linkage).
 
+(provide generate-platform-hill
+         platform-hill-array2d)
+
 (require "ufx.rkt")
 
 (define-syntax-rule (MAIN a ...)
-  #;(void)
+  (void)
   #;(module+ main a ...)
-  (begin a ...))
+  #;(begin a ...))
 
 {MAIN
  (require typed/pict
@@ -430,12 +433,16 @@
              (ufx< x w)
              (ufx< y h)))
       (define (shorter? [x : Fixnum] [y : Fixnum])
-        (and (in-bounds? x y)
-             (ufx< (samp x y) limit)))
-      (or (shorter? (ufx+ 1 x) y)
-          (shorter? (ufx+ -1 x) y)
-          (shorter? x (ufx+ 1 y))
-          (shorter? x (ufx+ -1 y))))
+        (or (not (in-bounds? x y))
+            (ufx< (samp x y) limit)))
+      (or (shorter? (ufx+ -1 x) (ufx+ -1 y))
+          (shorter? (ufx+ -1 x) (ufx+ 0 y))
+          (shorter? (ufx+ -1 x) (ufx+ 1 y))
+          (shorter? (ufx+ 0 x) (ufx+ -1 y))
+          (shorter? (ufx+ 0 x) (ufx+ -1 y))
+          (shorter? (ufx+ 1 x) (ufx+ -1 y))
+          (shorter? (ufx+ 1 x) (ufx+ 0 y))
+          (shorter? (ufx+ 1 x) (ufx+ 1 y))))
     (set! idx 0)
     (for ([y : Fixnum (ufx-in-range h)])
       (for ([x : Fixnum (ufx-in-range w)])
