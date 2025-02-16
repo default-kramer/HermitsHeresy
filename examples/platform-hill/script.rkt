@@ -2,14 +2,31 @@
 
 (require hermits-heresy
          (submod hermits-heresy undocumented)
-         hermits-heresy/hill2
+         hermits-heresy/platform-layout
          (only-in hermits-heresy/basics xz-x xz-z)
          (only-in hermits-heresy/chunky-area build-chunky-area))
 
 (define HH 35)
 (define WW 300)
-(define ph (generate-platform-hill WW HH))
-(define phbytes (platform-hill-array2d ph))
+(define ph (generate-platform-layout WW HH))
+(define phbytes (platform-layout-array2d ph))
+
+#;(begin
+    (define phplan (plan-platform-hill w h))
+    (define phplan (bitmap->platform-hill "platform-hill.bmp"))
+    (define ph (ph-apply phplan
+                         #:x 90 #:z 80
+                         #:wall 'Chert
+                         #:peak ['Moss 40]
+                         #:tall ['Moss 36]
+                         #:short ['Moss 33 34]))
+    (in-platform-hill?-apply! ph)
+    (in-platform-hill?-apply! "platform-hill.bmp"
+                              #:wall 'Chert
+                              #:wall-chisel 'flat-lo
+                              #:peak [40 'Moss]
+                              #:tall [36 'Moss]
+                              #:short [33 34 'Moss]))
 
 (define (build-area val)
   (define dx 90)
@@ -87,5 +104,5 @@
 
   (traverse stage trav! #:force-unsound-optimization? #t)
 
-  (save-stage! stage)
+  ;(save-stage! stage)
   }

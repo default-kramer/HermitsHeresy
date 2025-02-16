@@ -1,28 +1,7 @@
 #lang typed/racket
 
-; Platform-style hills.
-; Alternates tall,short,tall,short...
-; Constant "drift direction" (plan->pict drifts north as you go from east to west).
-;
-; IDEA: Notice that the mirror image drifts south as you go east to west.
-; So if you can implement cornering, which doesn't seem hard,
-; you can generate all 4 sides of a plateau!
-; (But... with the RNG involved, how would you ensure the corners meet?
-;  Maybe by adjusting the linkage depths?
-;  Or just regenerate until you get lucky?)
-;
-; REMEMBER: The original "rectangulator" idea does not drift.
-; Should that be a separate algorithm?
-; Or should I try to parameterize this code to allow/disallow drift?
-;
-; OF COURSE - you can randomly choose to implement the linkage in either
-; direction (positive or negative) which will allow running-depth to go
-; positive or negative. Set a limit to implement a driftless hill!
-; When (abs running-depth) reaches this limit, enforce that the linkage
-; steers back towards the center (ignore the RNG for this linkage).
-
-(provide generate-platform-hill
-         platform-hill-array2d)
+(provide generate-platform-layout Platform-Layout
+         platform-layout-array2d)
 
 (require "ufx.rkt")
 
@@ -37,15 +16,18 @@
  (define-type Pict pict)
  }
 
-; The body is the part of a platform that does not overlap a neighbor
+; The body is the part of a platform that does not overlap a neighbor.
+; The platform may be tall or short.
 (struct body ([width : Fixnum])
   #:transparent #:type-name Body)
 
-; The linkage defines how to connect 2 neighboring platforms
+; The linkage defines how to connect 2 neighboring bodies.
 (struct linkage ([overlap : Fixnum]
                  [depth : Fixnum])
   #:transparent #:type-name Linkage)
 
+; More specifically, the Body and Linkage must alternate.
+; But this type is good enough.
 (define-type Plan (Listof (U Body Linkage)))
 
 (: fxrandom (-> Fixnum Fixnum Fixnum))
@@ -68,14 +50,14 @@
 (define (generate-plan2 need-length)
   (let loop ([len 0])
     (cond
-      [(>= len need-length) (list)]
+      [(ufx>= len need-length) (list)]
       [else
        (let* ([w (fxrandom 3 7)]
               [o (fxrandom 2 5)]
               [d (fxrandom 1 3)])
          (list* (body w)
                 (linkage o d)
-                (loop (+ len w o))))])))
+                (loop (:ufx+ len w o))))])))
 
 (: straighten (-> Plan Fixnum Plan))
 ; Randomly negates some linkage depths.
@@ -110,6 +92,10 @@
        (error "assert fail")]))
   (loop plan 0))
 
+; Given a Plan, converts each Body to a Slice and each Linkage to a Slice.
+; Also introduces the tall/short alternation, which was implicit in the Plan.
+; Here the `tall` and `short` values are the dimensions of just that part
+; rather than a total offset.
 (struct slice ([width : Fixnum]
                [tall : Fixnum]
                [short : Fixnum]
@@ -117,6 +103,7 @@
   #:transparent #:type-name Slice)
 
 (: plan->slices (-> Plan (Listof Slice)))
+; This function does not use any RNG.
 (define (plan->slices plan)
   (define-values (min-depth max-depth)
     (let loop : (Values Fixnum Fixnum)
@@ -176,13 +163,14 @@
   (recurse plan 0 #t))
 
 
+; The backstop defines where the platforms end and the peak begins.
 (struct backstop-run ([width : Fixnum]
                       [depth : Fixnum])
   #:transparent #:type-name Backstop-Run)
 
 
-(: slices->backstop (-> (Listof Slice) (Listof Backstop-Run)))
-(define (slices->backstop slices)
+(: generate-backstop (-> (Listof Slice) (Listof Backstop-Run)))
+(define (generate-backstop slices)
   (define MIN 4) ; backstop must be at least this deep (relative to padding)
   (define TARGET 5) ; backstop should be, on average, this deep (relative to padding)
   (define MAX 6) ; not a true max, but beyond this we always step towards the target
@@ -239,15 +227,15 @@
         (error "failed to generate backstop, `last-try?` logic is broken?"))))
 
 
-(struct wall ([plan : (Listof (U Body Linkage))]
+(struct wall ([plan : Plan]
               [slices : (Listof Slice)]
               [backstop : (Listof Backstop-Run)])
   #:transparent #:type-name Wall)
 
-(: plan->wall (-> Plan Wall))
-(define (plan->wall plan)
+(: generate-wall (-> Plan Wall))
+(define (generate-wall plan)
   (let* ([slices (plan->slices plan)]
-         [backstop (slices->backstop slices)])
+         [backstop (generate-backstop slices)])
     (wall plan slices backstop)))
 
 {MAIN
@@ -288,7 +276,7 @@
 
 
  (let* ([plan (generate-plan 10)]
-        [wall (plan->wall plan)])
+        [wall (generate-wall plan)])
    (values plan
            (wall-slices wall)
            (wall-backstop wall)
@@ -306,12 +294,13 @@
                       (linkage 2 -1)
                       (body 5)
                       )])
-     (plan->wall plan)))
+     (generate-wall plan)))
  (scale (wall->pict (p2 1)) 10)
  (scale (wall->pict (p2 -1)) 10)
  }
 
 
+; A temporary structure, one per pixel.
 ; Here all dimensions are distance from the edge of the bounding box.
 (struct pixel-slice ([padding : Fixnum]
                      [short : Fixnum]
@@ -368,13 +357,15 @@
   vec)
 
 
-(struct platform-hill ([width : Fixnum]
-                       [height : Fixnum]
-                       [array2d : Bytes])
-  #:transparent #:type-name Platform-Hill)
+; A platform layout has no elevation or block information yet.
+; It just has multiple areas represented in the Bytes array.
+(struct platform-layout ([width : Fixnum]
+                         [height : Fixnum]
+                         [array2d : Bytes])
+  #:transparent #:type-name Platform-Layout)
 
-(: generate-platform-hill (-> Fixnum Fixnum Platform-Hill))
-(define (generate-platform-hill w h)
+(: generate-platform-layout (-> Fixnum Fixnum Platform-Layout))
+(define (generate-platform-layout w h)
   (define UNSET 0)
   (define EMPTY 1)
   (define SHORT 2)
@@ -388,8 +379,10 @@
   (define (gen-wall [len : Fixnum])
     (let* ([plan (generate-plan2 len)]
            [plan (straighten plan 7)])
-      (plan->wall plan)))
+      (generate-wall plan)))
   (define (sample [i : Integer] [wall : (Vectorof Pixel-Slice)] [j : Integer])
+    ; Sample the 4 walls. At most 2 should be relevant (near the corners).
+    ; Rely on `min` to ignore irrelevant samples.
     (let* ([slice (vector-ref wall j)]
            [backstop (pixel-slice-backstop slice)])
       (cond
@@ -459,13 +452,13 @@
              (bytes-set! array2d idx PEAK-BORDER)]))
         (set! idx (ufx+ 1 idx))))
     ; Done
-    (platform-hill w h array2d)))
+    (platform-layout w h array2d)))
 
 {MAIN
  (define (TODO3 [w : Fixnum] [h : Fixnum])
-   (let* ([ph (generate-platform-hill w h)]
+   (let* ([ph (generate-platform-layout w h)]
           [pixelvec (make-bytes (:ufx* 4 w h))]
-          [bytes (platform-hill-array2d ph)])
+          [bytes (platform-layout-array2d ph)])
      (define pixel-idx : Fixnum 0)
      (for ([idx : Fixnum (ufx-in-range (ufx* w h))])
        (let* ([val (bytes-ref bytes idx)]
@@ -495,27 +488,3 @@
      [else
       (send img save-file name 'bmp)]))
  }
-
-
-; TRAVERSAL - expand to something like:
-#;(cond
-    [(and (in-area? (get-area foo 'lo-grass))
-          (< YYY 30))
-     (set-block! 'Grassy-Earth)
-     #t]
-    [(and (in-area? (get-area foo 'lo))
-          (< YYY 30))
-     (set-block! 'Umber)
-     (when (= YYY 29)
-       (set-chisel! 'flat-lo))
-     #t]
-    [(and (in-area? (get-area foo 'mid-grass))
-          (< YYY 31))
-     (set-block! 'Grassy-Earth)
-     #t]
-    [(and (in-area? (get-area foo 'mid))
-          (< YYY 31))
-     (set-block! 'Umber)
-     (when (= YYY 30)
-       (set-chisel! 'flat-lo))
-     #t])
