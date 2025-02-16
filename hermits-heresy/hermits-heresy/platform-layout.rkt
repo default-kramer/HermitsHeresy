@@ -1,7 +1,7 @@
 #lang typed/racket
 
 (provide generate-platform-layout Platform-Layout
-         platform-layout-array2d)
+         platform-layout-array2d platform-layout-width platform-layout-depth)
 
 (require "ufx.rkt")
 
@@ -360,7 +360,7 @@
 ; A platform layout has no elevation or block information yet.
 ; It just has multiple areas represented in the Bytes array.
 (struct platform-layout ([width : Fixnum]
-                         [height : Fixnum]
+                         [depth : Fixnum]
                          [array2d : Bytes])
   #:transparent #:type-name Platform-Layout)
 
