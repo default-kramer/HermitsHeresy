@@ -16,6 +16,7 @@
          build-mottler
          (rename-out [make-selection selection])
          make-platform-hills
+         generate-platform-layout
 
          ; Traversal lang
          (rename-out [compile-traversal traversal])
@@ -45,6 +46,7 @@
 (require "NEW-API.rkt"
          "selection.rkt"
          "build-mottler.rkt"
+         (only-in "platform-layout.rkt" generate-platform-layout)
          (only-in "platform-hills.rkt" make-platform-hills)
          (only-in "traversal/untyped-traversal.rkt"
                   compile-traversal block-matches? set-block! in-hill?

@@ -42,8 +42,8 @@
 (define (make-platform-hills layout
                              #:x [dx 0]
                              #:z [dz 0]
-                             #:wall-block [wall-block 'Chert]
-                             #:wall-chisel [wall-chisel 'none]
+                             #:wall-block [wall-block 'Umber]
+                             #:wall-chisel [wall-chisel 'flat-lo]
                              #:platform-block [platform-block 'Seeded-Mossy-Spoiled-Soil]
                              #:peak-y [peak-y 40]
                              #:tall-y [tall-y -4]
@@ -95,8 +95,8 @@
                       (ufx+ tall-y short-y)
                       short-y)])
     (platform-hills (make 'peak peak-y platform-block 'none)
-                    (make 'peak-border peak-y wall-block 'flat-lo)
+                    (make 'peak-border peak-y wall-block wall-chisel)
                     (make 'tall tall-y platform-block 'none)
-                    (make 'tall-border tall-y wall-block 'flat-lo)
+                    (make 'tall-border tall-y wall-block wall-chisel)
                     (make 'short short-y platform-block 'none)
-                    (make 'short-border short-y wall-block 'flat-lo))))
+                    (make 'short-border short-y wall-block wall-chisel))))

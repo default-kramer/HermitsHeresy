@@ -1,5 +1,7 @@
 #lang racket
 
+; generate json file for C# project
+
 (require "blockdef.rkt"
          (submod "blockdef.rkt" for-json)
          json)
@@ -27,4 +29,4 @@
   (with-output-to-string
     (lambda () (write-json js-expr #:indent 2))))
 
-(displayln json-str)
+;(displayln json-str)

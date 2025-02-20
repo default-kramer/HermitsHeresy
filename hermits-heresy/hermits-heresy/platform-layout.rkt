@@ -380,9 +380,9 @@
 (struct platform-layout ([width : Fixnum]
                          [depth : Fixnum]
                          [array2d : Bytes])
-  #:transparent #:type-name Platform-Layout)
+  #:type-name Platform-Layout)
 
-(: generate-platform-layout (-> Fixnum Fixnum Platform-Layout))
+(: generate-platform-layout (-> Positive-Fixnum Positive-Fixnum Platform-Layout))
 (define (generate-platform-layout w h)
   (define array2d (make-bytes (ufx* w h) UNSET))
 

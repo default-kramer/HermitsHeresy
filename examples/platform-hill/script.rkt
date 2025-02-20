@@ -1,12 +1,13 @@
 #lang racket
 
-(require hermits-heresy
-         (submod hermits-heresy undocumented)
-         hermits-heresy/platform-layout)
+(require hermits-heresy)
 
 (define phills (make-platform-hills
                 (generate-platform-layout 300 35)
                 #:x 90 #:z 80
+                #:peak-y 35
+                #:tall-y -2
+                #:short-y -2
                 #:wall-block 'Umber
                 #:wall-chisel 'flat-lo))
 
