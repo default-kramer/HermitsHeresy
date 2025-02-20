@@ -1,17 +1,13 @@
 #lang typed/racket
 
 (provide Hill hill? area->hill area->hill2 bitmap->hill
-         hill-area hill-elevations
-         make-shell make-shell2
-         )
+         hill-area hill-elevations)
 
 (require "area.rkt"
          "chunky-area.rkt"
-         "interpolator.rkt"
          "basics.rkt"
          "block.rkt"
          "ufx.rkt"
-         racket/flonum
          typed/pict
          (only-in typed/racket/draw Bitmap%))
 
@@ -37,13 +33,11 @@
 
 (: bitmap->hill (->* ((U (Instance Bitmap%) Path-String))
                      (#:semitransparent-handling (U 'ignore 'adjust)
-                      #:adjust-y Fixnum
-                      #:cutoff-y Fixnum)
+                      #:adjust-y Fixnum)
                      Hill))
 (define (bitmap->hill arg
                       #:semitransparent-handling [semitransparent-handling 'adjust]
                       #:adjust-y [adjust-y 0]
-                      #:cutoff-y [cutoff-y 0]
                       )
   ; Semi-transparent pixels were a pain point for the first two users (one of them was me),
   ; so I think it's best that adjusting for this is the default behavior.
@@ -95,9 +89,8 @@
                     ; This adjustment formula looks good to me...
                     [(adjust) (cast (round (/ (* raw-elevation alpha) 255)) Fixnum)]
                     [(ignore) raw-elevation])]))
-             (when (ufx>= adjusted-elevation cutoff-y)
-               (hash-set! elevations (cons x z) adjusted-elevation))
-             (set! all-empty? #f)]
+             (set! all-empty? #f)
+             (hash-set! elevations (cons x z) adjusted-elevation)]
             [else
              (set! all-full? #f)])))))
   (when (or all-empty? all-full?)
@@ -109,81 +102,3 @@
                          (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
                        (lambda args #f)))
   (hill the-area (make-immutable-hash (hash->list elevations))))
-
-; TODO this function is duplicated:
-(define (neighbors [val : XZ])
-  (let ([x (xz-x val)]
-        [z (xz-z val)])
-    (list (xz (ufx+ 1 x) z)
-          (xz (ufx+ -1 x) z)
-          (xz x (ufx+ 1 z))
-          (xz x (ufx+ -1 z)))))
-
-(define (make-shell [old-hill : Hill] #:y [y : Fixnum])
-  (define old-area (hill-area old-hill))
-  (define (in-old-area? [xz : XZ])
-    (area-contains? old-area xz))
-  (define new-elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)
-    (hash))
-  (define new-area
-    (let-values ([(end-x end-z) (xz->values (rect-end (area-bounds old-area)))])
-      (build-chunky-area
-       (ufx+ 1 end-x)
-       (ufx+ 1 end-z)
-       (lambda ([xz : XZ])
-         (and (not (in-old-area? xz))
-              (ormap in-old-area? (neighbors xz))
-              (let-values ([(x z) (xz->values xz)])
-                (set! new-elevations (hash-set new-elevations (cons x z) y))
-                #t)))
-       (lambda args #f))))
-  (println (list "shell" (hash-count new-elevations)))
-  (hill new-area new-elevations))
-
-(define (make-shell2 [old-hill : Hill]
-                     #:y [y : Fixnum]
-                     #:adjuster [adjuster : (-> Fixnum Fixnum Fixnum)])
-  (define old-area (hill-area old-hill))
-  (define (in-old-area? [xz : XZ])
-    (area-contains? old-area xz))
-  (define old-elevations (hill-elevations old-hill))
-  (define new-elevations : (Immutable-HashTable (Pairof Integer Integer) Fixnum)
-    old-elevations)
-  (define (get-y [xz : XZ])
-    (let-values ([(x z) (xz->values xz)])
-      (let ([elev (hash-ref old-elevations (cons x z) #f)])
-        (min y (or elev -1)))))
-  (define new-area
-    (let*-values ([(end-x end-z) (xz->values (rect-end (area-bounds old-area)))]
-                  [(start-x start-z) (xz->values (rect-start (area-bounds old-area)))]
-                  [(start-x) (ufx+ -3 start-x)]
-                  [(start-z) (ufx+ -3 start-z)]
-                  [(end-x) (ufx+ 3 end-x)]
-                  [(end-z) (ufx+ 3 end-z)]
-                  [(new-rect) (make-rect (xz start-x start-z) (xz end-x end-z))]
-                  [(foo) (make-interpolator new-rect 6)]
-                  [(adjuster) (lambda ([x : Fixnum] [z : Fixnum])
-                                (let ([flo (or (interpolate foo (make-xz x z))
-                                               (error "assert fail"))])
-                                  (cond
-                                    [(fl< flo 0.33) 0]
-                                    [(fl< flo 0.66) -1]
-                                    [else -2])))])
-      (build-chunky-area
-       (ufx+ 0 end-x)
-       (ufx+ 0 end-z)
-       (lambda ([xz : XZ])
-         (and #t #;(not (in-old-area? xz)) ; obviously wrong, would need to be an elevation test instead
-              (let* ([elevs (map get-y (cons xz (neighbors xz)))]
-                     [elev (apply max elevs)]
-                     ; This ain't bad:
-                     #;[elev (ufx+ -1 (ufx+ (random 3) elev))])
-                (and (ufx> elev 0)
-                     (let*-values ([(x z) (xz->values xz)]
-                                   ; but this is better:
-                                   [(elev) (ufx+ elev (adjuster x z))])
-                       (set! new-elevations (hash-set new-elevations (cons x z) elev))
-                       #t)))))
-       (lambda args #f))))
-  (println (list "shell2" (hash-count new-elevations)))
-  (hill new-area new-elevations))

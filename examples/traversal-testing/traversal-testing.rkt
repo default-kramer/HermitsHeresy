@@ -80,63 +80,20 @@
     ;(save-stage! B00)
     }
 
-(define COUNT 0)
-
-(define-syntax-rule (build-mottle-proc sym ...)
-  (let* ([vec (vector-immutable (block sym)
-                                ...)]
-         [prng (make-pseudo-random-generator)]
-         [len (vector-length vec)])
-    (lambda ()
-      (set! COUNT (+ 1 COUNT))
-      (vector-ref vec (random len prng)))))
-
 {begin ;module+ main
-  (define mottle (build-mottle-proc 'Grassy-Earth
-                                    'Grassy-Earth
-                                    'Lemongrassy-Earth
-                                    'Limegrassy-Earth
-                                    'Earth
-                                    'Mossy-Earth
-                                    'Stony-Soil))
   (define trav
-    #;(traversal
-       (cond
-         [(> YYY 70) ; 83 -> 2064384, 70 -> 4300800
-          (set-block! (mottle))]))
     (traversal
      (cond
        [(liquid?)
         (void "keep liquids")]
-       #;[(block-matches? 'Seaside-Sand 'Stony-Sand 'Bubbling-Seaside-Sand)
-          (set-block! 'Ice)]
-       #;[(block-matches? 'Marble)
-          (set-block! 'Zenithium-Vein)]
-       #;[(block-matches? 'Snow)
-          (void "keep snow")]
-       #;[(block-matches? 'Grassy-Earth 'Limegrassy-Earth)
-          (set-block! (mottle))]
-       [(not (block-matches? 0))
+       [(block-matches? 'Seaside-Sand 'Stony-Sand 'Bubbling-Seaside-Sand)
         (set-block! 'Ice)]
-       #;[(not (block-matches? 0))
-          (set-block! (mottle))]
-       ))
-    #;(traversal
-       (cond
-         [(block-matches? 'Snow)
-          (set-block! 'Mossy-Earth)]
-         [(block-matches? 'Chalk)
-          (set-block! 'Stony-Soil)]
-         [(block-matches? 'Marble)
-          (set-block! 'Copper-Vein)]))
-    #;(traversal (when (not (block-matches? 0))
-                   (set-block! 'Ice)))
-    #;(traversal
-       (cond
-         [(= YYY 60)
-          (case (remainder (quotient XXX 20) 2)
-            [(0) (set-block! 'Zenithium-Vein)]
-            [(1) (set-block! 'Magnetite-Vein)])]))
+       [(block-matches? 'Marble)
+        (set-block! 'Zenithium-Vein)]
+       [(block-matches? 'Snow)
+        (void "keep snow")]
+       [(not (block-matches? 0))
+        (set-block! 'Basalt)]))
     )
 
   (begin
