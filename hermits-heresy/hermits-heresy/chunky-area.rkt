@@ -128,7 +128,8 @@
                           (xz end-x end-z))
                xz-count))
 
-(: build-chunky-area (-> Fixnum Fixnum
+(: build-chunky-area (-> Fixnum ; width (or "end-x") -- distance from X=0
+                         Fixnum ; depth (or "end-z") -- distance from Z=0
                          (-> XZ Any) ; in-area?
                          (-> Any Any Any) ; all-empty? all-full? -> any
                          Chunky-Area))

@@ -5,10 +5,12 @@
          ; more complex things elsewhere using these primitives:
          lift do! block-matches? set-block! HHEXPR YYY XXX ZZZ
          in-area? in-hill?
+         set-chisel!
          )
 
 (require "traversal.rkt"
          "../block.rkt"
+         "../chisel.rkt"
          "../selection.rkt"
          "../chunky-area.rkt"
          "../basics.rkt"
@@ -75,6 +77,10 @@
        (quasisyntax/loc stx
          (HHEXPR (::block-matches? [#,@constants]
                                    [#,@runtime]))))]))
+
+(define-syntax-rule (set-chisel! chisel)
+  (set! BLOCK (fxior (fxand BLOCK #x7FF)
+                     (chisel->mask chisel))))
 
 (define-syntax-rule (::set-block! block)
   ; Keep the other bits untouched (chisel status plus the mystery bit)

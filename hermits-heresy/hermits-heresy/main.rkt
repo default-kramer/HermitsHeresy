@@ -15,12 +15,15 @@
          traverse
          build-mottler
          (rename-out [make-selection selection])
+         make-platform-hills
+         generate-platform-layout
 
          ; Traversal lang
          (rename-out [compile-traversal traversal])
          block-matches? set-block!
          with-selection
          in-hill?
+         in-platform-hills?!
          )
 
 (module+ undocumented
@@ -32,6 +35,7 @@
 
            ; traversal
            HHEXPR YYY XXX ZZZ
+           in-area? set-chisel!
 
            ; For alternate traversal
            traverse-lambda
@@ -42,8 +46,11 @@
 (require "NEW-API.rkt"
          "selection.rkt"
          "build-mottler.rkt"
+         (only-in "platform-layout.rkt" generate-platform-layout)
+         (only-in "platform-hills.rkt" make-platform-hills)
          (only-in "traversal/untyped-traversal.rkt"
                   compile-traversal block-matches? set-block! in-hill?
+                  set-chisel! in-area?
                   HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)

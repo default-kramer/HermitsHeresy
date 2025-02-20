@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Stgdat-Kind Stage
+(provide Stgdat-Kind Stage stage?
          stage-kind kind->filename
          stage-read stage-write!
          open-stgdat save-stage!

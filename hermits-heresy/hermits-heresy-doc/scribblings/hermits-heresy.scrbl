@@ -444,6 +444,41 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
   given dy value. Positive values raise the selection; negative values lower it.})
 }
 
+@defproc[(generate-platform-layout [width positive-fixnum?]
+                                   [depth positive-fixnum?])
+         platform-layout?]{
+ Randomly generates a rectangular platform layout.
+ To be used with @(racket make-platform-hills).
+}
+
+@defproc[(make-platform-hills [layout platform-layout?]
+                              [#:x dx fixnum? 0]
+                              [#:z dz fixnum? 0]
+                              [#:wall-block wall-block (or/c symbol? fixnum?) 'Umber]
+                              [#:wall-chisel wall-chisel (or/c 'none 'flat-lo 'flat-hi) 'flat-lo]
+                              [#:platform-block platform-block (or/c symbol? fixnum?) 'Seeded-Mossy-Spoiled-Soil]
+                              [#:peak-y peak-y fixnum? 40]
+                              [#:tall-y tall-y fixnum? -4]
+                              [#:short-y short-y fixnum? -2])
+         platform-hills?]{
+ Creates platform hills.
+ To be used with @(racket in-platform-hills?!).
+
+ @(itemlist
+   @item{The @(racket layout) can be created using @(racket generate-platform-layout).}
+   @item{@(racket dx) translates the hill east or west.}
+   @item{@(racket dz) translates the hill south or north.}
+   @item{@(racket wall-block) specifies which block to use for the walls.}
+   @item{@(racket wall-chisel) specifies the chisel to use for tops of walls that border platforms.}
+   @item{@(racket platform-block) specifies which block to use for the platforms.}
+   @item{@(racket peak-y) specifies the Y coordinate that the top of the hill will occupy.}
+   @item{@(racket tall-y) specifies the Y coordinate of the tall platforms.
+  If negative, indicates the amount to subtract from @(racket peak-y).}
+   @item{@(racket short-y) specifies the Y coordinate of the short platforms.
+  If negative, indicates the amount to subtract from @(racket tall-y).}
+   )
+}
+
 @subsection{Traversal}
 A traversal is basically a callback that is invoked for each coordinate in the blockspace.
 It is a generic building block from which more complex functionality can be built.
@@ -525,4 +560,14 @@ For example, here is how a traversal could be used to replace certain blocks wit
  Returns true if the current xzy coordinate is inside the given @(racket hill),
  false otherwise.
  Hills can be created using @(racket bitmap->hill).
+}
+
+@defform[(in-platform-hills?! platform-hills)]{
+ Can only be used inside a @(racket traversal).
+
+ If the current xzy coordinate is inside the given platform hills,
+ performs the block manipulations specified by that hill and returns true.
+ Otherwise, does nothing and returns false.
+
+ Platform hills can be created using @(racket make-platform-hills).
 }
