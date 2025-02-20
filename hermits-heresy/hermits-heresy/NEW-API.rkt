@@ -171,9 +171,8 @@
 
 (: find-outskirts (-> Area (-> XZ Any) (Listof XZ)))
 (define (find-outskirts area extra-outside?)
-  (define contains? (area->contains-func area))
   (define (outside? [xz : XZ])
-    (or (not (contains? xz))
+    (or (not (area-contains? area xz))
         (extra-outside? xz)))
   (define (inside? [xz : XZ])
     (not (outside? xz)))
@@ -195,19 +194,6 @@
            [val (stage-read stage p)])
       (println (list "y:" y "block:" val)))))
 
-(define (stage-full-area [chunk-layout : Chunk-Layout])
-  (let* ([depth (ufx* 32 (vector-length chunk-layout))]
-         [width (ufx* 32 (vector-length (vector-ref chunk-layout 0)))]
-         [bounds (make-rect (xz 0 0) (xz width depth))])
-    (define (contains? [xz : XZ])
-      (chunk-translate chunk-layout xz))
-    (area bounds contains? #f)))
-
-(define-syntax-rule (get-area x stage)
-  (case x
-    [(all) (stage-full-area (stage-chunk-layout stage))]
-    [else (ann x Area)]))
-
 (define (repair-sea! [stage : Stage] [where : (U 'all Area)] #:sea-level [sea-level : (U #f Fixnum) #f])
   ; Notes from IoA testing:
   ; Sea level is at y=31.
@@ -218,64 +204,70 @@
   ; (I strongly suspect there is an "undersea" flag there.)
   ; But for now, too bad, the user would have to manually destroy those items
   ; before using this function and put them back afterwards.
-  (define kind (stage-kind stage))
-  (define water-level : Fixnum (or sea-level
-                                   (case kind
-                                     [(IoA) 31]
-                                     [else (error "Unexpected kind" kind)])))
-  ; The top-sea and full-sea values that follow are confirmed on IoA.
-  ; Other islands might use other values, more investigation needed.
-  (define top-sea #x1A4) ; The shallow sea, placed at y = sea level
-  (define full-sea #x155) ; Full sea, placed at y < sea level
+  (error "TODO: redo as traversal")
+  #;(begin
+      (define kind (stage-kind stage))
+      (define water-level : Fixnum (or sea-level
+                                       (case kind
+                                         [(IoA) 31]
+                                         [else (error "Unexpected kind" kind)])))
+      ; The top-sea and full-sea values that follow are confirmed on IoA.
+      ; Other islands might use other values, more investigation needed.
+      (define top-sea #x1A4) ; The shallow sea, placed at y = sea level
+      (define full-sea #x155) ; Full sea, placed at y < sea level
 
-  (define (vacant? [point : Point])
-    ; This probably needs more cases... TBD
-    (case (stage-read stage point)
-      [(0) #t]
-      [else #f]))
+      (define (vacant? [point : Point])
+        ; This probably needs more cases... TBD
+        (case (stage-read stage point)
+          [(0) #t]
+          [else #f]))
 
-  (define area (get-area where stage))
-  (define protected-area (unbox (stage-protected-area stage)))
-  (for/area ([xz area])
-    (define proof (unprotected? protected-area xz))
-    (when proof
-      (for ([y : Fixnum (ufx-in-range (ufx+ 1 water-level))])
-        (let ([p (make-point xz y)])
-          (when (vacant? p)
-            (stage-write! stage proof p (if (ufx= y water-level)
-                                            top-sea
-                                            full-sea)))))))
-  (void))
+      (define area (get-area where stage))
+      (define protected-area (unbox (stage-protected-area stage)))
+      (for/area ([xz area])
+        (define proof (unprotected? protected-area xz))
+        (when proof
+          (for ([y : Fixnum (ufx-in-range (ufx+ 1 water-level))])
+            (let ([p (make-point xz y)])
+              (when (vacant? p)
+                (stage-write! stage proof p (if (ufx= y water-level)
+                                                top-sea
+                                                full-sea)))))))
+      (void)))
 
 (define (clear-area! [stage : Stage] [where : (U 'all Area)]
                      #:y-min [min-y : Fixnum 1]
                      #:keep-items? [keep-items? : Boolean #t])
-  ; Reset count of 24-byte records to zero
-  ; (this is probably a 4-byte number but 0xC8000 is the max)
-  (when (not keep-items?)
-    (define buffer (stage-buffer stage))
-    (bytes-set! buffer #x24E7CD 1) ; Setting to zero ruins the first item you place??
-    (bytes-set! buffer #x24E7CE 0)
-    (bytes-set! buffer #x24E7CF 0))
-  (define area (get-area where stage))
-  (define protected-area (unbox (stage-protected-area stage)))
-  (for/area ([xz area])
-    (define proof (unprotected? protected-area xz))
-    (when proof
-      (for ([y : Fixnum (ufx-in-range min-y 96)])
-        (let ([p (make-point xz y)])
-          (when (and (>= y min-y)
-                     (or (not keep-items?)
-                         (simple-block? (or (stage-read stage p) 0))))
-            (stage-write! stage proof p 0))))))
-  (void))
+  (error "TODO remove or redo as traversal")
+  #;(begin
+      ; Reset count of 24-byte records to zero
+      ; (this is probably a 4-byte number but 0xC8000 is the max)
+      (when (not keep-items?)
+        (define buffer (stage-buffer stage))
+        (bytes-set! buffer #x24E7CD 1) ; Setting to zero ruins the first item you place??
+        (bytes-set! buffer #x24E7CE 0)
+        (bytes-set! buffer #x24E7CF 0))
+      (define area (get-area where stage))
+      (define protected-area (unbox (stage-protected-area stage)))
+      (for/area ([xz area])
+        (define proof (unprotected? protected-area xz))
+        (when proof
+          (for ([y : Fixnum (ufx-in-range min-y 96)])
+            (let ([p (make-point xz y)])
+              (when (and (>= y min-y)
+                         (or (not keep-items?)
+                             (simple-block? (or (stage-read stage p) 0))))
+                (stage-write! stage proof p 0))))))
+      (void)))
 
 (define (blocks-hash [stage : Stage]
-                     #:where [where : (U 'all Area) 'all])
+                     #:where [where : (U 'all #;Area) 'all])
   ; For use by automated tests, to avoid adding too many large files into git.
   ; If the hash changes, you might need to use an older version of the code
   ; to export the complete data for diffing.
-  (define area (get-area where stage))
+  (define area
+    (and (eq? where 'all)
+         (chunk-layout->chunky-area (stage-chunk-layout stage))))
   (define hash1 0)
   (define hash2 0)
   (for/area ([xz area])
@@ -531,6 +523,8 @@
         [(go (+ 1 i) (cdr areas))]))
     (go 0 hills-and-areas))
 
+  (define full-area (chunk-layout->chunky-area (stage-chunk-layout stage)))
+
   (define (check-bedrock [xz : XZ])
     (or (not respect-bedrock?)
         (ufx= 1 (or (stage-read stage (make-point xz 0)) -1))))
@@ -544,7 +538,7 @@
       ; and it gets worse in DrRacket. So this is worth it IMO.
       (error "assert fail: callback is an impersonator"))
     (define protected-area (unbox (stage-protected-area stage)))
-    (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
+    (for/area ([xz full-area])
       (define proof (and (check-bedrock xz)
                          (unprotected? protected-area xz)))
       (when proof
@@ -594,7 +588,8 @@ If so, just do an area-intersect with the stage full area, right?")))
 (define (traverse-lambda stage callback)
   (define args (t:make-empty-argbox))
   (define protected-area (unbox (stage-protected-area stage)))
-  (for/area ([xz (stage-full-area (stage-chunk-layout stage))])
+  (define full-area (chunk-layout->chunky-area (stage-chunk-layout stage)))
+  (for/area ([xz full-area])
     (define proof (unprotected? protected-area xz))
     (when proof
       (t:set-argbox-x! args (xz-x xz))

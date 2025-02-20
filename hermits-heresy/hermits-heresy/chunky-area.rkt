@@ -6,6 +6,8 @@
          chunky-area-bounds
          empty-chunky-area
          chunky-area-transform
+         build-chunky-area
+         chunk-layout->chunky-area
          )
 
 (require typed/pict
@@ -46,6 +48,9 @@
 ; than a HashTable. Then after some more time I realized that most call sites should only test
 ; the XZ coordinate once, not 96 times for each Y, duh!
 ; But faster is better so I'm keeping it.
+; Note 2: Maybe not so questionable, because we can very quickly create a chunky-area
+; from a chunk layout, or from the per-chunk block indexes (not doing this yet but it
+; will produce great speedups for certain scenarios such as find+replace).
 (struct chunky-area ([bytevec : (Immutable-Vectorof Bytes)]
                      [W32 : Fixnum] ; number of chunks wide
                      [bounds : Rect]
@@ -123,7 +128,8 @@
                           (xz end-x end-z))
                xz-count))
 
-(: build-chunky-area (-> Fixnum Fixnum
+(: build-chunky-area (-> Fixnum ; width (or "end-x") -- distance from X=0
+                         Fixnum ; depth (or "end-z") -- distance from Z=0
                          (-> XZ Any) ; in-area?
                          (-> Any Any Any) ; all-empty? all-full? -> any
                          Chunky-Area))

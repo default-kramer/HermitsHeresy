@@ -1,0 +1,4250 @@
+[
+    {
+        "BlockId": 0,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "<empty>",
+        "PrimaryBlockId": 0
+    },
+    {
+        "BlockId": 1,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bedrock",
+        "PrimaryBlockId": 1
+    },
+    {
+        "BlockId": 2,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Earth",
+        "PrimaryBlockId": 2
+    },
+    {
+        "BlockId": 3,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Grassy-Earth",
+        "PrimaryBlockId": 3
+    },
+    {
+        "BlockId": 4,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Limegrassy-Earth",
+        "PrimaryBlockId": 4
+    },
+    {
+        "BlockId": 5,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Tilled-Soil",
+        "PrimaryBlockId": 5
+    },
+    {
+        "BlockId": 6,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Clay",
+        "PrimaryBlockId": 6
+    },
+    {
+        "BlockId": 7,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mossy-Earth",
+        "PrimaryBlockId": 7
+    },
+    {
+        "BlockId": 8,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chalk",
+        "PrimaryBlockId": 8
+    },
+    {
+        "BlockId": 9,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chunky-Chalk",
+        "PrimaryBlockId": 9
+    },
+    {
+        "BlockId": 10,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Obsidian",
+        "PrimaryBlockId": 10
+    },
+    {
+        "BlockId": 11,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sand",
+        "PrimaryBlockId": 11
+    },
+    {
+        "BlockId": 12,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sandstone",
+        "PrimaryBlockId": 12
+    },
+    {
+        "BlockId": 13,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sandy-Sandstone",
+        "PrimaryBlockId": 13
+    },
+    {
+        "BlockId": 14,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bloodstone",
+        "PrimaryBlockId": 14
+    },
+    {
+        "BlockId": 15,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Ash",
+        "PrimaryBlockId": 15
+    },
+    {
+        "BlockId": 16,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Witchgrassy-Earth",
+        "PrimaryBlockId": 16
+    },
+    {
+        "BlockId": 17,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Poisonous-Peat",
+        "PrimaryBlockId": 17
+    },
+    {
+        "BlockId": 18,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Snow-Cover",
+        "PrimaryBlockId": 18
+    },
+    {
+        "BlockId": 19,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Snow",
+        "PrimaryBlockId": 19
+    },
+    {
+        "BlockId": 20,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Ice",
+        "PrimaryBlockId": 20
+    },
+    {
+        "BlockId": 21,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Clodstone",
+        "PrimaryBlockId": 21
+    },
+    {
+        "BlockId": 22,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Crumbly-Clodstone",
+        "PrimaryBlockId": 22
+    },
+    {
+        "BlockId": 23,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Basalt",
+        "PrimaryBlockId": 23
+    },
+    {
+        "BlockId": 24,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Translucent-Block",
+        "PrimaryBlockId": 24
+    },
+    {
+        "BlockId": 25,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lava",
+        "PrimaryBlockId": 25
+    },
+    {
+        "BlockId": 26,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Vault-Wall",
+        "PrimaryBlockId": 26
+    },
+    {
+        "BlockId": 27,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Viny-Vault-Wall",
+        "PrimaryBlockId": 27
+    },
+    {
+        "BlockId": 28,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cracked-Vault-Wall",
+        "PrimaryBlockId": 28
+    },
+    {
+        "BlockId": 29,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mud-Brick-Wall",
+        "PrimaryBlockId": 29
+    },
+    {
+        "BlockId": 30,
+        "Dyes": [
+            {
+                "BlockId": 277,
+                "Color": "white"
+            },
+            {
+                "BlockId": 278,
+                "Color": "black"
+            },
+            {
+                "BlockId": 279,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 280,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 281,
+                "Color": "red"
+            },
+            {
+                "BlockId": 282,
+                "Color": "green"
+            },
+            {
+                "BlockId": 283,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 284,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Timbered-Foundation",
+        "PrimaryBlockId": 30
+    },
+    {
+        "BlockId": 31,
+        "Dyes": [
+            {
+                "BlockId": 285,
+                "Color": "white"
+            },
+            {
+                "BlockId": 286,
+                "Color": "black"
+            },
+            {
+                "BlockId": 287,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 288,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 289,
+                "Color": "red"
+            },
+            {
+                "BlockId": 290,
+                "Color": "green"
+            },
+            {
+                "BlockId": 291,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 292,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Timbered-Wall-Midsection",
+        "PrimaryBlockId": 31
+    },
+    {
+        "BlockId": 32,
+        "Dyes": [
+            {
+                "BlockId": 293,
+                "Color": "white"
+            },
+            {
+                "BlockId": 294,
+                "Color": "black"
+            },
+            {
+                "BlockId": 295,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 296,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 297,
+                "Color": "red"
+            },
+            {
+                "BlockId": 298,
+                "Color": "green"
+            },
+            {
+                "BlockId": 299,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 300,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Timbered-Capital",
+        "PrimaryBlockId": 32
+    },
+    {
+        "BlockId": 33,
+        "Dyes": [
+            {
+                "BlockId": 359,
+                "Color": "white"
+            },
+            {
+                "BlockId": 360,
+                "Color": "black"
+            },
+            {
+                "BlockId": 361,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 362,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 363,
+                "Color": "red"
+            },
+            {
+                "BlockId": 364,
+                "Color": "green"
+            },
+            {
+                "BlockId": 365,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 366,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Hardwood-Pedestal",
+        "PrimaryBlockId": 33
+    },
+    {
+        "BlockId": 34,
+        "Dyes": [
+            {
+                "BlockId": 351,
+                "Color": "white"
+            },
+            {
+                "BlockId": 352,
+                "Color": "black"
+            },
+            {
+                "BlockId": 353,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 354,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 355,
+                "Color": "red"
+            },
+            {
+                "BlockId": 356,
+                "Color": "green"
+            },
+            {
+                "BlockId": 357,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 358,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Hardwood-Column-Midsection",
+        "PrimaryBlockId": 34
+    },
+    {
+        "BlockId": 35,
+        "Dyes": [
+            {
+                "BlockId": 367,
+                "Color": "white"
+            },
+            {
+                "BlockId": 368,
+                "Color": "black"
+            },
+            {
+                "BlockId": 369,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 370,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 371,
+                "Color": "red"
+            },
+            {
+                "BlockId": 372,
+                "Color": "green"
+            },
+            {
+                "BlockId": 373,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 374,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Hardwood-Capital",
+        "PrimaryBlockId": 35
+    },
+    {
+        "BlockId": 36,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Stone-Foundation",
+        "PrimaryBlockId": 36
+    },
+    {
+        "BlockId": 37,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Stone-Wall-Midsection",
+        "PrimaryBlockId": 37
+    },
+    {
+        "BlockId": 39,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Castle-Foundation",
+        "PrimaryBlockId": 39
+    },
+    {
+        "BlockId": 40,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Castle-Wall-Midsection",
+        "PrimaryBlockId": 40
+    },
+    {
+        "BlockId": 41,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Castle-Crenellation",
+        "PrimaryBlockId": 41
+    },
+    {
+        "BlockId": 42,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Castle-Battlement",
+        "PrimaryBlockId": 42
+    },
+    {
+        "BlockId": 43,
+        "Dyes": [
+            {
+                "BlockId": 301,
+                "Color": "white"
+            },
+            {
+                "BlockId": 302,
+                "Color": "black"
+            },
+            {
+                "BlockId": 303,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 304,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 305,
+                "Color": "red"
+            },
+            {
+                "BlockId": 306,
+                "Color": "green"
+            },
+            {
+                "BlockId": 307,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 308,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Wooden-Wall",
+        "PrimaryBlockId": 43
+    },
+    {
+        "BlockId": 44,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Plumberry-Lumber",
+        "PrimaryBlockId": 44
+    },
+    {
+        "BlockId": 45,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Flagstone",
+        "PrimaryBlockId": 45
+    },
+    {
+        "BlockId": 46,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Straw-Floor",
+        "PrimaryBlockId": 46
+    },
+    {
+        "BlockId": 47,
+        "Dyes": [
+            {
+                "BlockId": 317,
+                "Color": "white"
+            },
+            {
+                "BlockId": 318,
+                "Color": "black"
+            },
+            {
+                "BlockId": 319,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 320,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 321,
+                "Color": "red"
+            },
+            {
+                "BlockId": 322,
+                "Color": "green"
+            },
+            {
+                "BlockId": 323,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 324,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Wooden-Floor",
+        "PrimaryBlockId": 47
+    },
+    {
+        "BlockId": 48,
+        "Dyes": [
+            {
+                "BlockId": 463,
+                "Color": "white"
+            },
+            {
+                "BlockId": 464,
+                "Color": "black"
+            },
+            {
+                "BlockId": 465,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 466,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 467,
+                "Color": "red"
+            },
+            {
+                "BlockId": 468,
+                "Color": "green"
+            },
+            {
+                "BlockId": 469,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 470,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Hardwood-Tile",
+        "PrimaryBlockId": 48
+    },
+    {
+        "BlockId": 49,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Purple-Flagstone",
+        "PrimaryBlockId": 49
+    },
+    {
+        "BlockId": 50,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Flagstone",
+        "PrimaryBlockId": 50
+    },
+    {
+        "BlockId": 51,
+        "Dyes": [
+            {
+                "BlockId": 375,
+                "Color": "white"
+            },
+            {
+                "BlockId": 376,
+                "Color": "black"
+            },
+            {
+                "BlockId": 377,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 378,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 379,
+                "Color": "red"
+            },
+            {
+                "BlockId": 380,
+                "Color": "green"
+            },
+            {
+                "BlockId": 381,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 382,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Carpet-Midsection",
+        "PrimaryBlockId": 51
+    },
+    {
+        "BlockId": 52,
+        "Dyes": [
+            {
+                "BlockId": 269,
+                "Color": "white"
+            },
+            {
+                "BlockId": 270,
+                "Color": "black"
+            },
+            {
+                "BlockId": 271,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 272,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 273,
+                "Color": "green"
+            },
+            {
+                "BlockId": 274,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 275,
+                "Color": "blue"
+            },
+            {
+                "BlockId": 276,
+                "Color": "red"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Fancy-Carpet",
+        "PrimaryBlockId": 52
+    },
+    {
+        "BlockId": 53,
+        "Dyes": [
+            {
+                "BlockId": 654,
+                "Color": "white"
+            },
+            {
+                "BlockId": 655,
+                "Color": "black"
+            },
+            {
+                "BlockId": 656,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 657,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 658,
+                "Color": "red"
+            },
+            {
+                "BlockId": 659,
+                "Color": "green"
+            },
+            {
+                "BlockId": 660,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 661,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Castle-Tile",
+        "PrimaryBlockId": 53
+    },
+    {
+        "BlockId": 54,
+        "Dyes": [
+            {
+                "BlockId": 662,
+                "Color": "white"
+            },
+            {
+                "BlockId": 663,
+                "Color": "black"
+            },
+            {
+                "BlockId": 664,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 665,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 666,
+                "Color": "red"
+            },
+            {
+                "BlockId": 667,
+                "Color": "green"
+            },
+            {
+                "BlockId": 668,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 669,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Carved-Castle-Tile",
+        "PrimaryBlockId": 54
+    },
+    {
+        "BlockId": 57,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bronze-Temple-Tile",
+        "PrimaryBlockId": 57
+    },
+    {
+        "BlockId": 58,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Temple-Tile",
+        "PrimaryBlockId": 58
+    },
+    {
+        "BlockId": 61,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golemite",
+        "PrimaryBlockId": 61
+    },
+    {
+        "BlockId": 62,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Coal-Vein",
+        "PrimaryBlockId": 62
+    },
+    {
+        "BlockId": 63,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Copper-Vein",
+        "PrimaryBlockId": 63
+    },
+    {
+        "BlockId": 64,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Iron-Vein",
+        "PrimaryBlockId": 64
+    },
+    {
+        "BlockId": 65,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Silver-Vein",
+        "PrimaryBlockId": 65
+    },
+    {
+        "BlockId": 66,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Gold-Vein",
+        "PrimaryBlockId": 66
+    },
+    {
+        "BlockId": 67,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Zenithium-Vein",
+        "PrimaryBlockId": 67
+    },
+    {
+        "BlockId": 68,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Ruby-Vein",
+        "PrimaryBlockId": 68
+    },
+    {
+        "BlockId": 69,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mythril-Vein",
+        "PrimaryBlockId": 69
+    },
+    {
+        "BlockId": 70,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Orichalcum-Vein",
+        "PrimaryBlockId": 70
+    },
+    {
+        "BlockId": 73,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golemite",
+        "PrimaryBlockId": 61
+    },
+    {
+        "BlockId": 74,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Palm-Lumber",
+        "PrimaryBlockId": 74
+    },
+    {
+        "BlockId": 75,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cedar-Lumber",
+        "PrimaryBlockId": 75
+    },
+    {
+        "BlockId": 76,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Time-Honoured-Turf",
+        "PrimaryBlockId": 76
+    },
+    {
+        "BlockId": 77,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "8-Bit-Brick",
+        "PrimaryBlockId": 77
+    },
+    {
+        "BlockId": 78,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Olde-Worlde-Wall",
+        "PrimaryBlockId": 78
+    },
+    {
+        "BlockId": 79,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Eyewall",
+        "PrimaryBlockId": 79
+    },
+    {
+        "BlockId": 80,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Dummy-Block",
+        "PrimaryBlockId": 80
+    },
+    {
+        "BlockId": 81,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Witchgrassy-Earth",
+        "PrimaryBlockId": 16
+    },
+    {
+        "BlockId": 82,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lemongrassy-Earth",
+        "PrimaryBlockId": 82
+    },
+    {
+        "BlockId": 83,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Unused-Ore",
+        "PrimaryBlockId": 83
+    },
+    {
+        "BlockId": 85,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Strange-Sand",
+        "PrimaryBlockId": 85
+    },
+    {
+        "BlockId": 86,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Unused-Lava-Block",
+        "PrimaryBlockId": 86
+    },
+    {
+        "BlockId": 87,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Unused-Ice-Block",
+        "PrimaryBlockId": 87
+    },
+    {
+        "BlockId": 88,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bonestone",
+        "PrimaryBlockId": 88
+    },
+    {
+        "BlockId": 89,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Hargon-Block",
+        "PrimaryBlockId": 89
+    },
+    {
+        "BlockId": 90,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Slimy-Block",
+        "PrimaryBlockId": 90
+    },
+    {
+        "BlockId": 91,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Retro-Roof",
+        "PrimaryBlockId": 91
+    },
+    {
+        "BlockId": 92,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Black-Block",
+        "PrimaryBlockId": 92
+    },
+    {
+        "BlockId": 93,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Grey-Block",
+        "PrimaryBlockId": 93
+    },
+    {
+        "BlockId": 94,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "White-Block",
+        "PrimaryBlockId": 94
+    },
+    {
+        "BlockId": 95,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Burgundy-Block",
+        "PrimaryBlockId": 95
+    },
+    {
+        "BlockId": 96,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Red-Block",
+        "PrimaryBlockId": 96
+    },
+    {
+        "BlockId": 97,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Purple-Block",
+        "PrimaryBlockId": 97
+    },
+    {
+        "BlockId": 98,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Pink-Block",
+        "PrimaryBlockId": 98
+    },
+    {
+        "BlockId": 99,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Green-Block",
+        "PrimaryBlockId": 99
+    },
+    {
+        "BlockId": 100,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lime-Green-Block",
+        "PrimaryBlockId": 100
+    },
+    {
+        "BlockId": 101,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Orange-Block",
+        "PrimaryBlockId": 101
+    },
+    {
+        "BlockId": 102,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Yellow-Block",
+        "PrimaryBlockId": 102
+    },
+    {
+        "BlockId": 103,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Navy-Block",
+        "PrimaryBlockId": 103
+    },
+    {
+        "BlockId": 104,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Block",
+        "PrimaryBlockId": 104
+    },
+    {
+        "BlockId": 105,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Beige-Block",
+        "PrimaryBlockId": 105
+    },
+    {
+        "BlockId": 106,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cyan-Block",
+        "PrimaryBlockId": 106
+    },
+    {
+        "BlockId": 107,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Silver-Block",
+        "PrimaryBlockId": 107
+    },
+    {
+        "BlockId": 108,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Gold-Block",
+        "PrimaryBlockId": 108
+    },
+    {
+        "BlockId": 109,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Fortress-Foundation",
+        "PrimaryBlockId": 109
+    },
+    {
+        "BlockId": 110,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Fortress-Wall-Midsection",
+        "PrimaryBlockId": 110
+    },
+    {
+        "BlockId": 111,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Fortress-Battlement",
+        "PrimaryBlockId": 111
+    },
+    {
+        "BlockId": 115,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Clodstone",
+        "PrimaryBlockId": 21
+    },
+    {
+        "BlockId": 118,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Crumbly-Clodstone",
+        "PrimaryBlockId": 22
+    },
+    {
+        "BlockId": 119,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Tilled-Soil",
+        "PrimaryBlockId": 5
+    },
+    {
+        "BlockId": 120,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-full-block",
+        "PrimaryBlockId": 128
+    },
+    {
+        "BlockId": 121,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 122,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 123,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 124,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Witchgrassy-Block",
+        "PrimaryBlockId": 124
+    },
+    {
+        "BlockId": 125,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lemongrassy-Block",
+        "PrimaryBlockId": 125
+    },
+    {
+        "BlockId": 126,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Grassy-Block",
+        "PrimaryBlockId": 126
+    },
+    {
+        "BlockId": 127,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Limegrassy-Block",
+        "PrimaryBlockId": 127
+    },
+    {
+        "BlockId": 128,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-full-block",
+        "PrimaryBlockId": 128
+    },
+    {
+        "BlockId": 130,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Light-Dolomite",
+        "PrimaryBlockId": 130
+    },
+    {
+        "BlockId": 131,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Dark-Dolomite",
+        "PrimaryBlockId": 131
+    },
+    {
+        "BlockId": 132,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Stony-Sand",
+        "PrimaryBlockId": 132
+    },
+    {
+        "BlockId": 134,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Masonry-Wall",
+        "PrimaryBlockId": 134
+    },
+    {
+        "BlockId": 138,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mossy-Bark",
+        "PrimaryBlockId": 138
+    },
+    {
+        "BlockId": 139,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bark",
+        "PrimaryBlockId": 139
+    },
+    {
+        "BlockId": 141,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Stony-Soil",
+        "PrimaryBlockId": 141
+    },
+    {
+        "BlockId": 142,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 143,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 144,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 145,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-shallow-block",
+        "PrimaryBlockId": 145
+    },
+    {
+        "BlockId": 146,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seaside-Sand",
+        "PrimaryBlockId": 146
+    },
+    {
+        "BlockId": 147,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Arid-Earth",
+        "PrimaryBlockId": 147
+    },
+    {
+        "BlockId": 149,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chert",
+        "PrimaryBlockId": 149
+    },
+    {
+        "BlockId": 153,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chunky-Chert",
+        "PrimaryBlockId": 153
+    },
+    {
+        "BlockId": 155,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leaves",
+        "PrimaryBlockId": 155
+    },
+    {
+        "BlockId": 156,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Spoiled-Soil",
+        "PrimaryBlockId": 156
+    },
+    {
+        "BlockId": 158,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Moss",
+        "PrimaryBlockId": 158
+    },
+    {
+        "BlockId": 161,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Humus",
+        "PrimaryBlockId": 161
+    },
+    {
+        "BlockId": 162,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Tilled-Humus",
+        "PrimaryBlockId": 162
+    },
+    {
+        "BlockId": 163,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Obsidian",
+        "PrimaryBlockId": 10
+    },
+    {
+        "BlockId": 164,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Temple-Tile",
+        "PrimaryBlockId": 58
+    },
+    {
+        "BlockId": 165,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chert",
+        "PrimaryBlockId": 149
+    },
+    {
+        "BlockId": 166,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Battlement",
+        "PrimaryBlockId": 166
+    },
+    {
+        "BlockId": 167,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Citadel-Capital",
+        "PrimaryBlockId": 167
+    },
+    {
+        "BlockId": 168,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Alcoved-Citadel-Wall",
+        "PrimaryBlockId": 168
+    },
+    {
+        "BlockId": 169,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Citadel-Foundation",
+        "PrimaryBlockId": 169
+    },
+    {
+        "BlockId": 170,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sanguine-Cinders",
+        "PrimaryBlockId": 170
+    },
+    {
+        "BlockId": 171,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Scales",
+        "PrimaryBlockId": 171
+    },
+    {
+        "BlockId": 172,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Tilled-Soil",
+        "PrimaryBlockId": 5
+    },
+    {
+        "BlockId": 173,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Tilled-Humus",
+        "PrimaryBlockId": 162
+    },
+    {
+        "BlockId": 174,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chert",
+        "PrimaryBlockId": 149
+    },
+    {
+        "BlockId": 175,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bubbling-Seaside-Sand",
+        "PrimaryBlockId": 175
+    },
+    {
+        "BlockId": 176,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Citadel-Wall",
+        "PrimaryBlockId": 176
+    },
+    {
+        "BlockId": 177,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Capital",
+        "PrimaryBlockId": 177
+    },
+    {
+        "BlockId": 178,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Foundation",
+        "PrimaryBlockId": 178
+    },
+    {
+        "BlockId": 179,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Castle-Wall-Midsection",
+        "PrimaryBlockId": 40
+    },
+    {
+        "BlockId": 180,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Floor",
+        "PrimaryBlockId": 180
+    },
+    {
+        "BlockId": 182,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-shallow-block",
+        "PrimaryBlockId": 182
+    },
+    {
+        "BlockId": 183,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 184,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 185,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 186,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 187,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 188,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 189,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-full-block",
+        "PrimaryBlockId": 189
+    },
+    {
+        "BlockId": 190,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-full-block",
+        "PrimaryBlockId": 189
+    },
+    {
+        "BlockId": 191,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-shallow-block",
+        "PrimaryBlockId": 191
+    },
+    {
+        "BlockId": 192,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 193,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 194,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 195,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 196,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 197,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 198,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-full-block",
+        "PrimaryBlockId": 198
+    },
+    {
+        "BlockId": 199,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-full-block",
+        "PrimaryBlockId": 198
+    },
+    {
+        "BlockId": 200,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-shallow-block",
+        "PrimaryBlockId": 200
+    },
+    {
+        "BlockId": 201,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 202,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 203,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 204,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 205,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 206,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 207,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-full-block",
+        "PrimaryBlockId": 207
+    },
+    {
+        "BlockId": 208,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-full-block",
+        "PrimaryBlockId": 207
+    },
+    {
+        "BlockId": 209,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Umber",
+        "PrimaryBlockId": 209
+    },
+    {
+        "BlockId": 210,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Umber-Sandstone-Block",
+        "PrimaryBlockId": 210
+    },
+    {
+        "BlockId": 223,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-shallow-block",
+        "PrimaryBlockId": 223
+    },
+    {
+        "BlockId": 224,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 225,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 226,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 227,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 228,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 229,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-surface-block",
+        "PrimaryBlockId": 224
+    },
+    {
+        "BlockId": 230,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-full-block",
+        "PrimaryBlockId": 230
+    },
+    {
+        "BlockId": 231,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-Water-full-block",
+        "PrimaryBlockId": 230
+    },
+    {
+        "BlockId": 232,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mossy-Spoiled-Soil",
+        "PrimaryBlockId": 232
+    },
+    {
+        "BlockId": 234,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Swampy-Soil",
+        "PrimaryBlockId": 234
+    },
+    {
+        "BlockId": 235,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 236,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 239,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 241,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lumpy-Umber",
+        "PrimaryBlockId": 241
+    },
+    {
+        "BlockId": 243,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Softwood",
+        "PrimaryBlockId": 243
+    },
+    {
+        "BlockId": 244,
+        "Dyes": [
+            {
+                "BlockId": 570,
+                "Color": "white"
+            },
+            {
+                "BlockId": 571,
+                "Color": "black"
+            },
+            {
+                "BlockId": 572,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 573,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 574,
+                "Color": "red"
+            },
+            {
+                "BlockId": 575,
+                "Color": "green"
+            },
+            {
+                "BlockId": 576,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 577,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Floorboard",
+        "PrimaryBlockId": 244
+    },
+    {
+        "BlockId": 247,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Yellow-frame-block",
+        "PrimaryBlockId": 247
+    },
+    {
+        "BlockId": 256,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Moss",
+        "PrimaryBlockId": 158
+    },
+    {
+        "BlockId": 259,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-shallow-block",
+        "PrimaryBlockId": 259
+    },
+    {
+        "BlockId": 260,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 261,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 262,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 263,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 264,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 265,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 266,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 267,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 268,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Vault-Wall",
+        "PrimaryBlockId": 268
+    },
+    {
+        "BlockId": 331,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Shifting-Sand",
+        "PrimaryBlockId": 331
+    },
+    {
+        "BlockId": 333,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-shallow-block",
+        "PrimaryBlockId": 349
+    },
+    {
+        "BlockId": 334,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 335,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 336,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 337,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 338,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 339,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 340,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-full-block",
+        "PrimaryBlockId": 341
+    },
+    {
+        "BlockId": 341,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-full-block",
+        "PrimaryBlockId": 341
+    },
+    {
+        "BlockId": 343,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-shallow-block",
+        "PrimaryBlockId": 145
+    },
+    {
+        "BlockId": 344,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-water-shallow-block",
+        "PrimaryBlockId": 344
+    },
+    {
+        "BlockId": 345,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-shallow-block",
+        "PrimaryBlockId": 182
+    },
+    {
+        "BlockId": 346,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-shallow-block",
+        "PrimaryBlockId": 259
+    },
+    {
+        "BlockId": 347,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-shallow-block",
+        "PrimaryBlockId": 191
+    },
+    {
+        "BlockId": 348,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-shallow-block",
+        "PrimaryBlockId": 200
+    },
+    {
+        "BlockId": 349,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-shallow-block",
+        "PrimaryBlockId": 349
+    },
+    {
+        "BlockId": 383,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Clear-water-surface-block",
+        "PrimaryBlockId": 121
+    },
+    {
+        "BlockId": 384,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Hot-water-surface-block",
+        "PrimaryBlockId": 384
+    },
+    {
+        "BlockId": 385,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Poison-surface-block",
+        "PrimaryBlockId": 183
+    },
+    {
+        "BlockId": 386,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Lava-surface-block",
+        "PrimaryBlockId": 260
+    },
+    {
+        "BlockId": 387,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Bottomless-Swamp-surface-block",
+        "PrimaryBlockId": 192
+    },
+    {
+        "BlockId": 388,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Muddy-Water-surface-block",
+        "PrimaryBlockId": 201
+    },
+    {
+        "BlockId": 389,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-surface-block",
+        "PrimaryBlockId": 334
+    },
+    {
+        "BlockId": 390,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-shallow-block",
+        "PrimaryBlockId": 390
+    },
+    {
+        "BlockId": 391,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 392,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 393,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 394,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 395,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 396,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 397,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-full-block",
+        "PrimaryBlockId": 397
+    },
+    {
+        "BlockId": 398,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-full-block",
+        "PrimaryBlockId": 397
+    },
+    {
+        "BlockId": 399,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-shallow-block",
+        "PrimaryBlockId": 390
+    },
+    {
+        "BlockId": 400,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Plasma-surface-block",
+        "PrimaryBlockId": 391
+    },
+    {
+        "BlockId": 401,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Vault-Tile",
+        "PrimaryBlockId": 401
+    },
+    {
+        "BlockId": 402,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Gold-Brick",
+        "PrimaryBlockId": 402
+    },
+    {
+        "BlockId": 403,
+        "Dyes": [
+            {
+                "BlockId": 421,
+                "Color": "white"
+            },
+            {
+                "BlockId": 422,
+                "Color": "black"
+            },
+            {
+                "BlockId": 423,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 424,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 425,
+                "Color": "red"
+            },
+            {
+                "BlockId": 426,
+                "Color": "green"
+            },
+            {
+                "BlockId": 427,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 428,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Spaceship-Wall",
+        "PrimaryBlockId": 403
+    },
+    {
+        "BlockId": 404,
+        "Dyes": [
+            {
+                "BlockId": 429,
+                "Color": "white"
+            },
+            {
+                "BlockId": 430,
+                "Color": "black"
+            },
+            {
+                "BlockId": 431,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 432,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 433,
+                "Color": "red"
+            },
+            {
+                "BlockId": 434,
+                "Color": "green"
+            },
+            {
+                "BlockId": 435,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 436,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Shiny-Spaceship-Wall",
+        "PrimaryBlockId": 404
+    },
+    {
+        "BlockId": 405,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Battlement",
+        "PrimaryBlockId": 166
+    },
+    {
+        "BlockId": 407,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Citadel-Capital",
+        "PrimaryBlockId": 167
+    },
+    {
+        "BlockId": 408,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Alcoved-Citadel-Wall",
+        "PrimaryBlockId": 168
+    },
+    {
+        "BlockId": 409,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Citadel-Foundation",
+        "PrimaryBlockId": 169
+    },
+    {
+        "BlockId": 410,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Citadel-Wall",
+        "PrimaryBlockId": 176
+    },
+    {
+        "BlockId": 411,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Tile",
+        "PrimaryBlockId": 411
+    },
+    {
+        "BlockId": 412,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Hargon-Block",
+        "PrimaryBlockId": 89
+    },
+    {
+        "BlockId": 413,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Black-Void",
+        "PrimaryBlockId": 413
+    },
+    {
+        "BlockId": 414,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Earth",
+        "PrimaryBlockId": 2
+    },
+    {
+        "BlockId": 415,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mossy-Earth",
+        "PrimaryBlockId": 7
+    },
+    {
+        "BlockId": 416,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Snow",
+        "PrimaryBlockId": 19
+    },
+    {
+        "BlockId": 417,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Clodstone",
+        "PrimaryBlockId": 21
+    },
+    {
+        "BlockId": 418,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Witchgrassy-Earth",
+        "PrimaryBlockId": 16
+    },
+    {
+        "BlockId": 419,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Battlefield-Earth",
+        "PrimaryBlockId": 419
+    },
+    {
+        "BlockId": 420,
+        "Dyes": [],
+        "IsLiquid": true,
+        "Name": "Sea-water-shallow-block",
+        "PrimaryBlockId": 349
+    },
+    {
+        "BlockId": 437,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woodless-Timbered-Wall",
+        "PrimaryBlockId": 437
+    },
+    {
+        "BlockId": 438,
+        "Dyes": [
+            {
+                "BlockId": 447,
+                "Color": "white"
+            },
+            {
+                "BlockId": 448,
+                "Color": "black"
+            },
+            {
+                "BlockId": 449,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 450,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 451,
+                "Color": "red"
+            },
+            {
+                "BlockId": 452,
+                "Color": "green"
+            },
+            {
+                "BlockId": 453,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 454,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Banded-Timbered-Wall",
+        "PrimaryBlockId": 438
+    },
+    {
+        "BlockId": 472,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Red-Brick-Wall",
+        "PrimaryBlockId": 472
+    },
+    {
+        "BlockId": 473,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Diamond-Vein",
+        "PrimaryBlockId": 473
+    },
+    {
+        "BlockId": 474,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Chert-Red",
+        "PrimaryBlockId": 474
+    },
+    {
+        "BlockId": 475,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Floor-Red",
+        "PrimaryBlockId": 475
+    },
+    {
+        "BlockId": 476,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Magnetite-Vein",
+        "PrimaryBlockId": 476
+    },
+    {
+        "BlockId": 477,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Siltstone",
+        "PrimaryBlockId": 477
+    },
+    {
+        "BlockId": 481,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Slimy-Block",
+        "PrimaryBlockId": 90
+    },
+    {
+        "BlockId": 484,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Red-Brick-Floor",
+        "PrimaryBlockId": 484
+    },
+    {
+        "BlockId": 485,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Crazing-Paving",
+        "PrimaryBlockId": 485
+    },
+    {
+        "BlockId": 486,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Copper-Wall",
+        "PrimaryBlockId": 486
+    },
+    {
+        "BlockId": 487,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Marble",
+        "PrimaryBlockId": 487
+    },
+    {
+        "BlockId": 488,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Silver-Birch-Lumber",
+        "PrimaryBlockId": 488
+    },
+    {
+        "BlockId": 489,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Spoiled-Soil",
+        "PrimaryBlockId": 156
+    },
+    {
+        "BlockId": 491,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Dark-Bark",
+        "PrimaryBlockId": 491
+    },
+    {
+        "BlockId": 492,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Teal-Leaves",
+        "PrimaryBlockId": 492
+    },
+    {
+        "BlockId": 497,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bloodstained-Soil",
+        "PrimaryBlockId": 497
+    },
+    {
+        "BlockId": 498,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bloodstained-Soil-full",
+        "PrimaryBlockId": 498
+    },
+    {
+        "BlockId": 499,
+        "Dyes": [
+            {
+                "BlockId": 578,
+                "Color": "white"
+            },
+            {
+                "BlockId": 579,
+                "Color": "black"
+            },
+            {
+                "BlockId": 580,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 581,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 582,
+                "Color": "red"
+            },
+            {
+                "BlockId": 583,
+                "Color": "green"
+            },
+            {
+                "BlockId": 584,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 585,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Padded-Floor",
+        "PrimaryBlockId": 499
+    },
+    {
+        "BlockId": 500,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leafy-Spoiled-Soil",
+        "PrimaryBlockId": 500
+    },
+    {
+        "BlockId": 501,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leafy-Spoiled-Soil-full",
+        "PrimaryBlockId": 501
+    },
+    {
+        "BlockId": 519,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cracked-Floorboard",
+        "PrimaryBlockId": 519
+    },
+    {
+        "BlockId": 520,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blackened-Bark",
+        "PrimaryBlockId": 520
+    },
+    {
+        "BlockId": 521,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bloodstained-Soil-full",
+        "PrimaryBlockId": 498
+    },
+    {
+        "BlockId": 522,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Malachite",
+        "PrimaryBlockId": 522
+    },
+    {
+        "BlockId": 523,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Vault-Wall",
+        "PrimaryBlockId": 268
+    },
+    {
+        "BlockId": 524,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Vault-Wall",
+        "PrimaryBlockId": 268
+    },
+    {
+        "BlockId": 525,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Adobe-Capital",
+        "PrimaryBlockId": 525
+    },
+    {
+        "BlockId": 526,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Adobe-Wall-Midsection",
+        "PrimaryBlockId": 526
+    },
+    {
+        "BlockId": 527,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Adobe-Pedestal",
+        "PrimaryBlockId": 527
+    },
+    {
+        "BlockId": 528,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Alcoved-Adobe-Wall",
+        "PrimaryBlockId": 528
+    },
+    {
+        "BlockId": 529,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Copper-Floor",
+        "PrimaryBlockId": 529
+    },
+    {
+        "BlockId": 530,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sooty-Softwood",
+        "PrimaryBlockId": 530
+    },
+    {
+        "BlockId": 532,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Heartwood",
+        "PrimaryBlockId": 532
+    },
+    {
+        "BlockId": 533,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Plumberry-Lumber",
+        "PrimaryBlockId": 44
+    },
+    {
+        "BlockId": 534,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "White-Dye-Vein",
+        "PrimaryBlockId": 534
+    },
+    {
+        "BlockId": 535,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Black-Dye-Vein",
+        "PrimaryBlockId": 535
+    },
+    {
+        "BlockId": 536,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Purple-Dye-Vein",
+        "PrimaryBlockId": 536
+    },
+    {
+        "BlockId": 537,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Pink-Dye-Vein",
+        "PrimaryBlockId": 537
+    },
+    {
+        "BlockId": 538,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Red-Dye-Vein",
+        "PrimaryBlockId": 538
+    },
+    {
+        "BlockId": 539,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Green-Dye-Vein",
+        "PrimaryBlockId": 539
+    },
+    {
+        "BlockId": 540,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Yellow-Dye-Vein",
+        "PrimaryBlockId": 540
+    },
+    {
+        "BlockId": 541,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Dye-Vein",
+        "PrimaryBlockId": 541
+    },
+    {
+        "BlockId": 543,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Temple-Tile-Half-Dummy",
+        "PrimaryBlockId": 543
+    },
+    {
+        "BlockId": 544,
+        "Dyes": [
+            {
+                "BlockId": 309,
+                "Color": "white"
+            },
+            {
+                "BlockId": 310,
+                "Color": "black"
+            },
+            {
+                "BlockId": 311,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 312,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 313,
+                "Color": "red"
+            },
+            {
+                "BlockId": 314,
+                "Color": "green"
+            },
+            {
+                "BlockId": 315,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 316,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Carpet",
+        "PrimaryBlockId": 544
+    },
+    {
+        "BlockId": 545,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Castle-Capital",
+        "PrimaryBlockId": 545
+    },
+    {
+        "BlockId": 546,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Alcoved-Castle-Wall",
+        "PrimaryBlockId": 546
+    },
+    {
+        "BlockId": 547,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Golden-Castle-Foundation",
+        "PrimaryBlockId": 547
+    },
+    {
+        "BlockId": 548,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cracked-Castle-Tile",
+        "PrimaryBlockId": 548
+    },
+    {
+        "BlockId": 549,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Battlefield-Earth",
+        "PrimaryBlockId": 419
+    },
+    {
+        "BlockId": 550,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Capital",
+        "PrimaryBlockId": 177
+    },
+    {
+        "BlockId": 551,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Foundation",
+        "PrimaryBlockId": 178
+    },
+    {
+        "BlockId": 552,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Wall-Midsection",
+        "PrimaryBlockId": 552
+    },
+    {
+        "BlockId": 553,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Citadel-Floor",
+        "PrimaryBlockId": 180
+    },
+    {
+        "BlockId": 560,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Ghost-Block",
+        "PrimaryBlockId": 560
+    },
+    {
+        "BlockId": 561,
+        "Dyes": [
+            {
+                "BlockId": 562,
+                "Color": "white"
+            },
+            {
+                "BlockId": 563,
+                "Color": "black"
+            },
+            {
+                "BlockId": 564,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 565,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 566,
+                "Color": "red"
+            },
+            {
+                "BlockId": 567,
+                "Color": "green"
+            },
+            {
+                "BlockId": 568,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 569,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Plaster",
+        "PrimaryBlockId": 561
+    },
+    {
+        "BlockId": 586,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leafy-Stony-Soil",
+        "PrimaryBlockId": 586
+    },
+    {
+        "BlockId": 587,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leafy-Stony-Soil-Full",
+        "PrimaryBlockId": 587
+    },
+    {
+        "BlockId": 588,
+        "Dyes": [
+            {
+                "BlockId": 638,
+                "Color": "white"
+            },
+            {
+                "BlockId": 639,
+                "Color": "black"
+            },
+            {
+                "BlockId": 640,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 641,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 642,
+                "Color": "red"
+            },
+            {
+                "BlockId": 643,
+                "Color": "green"
+            },
+            {
+                "BlockId": 644,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 645,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Iron-Block",
+        "PrimaryBlockId": 588
+    },
+    {
+        "BlockId": 589,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Concrete-Block",
+        "PrimaryBlockId": 589
+    },
+    {
+        "BlockId": 590,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sun-Sigil-Block",
+        "PrimaryBlockId": 590
+    },
+    {
+        "BlockId": 591,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Star-Sigil-Block",
+        "PrimaryBlockId": 591
+    },
+    {
+        "BlockId": 592,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Moon-Sigil-Block",
+        "PrimaryBlockId": 592
+    },
+    {
+        "BlockId": 593,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Water-Sigil-Block",
+        "PrimaryBlockId": 593
+    },
+    {
+        "BlockId": 594,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Soul-Sigil-Block",
+        "PrimaryBlockId": 594
+    },
+    {
+        "BlockId": 595,
+        "Dyes": [
+            {
+                "BlockId": 646,
+                "Color": "white"
+            },
+            {
+                "BlockId": 647,
+                "Color": "black"
+            },
+            {
+                "BlockId": 648,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 649,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 650,
+                "Color": "red"
+            },
+            {
+                "BlockId": 651,
+                "Color": "green"
+            },
+            {
+                "BlockId": 652,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 653,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Sandstone-Brick",
+        "PrimaryBlockId": 595
+    },
+    {
+        "BlockId": 596,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Withered-Leaves",
+        "PrimaryBlockId": 596
+    },
+    {
+        "BlockId": 598,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Arid-Earth",
+        "PrimaryBlockId": 147
+    },
+    {
+        "BlockId": 599,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Umber",
+        "PrimaryBlockId": 209
+    },
+    {
+        "BlockId": 600,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Mossy-Spoiled-Soil",
+        "PrimaryBlockId": 232
+    },
+    {
+        "BlockId": 601,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Swampy-Soil",
+        "PrimaryBlockId": 234
+    },
+    {
+        "BlockId": 602,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lumpy-Umber",
+        "PrimaryBlockId": 241
+    },
+    {
+        "BlockId": 603,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bloodstained-Soil",
+        "PrimaryBlockId": 497
+    },
+    {
+        "BlockId": 604,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Leafy-Spoiled-Soil",
+        "PrimaryBlockId": 500
+    },
+    {
+        "BlockId": 606,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sanguine-Sandstone",
+        "PrimaryBlockId": 606
+    },
+    {
+        "BlockId": 607,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sanguine-Cinders",
+        "PrimaryBlockId": 170
+    },
+    {
+        "BlockId": 608,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sanguine-Sand",
+        "PrimaryBlockId": 608
+    },
+    {
+        "BlockId": 609,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sanguine-Sandy-Sandstone",
+        "PrimaryBlockId": 609
+    },
+    {
+        "BlockId": 610,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Scales",
+        "PrimaryBlockId": 171
+    },
+    {
+        "BlockId": 611,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Red-Block",
+        "PrimaryBlockId": 96
+    },
+    {
+        "BlockId": 612,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Silver-Brick",
+        "PrimaryBlockId": 612
+    },
+    {
+        "BlockId": 613,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sooty-Silver-Brick",
+        "PrimaryBlockId": 613
+    },
+    {
+        "BlockId": 614,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 615,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 616,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 617,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 618,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Spoiled-Soil",
+        "PrimaryBlockId": 235
+    },
+    {
+        "BlockId": 619,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Obsidian",
+        "PrimaryBlockId": 10
+    },
+    {
+        "BlockId": 620,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Sand",
+        "PrimaryBlockId": 11
+    },
+    {
+        "BlockId": 621,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Lava",
+        "PrimaryBlockId": 25
+    },
+    {
+        "BlockId": 622,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Umber-Sandstone-Block",
+        "PrimaryBlockId": 210
+    },
+    {
+        "BlockId": 624,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Silver-Tile",
+        "PrimaryBlockId": 624
+    },
+    {
+        "BlockId": 625,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Obsidian",
+        "PrimaryBlockId": 10
+    },
+    {
+        "BlockId": 626,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Light-Dolomite",
+        "PrimaryBlockId": 130
+    },
+    {
+        "BlockId": 627,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Clodstone",
+        "PrimaryBlockId": 21
+    },
+    {
+        "BlockId": 630,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Masonry-Wall",
+        "PrimaryBlockId": 134
+    },
+    {
+        "BlockId": 631,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Vault-Wall",
+        "PrimaryBlockId": 268
+    },
+    {
+        "BlockId": 632,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Patterned-Vault-Wall",
+        "PrimaryBlockId": 268
+    },
+    {
+        "BlockId": 633,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Vault-Tile",
+        "PrimaryBlockId": 401
+    },
+    {
+        "BlockId": 634,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Vault-Wall",
+        "PrimaryBlockId": 26
+    },
+    {
+        "BlockId": 635,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Viny-Vault-Wall",
+        "PrimaryBlockId": 27
+    },
+    {
+        "BlockId": 636,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cracked-Vault-Wall",
+        "PrimaryBlockId": 28
+    },
+    {
+        "BlockId": 637,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Black-Void",
+        "PrimaryBlockId": 413
+    },
+    {
+        "BlockId": 670,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cyan-Block",
+        "PrimaryBlockId": 106
+    },
+    {
+        "BlockId": 671,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Green-Block",
+        "PrimaryBlockId": 99
+    },
+    {
+        "BlockId": 672,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Purple-Block",
+        "PrimaryBlockId": 97
+    },
+    {
+        "BlockId": 673,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Translucent-Block",
+        "PrimaryBlockId": 24
+    },
+    {
+        "BlockId": 674,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Yellow-Block",
+        "PrimaryBlockId": 102
+    },
+    {
+        "BlockId": 675,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Orange-Block",
+        "PrimaryBlockId": 101
+    },
+    {
+        "BlockId": 676,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Block",
+        "PrimaryBlockId": 104
+    },
+    {
+        "BlockId": 677,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Cyan-Block",
+        "PrimaryBlockId": 106
+    },
+    {
+        "BlockId": 678,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Bronze-Temple-Tile",
+        "PrimaryBlockId": 57
+    },
+    {
+        "BlockId": 679,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Blue-Temple-Tile",
+        "PrimaryBlockId": 58
+    },
+    {
+        "BlockId": 680,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Limegrassy-Earth",
+        "PrimaryBlockId": 680
+    },
+    {
+        "BlockId": 681,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Mossy-Spoiled-Soil",
+        "PrimaryBlockId": 681
+    },
+    {
+        "BlockId": 682,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Sand",
+        "PrimaryBlockId": 682
+    },
+    {
+        "BlockId": 683,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Earth",
+        "PrimaryBlockId": 683
+    },
+    {
+        "BlockId": 684,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Snow",
+        "PrimaryBlockId": 684
+    },
+    {
+        "BlockId": 685,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seeded-Grassy-Earth",
+        "PrimaryBlockId": 685
+    },
+    {
+        "BlockId": 686,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Gravel-Block",
+        "PrimaryBlockId": 686
+    },
+    {
+        "BlockId": 687,
+        "Dyes": [
+            {
+                "BlockId": 694,
+                "Color": "white"
+            },
+            {
+                "BlockId": 695,
+                "Color": "black"
+            },
+            {
+                "BlockId": 696,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 697,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 698,
+                "Color": "red"
+            },
+            {
+                "BlockId": 699,
+                "Color": "green"
+            },
+            {
+                "BlockId": 700,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 701,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Scaled-Wall-Block",
+        "PrimaryBlockId": 687
+    },
+    {
+        "BlockId": 688,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Slatted-Wall-Block",
+        "PrimaryBlockId": 688
+    },
+    {
+        "BlockId": 689,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woven-Straw-Block",
+        "PrimaryBlockId": 689
+    },
+    {
+        "BlockId": 690,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woven-Straw-Block",
+        "PrimaryBlockId": 689
+    },
+    {
+        "BlockId": 691,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woven-Straw-Block",
+        "PrimaryBlockId": 689
+    },
+    {
+        "BlockId": 692,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woven-Straw-Block",
+        "PrimaryBlockId": 689
+    },
+    {
+        "BlockId": 693,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Woven-Straw-Block",
+        "PrimaryBlockId": 689
+    },
+    {
+        "BlockId": 702,
+        "Dyes": [
+            {
+                "BlockId": 703,
+                "Color": "white"
+            },
+            {
+                "BlockId": 704,
+                "Color": "black"
+            },
+            {
+                "BlockId": 705,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 706,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 707,
+                "Color": "red"
+            },
+            {
+                "BlockId": 708,
+                "Color": "green"
+            },
+            {
+                "BlockId": 709,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 710,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Polka-Dot-Block",
+        "PrimaryBlockId": 702
+    },
+    {
+        "BlockId": 711,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Faux-Floral-Floor-Block",
+        "PrimaryBlockId": 711
+    },
+    {
+        "BlockId": 712,
+        "Dyes": [
+            {
+                "BlockId": 732,
+                "Color": "white"
+            },
+            {
+                "BlockId": 733,
+                "Color": "black"
+            },
+            {
+                "BlockId": 734,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 735,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 736,
+                "Color": "red"
+            },
+            {
+                "BlockId": 737,
+                "Color": "green"
+            },
+            {
+                "BlockId": 738,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 739,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Palm-Patterned-Block",
+        "PrimaryBlockId": 712
+    },
+    {
+        "BlockId": 713,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Fruity-Fiend-Block",
+        "PrimaryBlockId": 713
+    },
+    {
+        "BlockId": 714,
+        "Dyes": [
+            {
+                "BlockId": 740,
+                "Color": "white"
+            },
+            {
+                "BlockId": 741,
+                "Color": "black"
+            },
+            {
+                "BlockId": 742,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 743,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 744,
+                "Color": "red"
+            },
+            {
+                "BlockId": 745,
+                "Color": "green"
+            },
+            {
+                "BlockId": 746,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 747,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Chequered-Block",
+        "PrimaryBlockId": 714
+    },
+    {
+        "BlockId": 715,
+        "Dyes": [
+            {
+                "BlockId": 834,
+                "Color": "white"
+            },
+            {
+                "BlockId": 835,
+                "Color": "black"
+            },
+            {
+                "BlockId": 836,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 837,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 838,
+                "Color": "red"
+            },
+            {
+                "BlockId": 839,
+                "Color": "green"
+            },
+            {
+                "BlockId": 840,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 841,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Sunset-Styled-Block",
+        "PrimaryBlockId": 715
+    },
+    {
+        "BlockId": 716,
+        "Dyes": [
+            {
+                "BlockId": 842,
+                "Color": "white"
+            },
+            {
+                "BlockId": 843,
+                "Color": "black"
+            },
+            {
+                "BlockId": 844,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 845,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 846,
+                "Color": "red"
+            },
+            {
+                "BlockId": 847,
+                "Color": "green"
+            },
+            {
+                "BlockId": 848,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 849,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Seaweed-Styled-Block",
+        "PrimaryBlockId": 716
+    },
+    {
+        "BlockId": 717,
+        "Dyes": [
+            {
+                "BlockId": 748,
+                "Color": "white"
+            },
+            {
+                "BlockId": 749,
+                "Color": "black"
+            },
+            {
+                "BlockId": 750,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 751,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 752,
+                "Color": "red"
+            },
+            {
+                "BlockId": 753,
+                "Color": "green"
+            },
+            {
+                "BlockId": 754,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 755,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Stylish-Stripy-Block",
+        "PrimaryBlockId": 717
+    },
+    {
+        "BlockId": 718,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Seaside-Scene-Block",
+        "PrimaryBlockId": 718
+    },
+    {
+        "BlockId": 719,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Abstract-Floral-Floor-Block",
+        "PrimaryBlockId": 719
+    },
+    {
+        "BlockId": 720,
+        "Dyes": [
+            {
+                "BlockId": 756,
+                "Color": "white"
+            },
+            {
+                "BlockId": 757,
+                "Color": "black"
+            },
+            {
+                "BlockId": 758,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 759,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 760,
+                "Color": "red"
+            },
+            {
+                "BlockId": 761,
+                "Color": "green"
+            },
+            {
+                "BlockId": 762,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 763,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Herringbone-Floorboard-Block",
+        "PrimaryBlockId": 720
+    },
+    {
+        "BlockId": 721,
+        "Dyes": [
+            {
+                "BlockId": 764,
+                "Color": "white"
+            },
+            {
+                "BlockId": 765,
+                "Color": "black"
+            },
+            {
+                "BlockId": 766,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 767,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 768,
+                "Color": "red"
+            },
+            {
+                "BlockId": 769,
+                "Color": "green"
+            },
+            {
+                "BlockId": 770,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 771,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Night-Sky-Wall-Block",
+        "PrimaryBlockId": 721
+    },
+    {
+        "BlockId": 722,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Granite-Floor-Block",
+        "PrimaryBlockId": 722
+    },
+    {
+        "BlockId": 723,
+        "Dyes": [
+            {
+                "BlockId": 724,
+                "Color": "white"
+            },
+            {
+                "BlockId": 725,
+                "Color": "black"
+            },
+            {
+                "BlockId": 726,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 727,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 728,
+                "Color": "red"
+            },
+            {
+                "BlockId": 729,
+                "Color": "green"
+            },
+            {
+                "BlockId": 730,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 731,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Stucco-Wall-Block",
+        "PrimaryBlockId": 723
+    },
+    {
+        "BlockId": 772,
+        "Dyes": [
+            {
+                "BlockId": 773,
+                "Color": "white"
+            },
+            {
+                "BlockId": 774,
+                "Color": "black"
+            },
+            {
+                "BlockId": 775,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 776,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 777,
+                "Color": "red"
+            },
+            {
+                "BlockId": 778,
+                "Color": "green"
+            },
+            {
+                "BlockId": 779,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 780,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Modern-Masonry-Block",
+        "PrimaryBlockId": 772
+    },
+    {
+        "BlockId": 781,
+        "Dyes": [
+            {
+                "BlockId": 782,
+                "Color": "white"
+            },
+            {
+                "BlockId": 783,
+                "Color": "black"
+            },
+            {
+                "BlockId": 784,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 785,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 786,
+                "Color": "red"
+            },
+            {
+                "BlockId": 787,
+                "Color": "green"
+            },
+            {
+                "BlockId": 788,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 789,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Chintzy-Block",
+        "PrimaryBlockId": 781
+    },
+    {
+        "BlockId": 790,
+        "Dyes": [
+            {
+                "BlockId": 791,
+                "Color": "white"
+            },
+            {
+                "BlockId": 792,
+                "Color": "black"
+            },
+            {
+                "BlockId": 793,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 794,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 795,
+                "Color": "red"
+            },
+            {
+                "BlockId": 796,
+                "Color": "green"
+            },
+            {
+                "BlockId": 797,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 798,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Gingham-Carpet",
+        "PrimaryBlockId": 790
+    },
+    {
+        "BlockId": 799,
+        "Dyes": [
+            {
+                "BlockId": 800,
+                "Color": "white"
+            },
+            {
+                "BlockId": 801,
+                "Color": "black"
+            },
+            {
+                "BlockId": 802,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 803,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 804,
+                "Color": "red"
+            },
+            {
+                "BlockId": 805,
+                "Color": "green"
+            },
+            {
+                "BlockId": 806,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 807,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Stripy-Wall",
+        "PrimaryBlockId": 799
+    },
+    {
+        "BlockId": 808,
+        "Dyes": [
+            {
+                "BlockId": 809,
+                "Color": "white"
+            },
+            {
+                "BlockId": 810,
+                "Color": "black"
+            },
+            {
+                "BlockId": 811,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 812,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 813,
+                "Color": "red"
+            },
+            {
+                "BlockId": 814,
+                "Color": "green"
+            },
+            {
+                "BlockId": 815,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 816,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Mottled-Wall",
+        "PrimaryBlockId": 808
+    },
+    {
+        "BlockId": 817,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Slimy-Wall",
+        "PrimaryBlockId": 817
+    },
+    {
+        "BlockId": 818,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Diamond-Design-Block",
+        "PrimaryBlockId": 818
+    },
+    {
+        "BlockId": 819,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Old-Skool-Wall-Block",
+        "PrimaryBlockId": 819
+    },
+    {
+        "BlockId": 820,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Art-Deco-Block",
+        "PrimaryBlockId": 820
+    },
+    {
+        "BlockId": 821,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Jungle-Wall",
+        "PrimaryBlockId": 821
+    },
+    {
+        "BlockId": 822,
+        "Dyes": [
+            {
+                "BlockId": 850,
+                "Color": "white"
+            },
+            {
+                "BlockId": 851,
+                "Color": "black"
+            },
+            {
+                "BlockId": 852,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 853,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 854,
+                "Color": "red"
+            },
+            {
+                "BlockId": 855,
+                "Color": "green"
+            },
+            {
+                "BlockId": 856,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 857,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Vintage-Wall",
+        "PrimaryBlockId": 822
+    },
+    {
+        "BlockId": 823,
+        "Dyes": [
+            {
+                "BlockId": 824,
+                "Color": "white"
+            },
+            {
+                "BlockId": 825,
+                "Color": "black"
+            },
+            {
+                "BlockId": 826,
+                "Color": "purple"
+            },
+            {
+                "BlockId": 827,
+                "Color": "pink"
+            },
+            {
+                "BlockId": 828,
+                "Color": "red"
+            },
+            {
+                "BlockId": 829,
+                "Color": "green"
+            },
+            {
+                "BlockId": 830,
+                "Color": "yellow"
+            },
+            {
+                "BlockId": 831,
+                "Color": "blue"
+            }
+        ],
+        "IsLiquid": false,
+        "Name": "Damask-Design-Block",
+        "PrimaryBlockId": 823
+    },
+    {
+        "BlockId": 832,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Refined-Design-Block",
+        "PrimaryBlockId": 832
+    },
+    {
+        "BlockId": 833,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Classy-Cross-Block",
+        "PrimaryBlockId": 833
+    },
+    {
+        "BlockId": 1012,
+        "Dyes": [],
+        "IsLiquid": false,
+        "Name": "Black-Void",
+        "PrimaryBlockId": 413
+    }
+]
