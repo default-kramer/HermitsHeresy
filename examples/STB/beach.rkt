@@ -1,6 +1,7 @@
 #lang racket
 
-(require hermits-heresy)
+(require hermits-heresy
+         (only-in (submod hermits-heresy undocumented) YYY))
 
 {begin
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
@@ -46,26 +47,29 @@
 
   (define trav
     (traversal
-     (when (in-hill? beach-border-hill)
-       (set-block! 'Dark-Dolomite))
-     #;(cond
-         #;[(block-matches? 'Old-Skool-Wall-Block)
-            (set-block! 128 #;'Clear-water-full-block)]
-         #;[(in-hill? beach-border-hill)
-            (set-block! 'Dark-Dolomite)]
-         [(in-hill? sand-hill-base)
+     #;(when (in-hill? beach-border-hill)
+         (set-block! 'Dark-Dolomite))
+     (cond
+       #;[(block-matches? 'Old-Skool-Wall-Block)
+          (set-block! 128 #;'Clear-water-full-block)]
+       [(in-hill? beach-border-hill)
+        (set-block! 'Dark-Dolomite)]
+       #;[(in-hill? sand-hill-base)
           (set-block! 'Sandstone)]
-         #;[(in-hill? sand-hill)
-            (set-block! (sandy-mottler))]
-         #;[(in-hill? grass-hill)
-            (set-block! (grassy-mottler))]
-         #;[(in-hill? sea-floor)
-            (set-block! 'Stony-Sand)]
-         #;[(in-hill? sea-full)
-            (set-block! 341 #;(block 'Sea-water-full-block))]
-         #;[(in-hill? sea-top)
-            (set-block! 349 #;(block 'Sea-water-shallow-block))]
-         )))
+       #;[(in-hill? sand-hill)
+          (set-block! (sandy-mottler))]
+       #;[(in-hill? grass-hill)
+          (set-block! (grassy-mottler))]
+       #;[(in-hill? sea-floor)
+          (set-block! 'Stony-Sand)]
+       #;[(in-hill? sea-full)
+          (set-block! 341 #;(block 'Sea-water-full-block))]
+       #;[(in-hill? sea-top)
+          (set-block! 349 #;(block 'Sea-water-shallow-block))]
+       ; Here is the "update the minimap" trick, just go touch this water
+       #;[(= YYY 60)
+          (set-block! 120)]
+       )))
 
   (time (traverse dst trav #:force-unsound-optimization? #t))
   }

@@ -10,10 +10,10 @@
 
 (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
 
-#;(define-values (cs-plateau mountain evil)
-    (time (values (bitmap->area "cs-plateau.bmp")
-                  (bitmap->area "mountain.bmp")
-                  (bitmap->area "evil.bmp"))))
+(define-values (cs-plateau mountain evil)
+  (time (values (bitmap->area "cs-plateau.bmp")
+                (bitmap->area "mountain.bmp")
+                (bitmap->area "evil.bmp"))))
 
 ; bumps and bumps2 are basically the same thing, but with different randomness
 ; courtesy of the Crystallize effect. Use one with Chunky Chert and the other
@@ -105,8 +105,8 @@
   ;(copy-all-save-files! #:from 'B02 #:to 'B00)
   (define B00 (load-stage 'IoA 'B00))
   (println "loaded stage")
-  (update-manual-build-pict B00 "TEMP.bmp")
-  #;(define manual-build (bitmap->area "manual-build.bmp"))
+  ;(update-manual-build-pict B00 "TEMP.bmp")
+  (define manual-build (bitmap->area "manual-build.bmp"))
 
   ; Takes about 15 seconds on the command line or 26 seconds in DrRacket.
   ; Full script takes about 37 seconds in DrRacket.
@@ -137,23 +137,23 @@
   #;(let ([y (- 95 (quotient (max r g b) 2))]) (blah ...))
   ; Doing it this way pushes the work to the image editor, which is the best place to handle it.
   ; So if you want to raise some plateau by N blocks, you just decrease (darken) the color by N*2.
-  #;(time
-     (protect-area! B00 manual-build)
-     (put-hill! B00 (area->hill2 evil bumps) (block 'Poisonous-Peat) #:adjust-y -4)
-     (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow))
-     (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert))
-     (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert))
-     (with-absolute-seed 223344
-       (decorate-peaks! B00 mountain
-                        (lambda (xz below)
-                          (if (not (simple? below))
-                              0
-                              (case (random 7)
-                                [(0 1) 0] ; vacant
-                                [(2 3) (chisel (block 'Snow) 'flat-lo)]
-                                [(4 5) 18] ; snow cover
-                                [(6) (block 'Snow)])))))
-     )
+  (time
+   (protect-area! B00 manual-build)
+   (put-hill! B00 (area->hill2 evil bumps) (block 'Poisonous-Peat) #:adjust-y -4)
+   (put-hill! B00 (area->hill2 cs-plateau bumps) (block 'Snow))
+   (put-hill! B00 (area->hill2 mountain bumps2) (block 'Chunky-Chert))
+   (put-hill! B00 (area->hill2 mountain bumps) (block 'Chert))
+   (with-absolute-seed 223344
+     (decorate-peaks! B00 mountain
+                      (lambda (xz below)
+                        (if (not (simple? below))
+                            0
+                            (case (random 7)
+                              [(0 1) 0] ; vacant
+                              [(2 3) (chisel (block 'Snow) 'flat-lo)]
+                              [(4 5) 18] ; snow cover
+                              [(6) (block 'Snow)])))))
+   )
 
   ;(save-stage! B00)
   }
