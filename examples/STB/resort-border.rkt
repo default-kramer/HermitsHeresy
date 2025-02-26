@@ -15,11 +15,11 @@
   (define dst (load-stage 'IoA 'B00))
 
   (define ph-resort-border-west-lo
-    (make-platform-hills (generate-platform-layout 40 200)
+    (make-platform-hills (generate-platform-layout 40 150)
                          #:x 560 #:z 290
                          #:peak-y 44))
   (define ph-resort-border-west-hi
-    (make-platform-hills (generate-platform-layout 30 200)
+    (make-platform-hills (generate-platform-layout 30 150)
                          #:x 560 #:z 290
                          #:peak-y 54))
 
