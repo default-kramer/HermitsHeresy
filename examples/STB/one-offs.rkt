@@ -12,11 +12,11 @@
 
     (define stage (load-stage 'IoA 'B02))
     (define the-pict
-      (let* ([block1 (block 'Straw-Floor)]
+      (let* ([block1 (block 'Carved-Castle-Tile)]
              [block2 (+ #x800 block1)]
              [color #xFF0000FF])
         (stage->pict stage (hash block1 color block2 color))))
-    (let ([filename "TEMPAREA.bmp"])
+    (let ([filename "resort-aquarium.bmp"])
       (send (pict->bitmap the-pict) save-file filename 'bmp)
       (println (format "updated: ~a" filename)))
     }
@@ -27,7 +27,7 @@
     (copy-all-save-files! #:from 'B02 #:to 'B00)
     (define stage (load-stage 'IoA 'B00))
 
-    (define area (bitmap->area "TEMPAREA.bmp"))
+    (define area (bitmap->area "TEMPAREA2.bmp"))
     (define trav (traversal
                   (cond
                     [(and (in-area? area)
