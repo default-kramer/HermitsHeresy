@@ -17,18 +17,20 @@
 
   (define dst (load-stage 'IoA 'B00))
 
-  ; To avoid draw distance problems when looking from the NE corner to the SW
-  ; corner, lower the hill as it goes south.
   (define ph-resort-border-west-lo
-    (make-platform-hills (generate-platform-layout 40 150)
+    (make-platform-hills (generate-platform-layout 40 105)
                          #:x 560 #:z 290
-                         ; Was 44, dropped to 39 for draw distance issues.
-                         ; Maybe create another hill at 44 to underlie the `-hi` hill.
-                         #:peak-y 39))
+                         #:peak-y 44))
   (define ph-resort-border-west-hi
     (make-platform-hills (generate-platform-layout 30 90)
                          #:x 560 #:z 290
                          #:peak-y 54))
+  ; To avoid draw distance problems when looking from the NE corner to the SW
+  ; corner, lower the hill as it goes south.
+  (define ph-resort-border-west-extra-lo
+    (make-platform-hills (generate-platform-layout 40 65)
+                         #:x 560 #:z 385
+                         #:peak-y 39))
 
   (define ph-resort-border-north-lo
     (make-platform-hills (generate-platform-layout 320 40)
@@ -46,6 +48,7 @@
        [(in-platform-hills?! ph-resort-border-west-hi) #t]
        [(in-platform-hills?! ph-resort-border-north-lo) #t]
        [(in-platform-hills?! ph-resort-border-west-lo) #t]
+       [(in-platform-hills?! ph-resort-border-west-extra-lo) #t]
        )))
 
   (time (traverse dst trav #:force-unsound-optimization? #t))
