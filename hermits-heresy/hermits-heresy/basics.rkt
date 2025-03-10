@@ -7,6 +7,7 @@
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
+         Samplerof
          )
 
 (require "ufx.rkt"
@@ -26,6 +27,10 @@
   (let ([xz : XZ xz-expr])
     (values (xz-x xz)
             (xz-z xz))))
+
+; TBD is this a missing abstraction?
+; I think I'll probably want to write code against this generic interface...
+(define-type (Samplerof A) (-> XZ A))
 
 ; OUCH - constructor is now x z y which is confusing!
 ; Should hide this... use a generic interface? No - use composition instead.
