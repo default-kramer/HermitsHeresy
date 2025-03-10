@@ -1,12 +1,14 @@
 #lang typed/racket
 
 (provide Hill hill? area->hill area->hill2 bitmap->hill
+         bitmap->hill2
          hill-area hill-elevations)
 
 (require "area.rkt"
          "chunky-area.rkt"
          "basics.rkt"
          "block.rkt"
+         "bitmap-sampler.rkt"
          "ufx.rkt"
          typed/pict
          (only-in typed/racket/draw Bitmap%))
@@ -101,4 +103,45 @@
                        (lambda ([xz : XZ])
                          (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
                        (lambda args #f)))
+  (hill the-area (make-immutable-hash (hash->list elevations))))
+
+(: bitmap->hill2 (-> (Listof Bitmap-Sampler) Hill))
+(define (bitmap->hill2 samplers)
+  (define width (bitmap-sampler-width (first samplers)))
+  (define height (bitmap-sampler-height (first samplers)))
+  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
+  (define all-empty? : Boolean #t)
+  (define all-full? : Boolean #t)
+  (define semitransparent-warned? : Boolean #f)
+
+  (: get-sample (-> XZ Fixnum (Listof (Samplerof (U #f Fixnum))) (U #f Fixnum)))
+  ; NOMERGE need to clean this up.
+  ; Caller shouldn't be allowed to pass in a list of raw samplers.
+  ; They need to enrich them with information such as:
+  ; * what happens when this modifier returns false? add zero, or return false
+  ; * how to combine? add or subtract?
+  (define (get-sample [xz : XZ] [accum : Fixnum] [samplers : (Listof (Samplerof (U #f Fixnum)))])
+    (if (empty? samplers)
+        accum
+        (let* ([s (first samplers)]
+               [sample (s xz)]
+               [sample (or sample 0)])
+          (and sample
+               (get-sample xz (ufx+ accum sample) (cdr samplers))))))
+
+  (define funcs (map unpack-bitmap-sampler samplers))
+  (println (list "any impersonators?" (ormap impersonator? funcs)))
+
+  (for ([z : Fixnum (ufx-in-range height)])
+    (for ([x : Fixnum (ufx-in-range width)])
+      (let* ([sample (get-sample (xz x z) 0 funcs)])
+        (when sample
+          (hash-set! elevations (cons x z) sample)))))
+
+  (define the-area
+    (build-chunky-area width height
+                       (lambda ([xz : XZ])
+                         (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
+                       (lambda args #f)))
+
   (hill the-area (make-immutable-hash (hash->list elevations))))
