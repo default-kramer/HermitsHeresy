@@ -114,27 +114,24 @@
   (define all-full? : Boolean #t)
   (define semitransparent-warned? : Boolean #f)
 
-  (: get-sample (-> XZ Fixnum (Listof (Samplerof (U #f Fixnum))) (U #f Fixnum)))
-  ; NOMERGE need to clean this up.
+  (define funcs (map unpack-bitmap-sampler samplers))
+  (println (list "any impersonators?" (ormap impersonator? funcs)))
+
+  ; NOMERGE hard-coding here...
   ; Caller shouldn't be allowed to pass in a list of raw samplers.
   ; They need to enrich them with information such as:
   ; * what happens when this modifier returns false? add zero, or return false
   ; * how to combine? add or subtract?
-  (define (get-sample [xz : XZ] [accum : Fixnum] [samplers : (Listof (Samplerof (U #f Fixnum)))])
-    (if (empty? samplers)
-        accum
-        (let* ([s (first samplers)]
-               [sample (s xz)]
-               [sample (or sample 0)])
-          (and sample
-               (get-sample xz (ufx+ accum sample) (cdr samplers))))))
-
-  (define funcs (map unpack-bitmap-sampler samplers))
-  (println (list "any impersonators?" (ormap impersonator? funcs)))
+  ; ALSO BE CAREFUL not to make the area bigger than needed.
+  (define sampler-one (first funcs))
+  (define sampler-two (second funcs))
 
   (for ([z : Fixnum (ufx-in-range height)])
     (for ([x : Fixnum (ufx-in-range width)])
-      (let* ([sample (get-sample (xz x z) 0 funcs)])
+      (let* ([xz (xz x z)]
+             [sample (sampler-one xz)]
+             [sample (and sample
+                          (ufx+ sample (or (sampler-two xz) 0)))])
         (when sample
           (hash-set! elevations (cons x z) sample)))))
 
