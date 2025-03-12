@@ -55,14 +55,11 @@
     (bitmap->hill2
      (list (make-bitmap-sampler "sea.bmp"
                                 #:rgb 'g
-                                ;#:invert? #t
                                 #:normalize '[0 1 ... N-1]
-                                ;#:project '([darkest 31] [step -1])
                                 #:project '([lightest 31] [step -1])
                                 )
            (make-bitmap-sampler "sea-dropoff.bmp"
                                 #:rgb 'max
-                                #:invert? #f
                                 #:normalize 'none
                                 #:project '([darkest -1] [step -1])))))
 
@@ -105,8 +102,8 @@
                          (block 'Sea-water-shallow-block))]
       [(recurring) (values 469 ; yellow hardwood tile
                            (block 'Strange-Sand)
-                           (block 'Sea-water-full-block)
-                           (block 'Sea-water-shallow-block))]))
+                           0 #;(block 'Sea-water-full-block)
+                           0 #;(block 'Sea-water-shallow-block))]))
 
   (define do-hills? (member release-mode '(publish)))
 
