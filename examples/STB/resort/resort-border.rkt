@@ -102,8 +102,8 @@
                          (block 'Sea-water-shallow-block))]
       [(recurring) (values 469 ; yellow hardwood tile
                            (block 'Strange-Sand)
-                           0 #;(block 'Sea-water-full-block)
-                           0 #;(block 'Sea-water-shallow-block))]))
+                           (block 'Sea-water-full-block)
+                           (block 'Sea-water-shallow-block))]))
 
   (define do-hills? (member release-mode '(publish)))
 
