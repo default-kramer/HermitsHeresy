@@ -1,37 +1,31 @@
 #lang typed/racket
 
-(provide Bitmap-Sampler bitmap-sampler?
-         bitmap-sampler-width bitmap-sampler-height
-         make-bitmap-sampler
-         unpack-bitmap-sampler
-         )
+(provide Bitmap-Sampler make-bitmap-sampler
+         RGB-Spec Normalize-Spec Project-Spec)
 
 (require "basics.rkt"
          "ufx.rkt"
          typed/pict
          (only-in typed/racket/draw Bitmap%))
 
-
-(struct bitmap-sampler ([sample-func : (Samplerof (U #f Fixnum))]
-                        [width : Fixnum]
-                        [height : Fixnum])
-  #:transparent #:type-name Bitmap-Sampler)
-
-
-(: unpack-bitmap-sampler (-> Bitmap-Sampler (Samplerof (U #f Fixnum))))
-(define (unpack-bitmap-sampler sampler)
-  (bitmap-sampler-sample-func sampler))
-
+(struct bitmap-sampler fixnum-sampler
+  () ; may want to add filename for error messaging someday
+  #:type-name Bitmap-Sampler
+  #:property prop:authentic #t
+  #:transparent)
 
 ; Convenient name for function compositions in this file.
-(define-type Sampler (Samplerof (U #f Fixnum)))
+(define-type Sampler (-> XZ (U #f Fixnum)))
+
+; Describes how to convert from RGB to a single grayscale value.
+(define-type RGB-Spec (U 'r 'g 'b 'max 'min))
 
 (define-type Normalize-Spec
   (U
    ; No normalization.
    ; The range is defined as [0 .. 255] regardless of which grayscale
    ; values actually occur in the bitmap.
-   'none
+   #f
 
    ; If the bitmap contains N distinct grayscale colors, the darkest
    ; value will be remapped to 0 and the lightest to N-1.
@@ -47,7 +41,7 @@
   ; When the project spec mentions 'lightest and 'darkest it is referring
   ; to the largest and smallest values of this range.
   (U
-   'identity ; the grayscale value is projected directly
+   #f ; identity; the grayscale value is projected directly
 
    #;("for example" '([lightest 40] [step -1/3]))
    ; would mean "the lightest value projects to 40, and every 3rd step
@@ -73,7 +67,7 @@
 #;(#:returns (inclusive-range-lo inclusive-range-hi sampler))
 (define (normalize spec sampler width height)
   (match spec
-    ['none
+    [#f
      (values 0 255 sampler)]
     [(list 0 1 '... 'N-1)
      ; Scan the entire sample space and remap all non-false samples
@@ -96,7 +90,9 @@
        (values 0 (ufx+ -1 counter)
                (lambda (xz)
                  (let ([byte (sampler xz)])
-                   (and byte (vector-ref lookup byte))))))]))
+                   (and byte (vector-ref lookup byte))))))]
+    [else
+     (error "assert fail: unexpected normalize spec:" spec)]))
 
 (: project (-> Project-Spec Sampler Fixnum Fixnum Sampler))
 (define (project spec sampler inclusive-range-lo inclusive-range-hi)
@@ -111,7 +107,7 @@
                       [steps (ufxquotient steps d)])
                  (ufx+ start-val steps)))))))
   (match spec
-    ['identity
+    [#f
      sampler]
     [(list (list 'lightest start-val)
            (list 'step step-val))
@@ -121,21 +117,23 @@
            (list 'step step-val))
      (handle-lightest/darkest start-val step-val [byte]
                               (ufx- byte inclusive-range-lo))]
-    [else
-     (let* ([fixnums (cast spec (Listof Fixnum))]
-            [vec : (Vectorof Fixnum) (list->vector fixnums)]
+    [(list fixnums ...)
+     #:when (andmap fixnum? fixnums)
+     (let* ([vec : (Vectorof Fixnum) (list->vector fixnums)]
             [need-count (ufx+ 1 (ufx- inclusive-range-hi inclusive-range-lo))]
             [have-count (vector-length vec)])
        (when (ufx< have-count need-count)
-         ; TODO include need-count and echo back the given list
+         ; NOMERGE include need-count and echo back the given list
+         ; and write a test for this error message
          (error "Insufficient #:values were provided."))
        (lambda (xz)
          (let ([byte (sampler xz)])
            (and byte
-                (vector-ref vec byte)))))]))
+                (vector-ref vec byte)))))]
+    [else (error "assert fail: unexpected project spec:" spec)]))
 
 (: make-bitmap-sampler (->* [(U (Instance Bitmap%) Path-String)
-                             #:rgb (U 'r 'g 'b 'max 'min)
+                             #:rgb RGB-Spec
                              #:project Project-Spec
                              ]
                             [#:invert? Any
@@ -145,7 +143,7 @@
 (define (make-bitmap-sampler arg
                              #:rgb rgb-spec
                              #:invert? [rgb-invert? #f]
-                             #:normalize [normalize-spec 'none]
+                             #:normalize [normalize-spec #f]
                              #:project project-spec
                              )
   (define bmp (bitmap arg))
@@ -190,4 +188,5 @@
     (let-values ([(inclusive-start inclusive-end sampler)
                   (normalize normalize-spec sampler width height)])
       (let ([sampler (project project-spec sampler inclusive-start inclusive-end)])
-        (bitmap-sampler sampler width height)))))
+        (bitmap-sampler sampler
+                        (make-rect (xz 0 0) (xz width height)))))))

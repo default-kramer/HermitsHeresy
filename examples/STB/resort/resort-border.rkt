@@ -52,16 +52,14 @@
   #;([darkest -1] [step -1])
   ; as the amount to adjust the elevation by.
   (define sea-hill
-    (bitmap->hill2
-     (list (make-bitmap-sampler "sea.bmp"
-                                #:rgb 'g
-                                #:normalize '[0 1 ... N-1]
-                                #:project '([lightest 31] [step -1])
-                                )
-           (make-bitmap-sampler "sea-dropoff.bmp"
-                                #:rgb 'max
-                                #:normalize 'none
-                                #:project '([darkest -1] [step -1])))))
+    (make-hill
+     (bitmap-sampler "sea.bmp"
+                     #:rgb 'g
+                     #:normalize '[0 1 ... N-1]
+                     #:project '([lightest 31] [step -1]))
+     (bitmap-hill-adjuster "sea-dropoff.bmp"
+                           #:rgb 'max
+                           #:project '([darkest -1] [step -1]))))
 
   ; TODO don't re-read the bitmap, get this area from the hill
   (define sea-area (bitmap->area "sea.bmp"))

@@ -17,6 +17,9 @@
          (rename-out [make-selection selection])
          make-platform-hills
          generate-platform-layout
+         make-hill
+         (rename-out [make-bitmap-sampler bitmap-sampler])
+         bitmap-hill-adjuster
 
          ; Traversal lang
          (rename-out [compile-traversal traversal])
@@ -32,10 +35,6 @@
            decorate-peaks!
            simple?
            stage->pict
-           ; NOMERGE clean this all up:
-           hill-ref
-           bitmap->hill2
-           make-bitmap-sampler
 
            ; traversal
            HHEXPR YYY XXX ZZZ
@@ -48,11 +47,10 @@
            ))
 
 (require "NEW-API.rkt"
-         (only-in (submod "NEW-API.rkt" for-testing) hill-ref)
          "selection.rkt"
          "build-mottler.rkt"
          (only-in "bitmap-sampler.rkt" make-bitmap-sampler)
-         (only-in "hill.rkt" bitmap->hill2)
+         (only-in "hill.rkt" make-hill bitmap-hill-adjuster)
          (only-in "platform-layout.rkt" generate-platform-layout)
          (only-in "platform-hills.rkt" make-platform-hills)
          (only-in "traversal/untyped-traversal.rkt"

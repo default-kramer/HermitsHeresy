@@ -4,10 +4,12 @@
          XZ (struct-out xz) xz->values
          Rect make-rect rect-relative-xz
          rect-start rect-end rect-width rect-height rect-contains?
+         for/rect
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
-         Samplerof
+         (struct-out fixnum-sampler) Fixnum-Sampler
+         prop:authentic
          )
 
 (require "ufx.rkt"
@@ -27,10 +29,6 @@
   (let ([xz : XZ xz-expr])
     (values (xz-x xz)
             (xz-z xz))))
-
-; TBD is this a missing abstraction?
-; I think I'll probably want to write code against this generic interface...
-(define-type (Samplerof A) (-> XZ A))
 
 ; OUCH - constructor is now x z y which is confusing!
 ; Should hide this... use a generic interface? No - use composition instead.
@@ -107,3 +105,27 @@
        (ufx< x x2)
        (ufx< z z2)
        (make-xz (ufx- x x1) (ufx- z z1))))
+
+(define-syntax-rule (for/rect ([#:z z:id #:x x:id #:rect rect]) body ...)
+  (let* ([rect-id rect]
+         [start (rect-start rect-id)]
+         [end (rect-end rect-id)]
+         [start-x (xz-x start)]
+         [start-z (xz-z start)]
+         [end-x (xz-x end)]
+         [end-z (xz-z end)])
+    (for ([z:id : Fixnum (ufx-in-range start-z end-z)])
+      (for ([x:id : Fixnum (ufx-in-range start-x end-x)])
+        body ...))))
+
+
+; Exposing a generic sampler struct to untyped code seems unwise.
+; So let's only create non-generic structs.
+; And use prop:authentic for extra safety.
+(require/typed racket/base [prop:authentic Struct-Type-Property])
+
+(struct fixnum-sampler ([func : (-> XZ (U #f Fixnum))]
+                        [bounding-rect : Rect])
+  #:type-name Fixnum-Sampler
+  #:property prop:authentic #t
+  #:transparent)
