@@ -171,7 +171,10 @@
     (let* ([xz (xz x z)]
            [sample (primary-func xz)]
            [sample (apply-adjusters sample xz adjusters)])
-      (when sample
+      (when (and sample
+                 ; If any samples are 0 or less, drop them now
+                 ; to save time during the traversal later.
+                 (ufx> sample 0))
         (hash-set! elevations (cons x z) sample))))
 
   (define the-area

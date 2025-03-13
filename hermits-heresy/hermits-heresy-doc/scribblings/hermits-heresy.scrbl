@@ -546,6 +546,25 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
   given dy value. Positive values raise the selection; negative values lower it.})
 }
 
+@defproc[(make-hill [sampler fixnum-sampler?]
+                    [adjuster hill-adjuster?] ...)
+         hill?]{
+ Creates a hill from the given @(racket sampler).
+ If any @(racket adjuster)s are present, they will be applied in order
+ to the output from the @(racket sampler).
+ The final output defines the elevation of the hill.
+
+ The hill can be used with @(racket in-hill?) inside a traversal.
+
+ The @(racket sampler) can be a @(racket bitmap-sampler).
+
+ Each @(racket adjuster) can be a @(racket bitmap-hill-adjuster).
+
+ DQB2 supports a max elevation of 96.
+ Any samples greater than 96 will be equivalent to 96.
+ Any samples of 0 or less are eagerly excluded from the hill.
+}
+
 @defproc[(generate-platform-layout [width positive-fixnum?]
                                    [depth positive-fixnum?])
          platform-layout?]{
@@ -661,7 +680,7 @@ For example, here is how a traversal could be used to replace certain blocks wit
 
  Returns true if the current xzy coordinate is inside the given @(racket hill),
  false otherwise.
- Hills can be created using @(racket bitmap->hill).
+ Hills can be created using @(racket make-hill) or @(racket bitmap->hill).
 }
 
 @defform[(in-platform-hills?! platform-hills)]{
