@@ -121,7 +121,8 @@
        [(in-area? beach-area)
         (when (< YYY 32)
           (set-block! sandy-sandstone)
-          (set-chisel! 'none))]
+          ; preserve my manual chisel work
+          #;(set-chisel! 'none))]
        [(in-hill? sea-hill)
         (set-block! stony-sand)
         (set-chisel! 'none)]
