@@ -119,7 +119,7 @@
   (hill-adjuster adjust))
 
 (: bitmap-hill-adjuster (->* [(U (Instance Bitmap%) Path-String)
-                              #:rgb RGB-Spec
+                              #:rgb Grayscale-Spec
                               #:project Project-Spec
                               ]
                              [#:invert? Any

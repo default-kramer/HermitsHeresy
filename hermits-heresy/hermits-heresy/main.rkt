@@ -21,6 +21,11 @@
          (rename-out [make-bitmap-sampler bitmap-sampler])
          bitmap-hill-adjuster
 
+         ; Provided for not much reason other than documentation convenience:
+         grayscale-spec?
+         normalize-spec?
+         project-spec?
+
          ; Traversal lang
          (rename-out [compile-traversal traversal])
          block-matches? set-block!
@@ -49,7 +54,8 @@
 (require "NEW-API.rkt"
          "selection.rkt"
          "build-mottler.rkt"
-         (only-in "bitmap-sampler.rkt" make-bitmap-sampler)
+         (only-in "bitmap-sampler.rkt" make-bitmap-sampler
+                  grayscale-spec? normalize-spec? project-spec?)
          (only-in "hill.rkt" make-hill bitmap-hill-adjuster)
          (only-in "platform-layout.rkt" generate-platform-layout)
          (only-in "platform-hills.rkt" make-platform-hills)

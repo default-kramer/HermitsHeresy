@@ -1,7 +1,8 @@
 #lang typed/racket
 
 (provide Bitmap-Sampler make-bitmap-sampler
-         RGB-Spec Normalize-Spec Project-Spec)
+         Grayscale-Spec Normalize-Spec Project-Spec
+         grayscale-spec? normalize-spec? project-spec?)
 
 (require "basics.rkt"
          "ufx.rkt"
@@ -18,7 +19,9 @@
 (define-type Sampler (-> XZ (U #f Fixnum)))
 
 ; Describes how to convert from RGB to a single grayscale value.
-(define-type RGB-Spec (U 'r 'g 'b 'max 'min))
+(define-type Grayscale-Spec (U 'r 'g 'b 'max 'min))
+
+(define grayscale-spec? (make-predicate Grayscale-Spec))
 
 (define-type Normalize-Spec
   (U
@@ -30,8 +33,10 @@
    ; If the bitmap contains N distinct grayscale colors, the darkest
    ; value will be remapped to 0 and the lightest to N-1.
    ; The range will be this inclusive range.
-   '[0 1 ... N-1]
+   '[0 .. N-1]
    ))
+
+(define normalize-spec? (make-predicate Normalize-Spec))
 
 (define-type Project-Spec
   ; During the projection, we have a range of grayscale values.
@@ -57,6 +62,8 @@
    ; project to 31."
    (Listof Fixnum)))
 
+(define project-spec? (make-predicate Project-Spec))
+
 (: invert (-> Sampler Sampler))
 (define (invert sampler)
   (lambda (xz)
@@ -69,7 +76,7 @@
   (match spec
     [#f
      (values 0 255 sampler)]
-    [(list 0 1 '... 'N-1)
+    [(list 0 '.. 'N-1)
      ; Scan the entire sample space and remap all non-false samples
      ; such that the smallest value is remapped to 0,
      ; the second-smallest value is remapped to 1, and so on.
@@ -133,7 +140,7 @@
     [else (error "assert fail: unexpected project spec:" spec)]))
 
 (: make-bitmap-sampler (->* [(U (Instance Bitmap%) Path-String)
-                             #:rgb RGB-Spec
+                             #:rgb Grayscale-Spec
                              #:project Project-Spec
                              ]
                             [#:invert? Any
@@ -141,7 +148,7 @@
                              ]
                             Bitmap-Sampler))
 (define (make-bitmap-sampler arg
-                             #:rgb rgb-spec
+                             #:rgb grayscale-spec
                              #:invert? [rgb-invert? #f]
                              #:normalize [normalize-spec #f]
                              #:project project-spec
@@ -175,7 +182,7 @@
          Sampler))
 
   (define sampler : Sampler
-    (case rgb-spec
+    (case grayscale-spec
       [(r) (make-rgb-func [a r g b] r)]
       [(g) (make-rgb-func [a r g b] g)]
       [(b) (make-rgb-func [a r g b] b)]

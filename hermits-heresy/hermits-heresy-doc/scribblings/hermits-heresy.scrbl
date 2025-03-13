@@ -216,6 +216,108 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
 
 @subsection{Image Utilities}
 
+@defproc[(bitmap-sampler [filename path-string?]
+                         [#:rgb grayscale grayscale-spec?]
+                         [#:invert? invert? any/c #f]
+                         [#:normalize normalize normalize-spec? #f]
+                         [#:project project project-spec?])
+         fixnum-sampler?]{
+ Creates a sampler from the bitmap specified by @(racket filename).
+ NOMERGE - need to explain what a sampler is.
+ For every pixel that is not fully transparent, these 4 transformations will
+ be applied @bold{in the following order}:
+ @(itemlist
+   @item{@(racket grayscale) -- Applies the given @(racket grayscale-spec?).}
+   @item{@(racket invert?) -- When true, the grayscale value will be inverted.
+  The resulting value will remain in the inclusive range @(racket [0 .. 255]).}
+   @item{@(racket normalize) -- Applies the given @(racket normalize-spec?).}
+   @item{@(racket project) -- Applies the given @(racket project-spec?).})
+}
+
+@defproc[(grayscale-spec? [spec any/c]) any/c]{
+ Step 1 of the @(racket bitmap-sampler) pipeline.
+
+ A grayscale spec describes how to produce a single grayscale value from an RGB pixel.
+ The resulting value will always be in the inclusive range @(racket [0 .. 255]).
+ @(itemlist
+   @item{@(racket 'r) -- Selects the pixel's red component.}
+   @item{@(racket 'g) -- Selects the pixel's green component.}
+   @item{@(racket 'b) -- Selects the pixel's blue component.}
+   @item{@(racket 'max) -- Selects whichever of R,G,B has the maximum (lightest) value.}
+   @item{@(racket 'min) -- Selects whichever of R,G,B has the minimum (darkest) value.})
+}
+
+@defproc[(normalize-spec? [spec any/c]) any/c]{
+ Step 3 of the @(racket bitmap-sampler) pipeline.
+
+ A normalize spec describes how to compress or remap a range of grayscale values.
+ The input range is assumed to be the inclusive @(racket [0 .. 255]).
+ @(itemlist
+   @item{@(racket #f) -- No normalization. The output range remains defined
+  as the inclusive @(racket [0 .. 255]) regardless of what values actually exist.}
+   @item{@(racket '[0 .. N-1]) -- Scans the entire input (such as a bitmap)
+  to find the @(racket N) distinct grayscale values that actually occur.
+  Remaps those values such that the output range is the inclusive @(racket '[0 .. N-1]).
+  For example, if the input has 3 distinct grayscale values @(racket '(22 100 144))
+  the output mapping will be equivalent to
+  @(racketblock
+    (case input
+      [(22) 0]
+      [(100) 1]
+      [(144) 2]
+      [else (error "impossible")]))
+  This is useful so that you can create bitmaps with human-friendly contrast
+  and remap them to a more useful and predictable range.})
+}
+
+@defproc[(project-spec? [spec any/c]) any/c]{
+ Step 4 of the @(racket bitmap-sampler) pipeline.
+
+ A project spec defines an arbitrary projection.
+ @margin-note{Here I am using examples rather than precise Racket contracts.}
+ @(itemlist
+   @item{@(racket #f) -- The identity function; output matches input.}
+   @item{@(racket '([darkest 55] [step 2])) -- Declares an anchor:
+  the darkest (minimum) value of the input range will be projected to 55.
+  For each step taken towards the lightest (maximum) value of the input range,
+  the projected value will increase by 2 (the "step").
+  This example might be used to build a hill starting at elevation 55 which
+  increases by 2 steps at a time.}
+   @item{@(racket '([lightest 31] [step -1])) -- Declares an anchor:
+  the lightest (maximum) value of the input range will be projected to 31.
+  For each step taken towards the darkest (minimum) value of the input range,
+  the projected value will decrease by 1 (the "step").
+  This example might be used to build a seafloor at elevation 31 which decreases
+  by 1 step at a time.}
+   @item{@(racket '[43 44 45 46]) -- Asserts that the input range will have exactly 4
+  values and projects them to the values of the given list of integers.
+  The darkest (minimum) value projects to the first element of the list
+  and the lightest (maximum) value projects to the last element of the list.})
+
+ To be technically precise, @(racket 'lightest) and @(racket 'darkest) must
+ specify a @(racket fixnum?) as the anchor; while the @(racket 'step) must
+ be an @(racket exact?) and @(racket rational?) number.
+ For example @(racket '([lightest 40] [step -2/3])) would mean "The lightest value
+ of the input range is projected to 40. For every 2 steps taken towards the
+ darkest value of the input range, the projected value decreases by 3."
+
+ It is important to remember that @(racket 'lightest) and @(racket 'darkest) refer
+ to the endpoints of the inclusive input range, which can be much wider than the
+ range of values that actually occur when (for example)
+ a @(racket normalize-spec?) of @(racket #f) is used.
+}
+
+@defproc[(bitmap-hill-adjuster [filename path-string?]
+                               [#:rgb grayscale grayscale-spec?]
+                               [#:invert? invert? any/c #f]
+                               [#:normalize normalize normalize-spec? #f]
+                               [#:project project project-spec?])
+         hill-adjuster?]{
+ Creates a @(racket bitmap-sampler) using the same arguments that this
+ function receives. Wraps that sampler inside a hill adjuster which
+ can be used with @(racket make-hill).
+}
+
 @defproc[(get-template-image [id symbol?])
          pict?]{
  Returns a prebuilt template image.

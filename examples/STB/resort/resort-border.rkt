@@ -55,7 +55,7 @@
     (make-hill
      (bitmap-sampler "sea.bmp"
                      #:rgb 'g
-                     #:normalize '[0 1 ... N-1]
+                     #:normalize '[0 .. N-1]
                      #:project '([lightest 31] [step -1]))
      (bitmap-hill-adjuster "sea-dropoff.bmp"
                            #:rgb 'max
