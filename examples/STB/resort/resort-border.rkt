@@ -107,6 +107,11 @@
 
   (define trav!
     (traversal
+     ; update the minimap trick:
+     #;(when (and (= YYY 60)
+                  (not (= 0 (remainder XXX 96)))
+                  (not (= 0 (remainder ZZZ 96))))
+         (set-block! 120))
      (cond
        [(and do-hills?
              (or (in-platform-hills?! ph-resort-border-north-hi)
