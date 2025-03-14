@@ -49,8 +49,9 @@
   ; * Magic Wand to delete all pixels that remain black (RGB=0)
   ; This gives you a bitmap where very black indicates less dropoff
   ; and less black indicates more dropoff. Thus you want
-  #;([darkest -1] [step -1])
+  #;([darkest 0] [step -1])
   ; as the amount to adjust the elevation by.
+  ; (Pure black was deleted, so anchor it to 0 instead of -1)
   (define sea-hill
     (make-hill
      (bitmap-sampler "sea.bmp"
@@ -59,7 +60,7 @@
                      #:project '([lightest 31] [step -1]))
      (bitmap-hill-adjuster "sea-dropoff.bmp"
                            #:rgb 'max
-                           #:project '([darkest -1] [step -1]))))
+                           #:project '([darkest 0] [step -1]))))
 
   ; TODO don't re-read the bitmap, get this area from the hill
   (define sea-area (bitmap->area "sea.bmp"))
