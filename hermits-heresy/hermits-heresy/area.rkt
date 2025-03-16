@@ -15,6 +15,7 @@
 
 (define-type Area Chunky-Area)
 
+(define area? chunky-area?)
 (define area-bounds chunky-area-bounds)
 (define area-contains? chunky-area-contains?)
 

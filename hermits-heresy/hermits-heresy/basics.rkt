@@ -2,7 +2,7 @@
 
 (provide Chunky (struct-out chunky)
          XZ (struct-out xz) xz->values
-         Rect make-rect rect-relative-xz
+         Rect rect? make-rect rect-relative-xz
          rect-start rect-end rect-width rect-height rect-contains?
          rect-intersect rect-union
          for/rect

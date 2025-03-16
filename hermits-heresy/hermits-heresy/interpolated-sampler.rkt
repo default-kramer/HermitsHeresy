@@ -3,6 +3,7 @@
 (provide make-interpolated-sampler)
 
 (require "basics.rkt"
+         "area.rkt"
          "ufx.rkt"
          "interpolator.rkt"
          racket/flonum
@@ -17,21 +18,32 @@
   #:property prop:authentic #t
   #:transparent)
 
-(: make-interpolated-sampler (-> Rect Positive-Fixnum (U (Listof Fixnum)
-                                                         (List Fixnum '.. Fixnum))
+(: make-interpolated-sampler (-> (U Rect Area)
+                                 Positive-Fixnum
+                                 (U (Listof Fixnum)
+                                    (List Fixnum '.. Fixnum))
                                  Interpolated-Sampler))
-; NOMERGE this should accept (U Area Rect) to allow more power
-; to define the sampler's domain.
-(define (make-interpolated-sampler bounding-rect scale range)
+(define (make-interpolated-sampler area-arg scale range)
+  (define bounding-rect : Rect
+    (cond
+      [(rect? area-arg) area-arg]
+      [else (area-bounds area-arg)]))
   (define interpolator (make-interpolator bounding-rect scale))
 
   (define-syntax-rule (make-sample-func [flonum:id] body ...)
-    (ann (lambda ([xz : XZ])
-           (let ([sample (interpolate interpolator xz)])
-             (and sample
-                  (let ([flonum:id : Flonum sample])
-                    body ...))))
-         (-> XZ (U #f Fixnum))))
+    (let ()
+      (define-syntax-rule (do-sample xz)
+        (let ([sample (interpolate interpolator xz)])
+          (and sample
+               (let ([flonum:id : Flonum sample])
+                 body ...))))
+      (ann (cond
+             [(area? area-arg)
+              (lambda ([xz : XZ])
+                (and (area-contains? area-arg xz)
+                     (do-sample xz)))]
+             [else (lambda ([xz : XZ]) (do-sample xz))])
+           (-> XZ (U #f Fixnum)))))
 
   (define sample-func
     (match range

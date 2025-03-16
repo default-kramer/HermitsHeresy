@@ -61,11 +61,11 @@
      (function + (bitmap-sampler "sea-dropoff.bmp"
                                  #:rgb 'max
                                  #:project '([darkest 0] [step -1])))
-     ; TEMP TESTING:
-     (function - (make-interpolated-sampler
-                  (make-rect (xz 0 0) (xz 900 900))
-                  12 ; scale
-                  '[0 0 1 1 2]))))
+     ; just testing, doesn't look great:
+     #;(let ([floor (bitmap->area "sea-floor-only.bmp")])
+         (function - (make-interpolated-sampler floor
+                                                12 ; scale
+                                                '[0 0 1 1 2])))))
 
   ; TODO don't re-read the bitmap, get this area from the hill
   (define sea-area (bitmap->area "sea.bmp"))

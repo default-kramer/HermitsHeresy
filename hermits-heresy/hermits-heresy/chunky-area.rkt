@@ -151,7 +151,8 @@
   (define bytevec : (Vectorof Bytes)
     (make-vector vec-length empty-bytes))
   (define xz-count : Fixnum 0)
-  ; Find bounds
+  ; The actual bounding rect could be smaller than the given bounding rect.
+  ; We might as well compute it now since we're doing a full pass anyway.
   (define min-x : Fixnum (ufx+ 1 width))
   (define max-x : Fixnum -1)
   (define min-z : Fixnum (ufx+ 1 depth))

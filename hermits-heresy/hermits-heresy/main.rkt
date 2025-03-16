@@ -41,8 +41,7 @@
            decorate-peaks!
            simple?
            stage->pict
-           ; TEMP - trying this out:
-           make-interpolated-sampler make-rect xz
+           make-interpolated-sampler
 
            ; traversal
            HHEXPR YYY XXX ZZZ
