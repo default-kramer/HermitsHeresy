@@ -10,10 +10,14 @@
          simple?
          (struct-out fixnum-sampler) Fixnum-Sampler
          prop:authentic
+         with-absolute-seed
          )
 
 (require "ufx.rkt"
          "simple.rkt")
+
+(module+ test
+  (require typed/rackunit))
 
 ; Indicates that the contained value (e.g. an XZ or a Point)
 ; is relative to the chunk-id.
@@ -129,3 +133,45 @@
   #:type-name Fixnum-Sampler
   #:property prop:authentic #t
   #:transparent)
+
+
+
+; Maybe someday I will want `with-relative-seed` which would also be affected
+; (deterministically of course) by any enclosing uses of `with-*-seed`.
+; Hence the name `with-absolute-seed` here.
+(define-syntax-rule (with-absolute-seed [seed:expr] body ...)
+  (let* ([seed (ann seed:expr Integer)]
+         [seed (if (< seed 4294944442)
+                   seed
+                   (error "seed must be less than 4294944442, got:" seed))]
+         [seed (if (> seed 0)
+                   (ann seed Positive-Integer)
+                   (error "seed must be greater than 0, got:" seed))]
+         [vec (vector-immutable seed seed seed seed seed seed)]
+         [prng (vector->pseudo-random-generator vec)])
+    (parameterize ([current-pseudo-random-generator prng])
+      body ...)))
+
+{module+ test
+  (when #f
+    ; one-time test to make sure that we're getting a reasonably
+    ; random-looking distribution
+    (let* ([range 256]
+           [trials 987654]
+           [counts (make-vector range 0)])
+      (for ([i (in-range 1 trials)])
+        (with-absolute-seed [i]
+          (let ([idx (random range)])
+            (vector-set! counts idx (+ 1 (vector-ref counts idx))))))
+      (let ([lo (apply min (vector->list counts))]
+            [hi (apply max (vector->list counts))])
+        (println (list "min:" lo "max:" hi "should be near:" (/ trials range))))))
+
+  ; Any of these failing would indicate a breaking change:
+  (check-equal? (with-absolute-seed [3] (random 100))
+                0)
+  (check-equal? (with-absolute-seed [88112233] (random 100))
+                45)
+  (check-equal? (with-absolute-seed [7654321] (random 100))
+                88)
+  }
