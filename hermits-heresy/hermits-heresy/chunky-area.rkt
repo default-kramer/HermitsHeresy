@@ -128,12 +128,21 @@
                           (xz end-x end-z))
                xz-count))
 
-(: build-chunky-area (-> Fixnum ; width (or "end-x") -- distance from X=0
-                         Fixnum ; depth (or "end-z") -- distance from Z=0
+(: build-chunky-area (-> Rect
                          (-> XZ Any) ; in-area?
                          (-> Any Any Any) ; all-empty? all-full? -> any
                          Chunky-Area))
-(define (build-chunky-area width depth in-area? on-done-callback)
+(define (build-chunky-area bounding-rect in-area? on-done-callback)
+  ; We ignore the rect-start and build our byte array assuming the rect
+  ; starts at 0,0. This simplifies the calculation and will only cost a small
+  ; number of bytes in practice...
+  (define-values (width depth) (xz->values (rect-end bounding-rect)))
+  ; ... but this means we have to check for this error condition
+  (let-values ([(start-x start-z) (xz->values (rect-start bounding-rect))])
+    (when (or (< start-x 0)
+              (< start-z 0))
+      (error "was not expecting any rects with negative values:" bounding-rect)))
+
   (define all-empty? : Boolean #t)
   (define all-full? : Boolean #t)
   (define W32 (ufx+ 1 (ufxquotient width 32)))
@@ -193,6 +202,7 @@
                bounds
                xz-count))
 
+
 (: bitmap->chunky-area (-> (U (Instance Bitmap%) Path-String) Chunky-Area))
 (define (bitmap->chunky-area arg)
   (define bmp
@@ -224,15 +234,13 @@
       (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                      (if all-empty? "all" "zero")))))
 
-  (build-chunky-area width depth in-area? on-done))
+  (build-chunky-area (make-rect (xz 0 0) (xz width depth)) in-area? on-done))
 
 
 (: chunky-area-transform (-> Chunky-Area Transformer2D Rect Chunky-Area))
 ; This function might not be wise... it may place to much burder on the caller
 ; to get the `transformer` and `new-bounds` combination correct.
 (define (chunky-area-transform area transformer new-bounds)
-  (define-values (width depth)
-    (xz->values (rect-end new-bounds)))
   (define orig-bounds (chunky-area-bounds area))
 
   ; These are needed to apply the transformer:
@@ -259,4 +267,4 @@
   (define (on-done all-empty? all-full?)
     (void))
 
-  (build-chunky-area width depth in-area? on-done))
+  (build-chunky-area new-bounds in-area? on-done))

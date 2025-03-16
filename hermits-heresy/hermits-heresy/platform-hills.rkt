@@ -50,13 +50,14 @@
                              #:short-y [short-y -2])
   (define WW (platform-layout-width layout))
   (define HH (platform-layout-depth layout))
+  (define bounding-rect (make-rect (xz dx dz)
+                                   (xz (ufx+ dx WW) (ufx+ dz HH))))
   (define array2d (platform-layout-array2d layout))
 
   (: build-area (-> Fixnum Area))
   (define (build-area val)
     (build-chunky-area
-     (ufx+ dx WW)
-     (ufx+ dz HH)
+     bounding-rect
      (lambda (xz)
        (let* ([x (xz-x xz)]
               [z (xz-z xz)]

@@ -100,7 +100,7 @@
     (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                    (if all-empty? "all" "zero"))))
   (define the-area
-    (build-chunky-area width depth
+    (build-chunky-area (make-rect (xz 0 0) (xz width depth))
                        (lambda ([xz : XZ])
                          (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
                        (lambda args #f)))
@@ -108,22 +108,14 @@
 
 (: make-hill (-> Fixnum-Sampler Sampler-Combiner * Hill))
 (define (make-hill first-sampler . combiners)
-  (define primary (combine-samplers:list first-sampler combiners))
-  (define bounding-rect (fixnum-sampler-bounding-rect primary))
+  (define sampler (combine-samplers:list first-sampler combiners))
+  (define bounding-rect (fixnum-sampler-bounding-rect sampler))
+  (define sample-func (fixnum-sampler-func sampler))
   (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
-
-  ; NOMERGE - how do we reproduce the error messaging of the original bitmap->hill
-  ; now that we operate on any arbitrary Fixnum-Sampler ??
-  ; Do we even need that error messaging now that hill construction is so much simpler?
-  (define all-empty? : Boolean #t)
-  (define all-full? : Boolean #t)
-  (define semitransparent-warned? : Boolean #f)
-
-  (define primary-func (fixnum-sampler-func primary))
 
   (for/rect ([#:z z #:x x #:rect bounding-rect])
     (let* ([xz (xz x z)]
-           [sample (primary-func xz)])
+           [sample (sample-func xz)])
       (when (and sample
                  ; If any samples are 0 or less, drop them now
                  ; to save time during the traversal later.
@@ -131,10 +123,7 @@
         (hash-set! elevations (cons x z) sample))))
 
   (define the-area
-    ; NOMERGE probably build-chunky-area should ask for a Rect instead of W,H
-    ; because it (currently) assumes that W,H is relative to 0,0
-    (build-chunky-area (xz-x (rect-end bounding-rect))
-                       (xz-z (rect-end bounding-rect))
+    (build-chunky-area bounding-rect
                        (lambda ([xz : XZ])
                          (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
                        (lambda args #f)))
