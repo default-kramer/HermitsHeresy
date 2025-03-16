@@ -231,4 +231,10 @@
                 45)
   (check-equal? (with-absolute-seed [7654321] (random 100))
                 88)
+  ; min seed:
+  (check-equal? (with-absolute-seed [1] (random 100))
+                0)
+  ; max seed:
+  (check-equal? (with-absolute-seed [4294944441] (random 100))
+                87)
   }
