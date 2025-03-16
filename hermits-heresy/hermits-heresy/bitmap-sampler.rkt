@@ -15,9 +15,6 @@
   #:property prop:authentic #t
   #:transparent)
 
-; Convenient name for function compositions in this file.
-(define-type Sampler (-> XZ (U #f Fixnum)))
-
 ; Describes how to convert from RGB to a single grayscale value.
 (define-type Grayscale-Spec (U 'r 'g 'b 'max 'min))
 
@@ -64,13 +61,15 @@
 
 (define project-spec? (make-predicate Project-Spec))
 
-(: invert (-> Sampler Sampler))
+(: invert (-> (-> XZ (U #f Fixnum))
+              (-> XZ (U #f Fixnum))))
 (define (invert sampler)
   (lambda (xz)
     (let ([byte (sampler xz)])
       (and byte (ufx- 255 byte)))))
 
-(: normalize (-> Normalize-Spec Sampler Fixnum Fixnum (Values Fixnum Fixnum Sampler)))
+(: normalize (-> Normalize-Spec (-> XZ (U #f Fixnum)) Fixnum Fixnum
+                 (Values Fixnum Fixnum (-> XZ (U #f Fixnum)))))
 #;(#:returns (inclusive-range-lo inclusive-range-hi sampler))
 (define (normalize spec sampler width height)
   (match spec
@@ -101,7 +100,7 @@
     [else
      (error "assert fail: unexpected normalize spec:" spec)]))
 
-(: project (-> Project-Spec Sampler Fixnum Fixnum Sampler))
+(: project (-> Project-Spec (-> XZ (U #f Fixnum)) Fixnum Fixnum (-> XZ (U #f Fixnum))))
 (define (project spec sampler inclusive-range-lo inclusive-range-hi)
   (define-syntax-rule (handle-lightest/darkest start-val step-val [byte] raw-steps-expr)
     (let ([d (cast (denominator step-val) Fixnum)]
@@ -179,9 +178,9 @@
                        [b (bytes-ref pixels (ufx+ 3 index))])
                   (and (ufx> a 0)
                        body ...))))
-         Sampler))
+         (-> XZ (U #f Fixnum))))
 
-  (define sampler : Sampler
+  (define sampler : (-> XZ (U #f Fixnum))
     (case grayscale-spec
       [(r) (make-rgb-func [a r g b] r)]
       [(g) (make-rgb-func [a r g b] g)]
