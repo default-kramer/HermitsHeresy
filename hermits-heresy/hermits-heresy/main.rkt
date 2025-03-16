@@ -19,9 +19,10 @@
          generate-platform-layout
          make-hill
          (rename-out [make-bitmap-sampler bitmap-sampler])
-         bitmap-hill-adjuster
+         combine-samplers function intersection union
 
          ; Provided for not much reason other than documentation convenience:
+         sampler?
          grayscale-spec?
          normalize-spec?
          project-spec?
@@ -40,6 +41,8 @@
            decorate-peaks!
            simple?
            stage->pict
+           ; TEMP - trying this out:
+           make-interpolated-sampler make-rect xz
 
            ; traversal
            HHEXPR YYY XXX ZZZ
@@ -54,9 +57,13 @@
 (require "NEW-API.rkt"
          "selection.rkt"
          "build-mottler.rkt"
+         (only-in "basics.rkt" sampler? make-rect xz)
          (only-in "bitmap-sampler.rkt" make-bitmap-sampler
                   grayscale-spec? normalize-spec? project-spec?)
-         (only-in "hill.rkt" make-hill bitmap-hill-adjuster)
+         (only-in "combine-samplers.rkt"
+                  combine-samplers function intersection union)
+         (only-in "hill.rkt" make-hill)
+         (only-in "interpolated-sampler.rkt" make-interpolated-sampler)
          (only-in "platform-layout.rkt" generate-platform-layout)
          (only-in "platform-hills.rkt" make-platform-hills)
          (only-in "traversal/untyped-traversal.rkt"

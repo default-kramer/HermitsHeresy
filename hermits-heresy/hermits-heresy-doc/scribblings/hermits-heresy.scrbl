@@ -214,18 +214,44 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
  Will produce an error if the destination directory has not been @seclink[make-slot-writable-tag]{made writable}.
 }
 
-@subsection{Image Utilities}
+@subsection{Samplers}
+An @deftech{XZ} coordinate consists of two values.
+When referring to a DQB2 stage, larger values of X indicate "more east"
+and larger values of Z indicate "more south".
+When working with images, larger values of X indicate "more right"
+and larger values of Z indicate "more down".
+This correspondence allows you to use images to define edits to a DQB2 stage.
+
+To fully specify a point in 3D space, you need an @tech{XZ} plus a Y coordinate.
+The Y coordinate specifies elevation; larger values are higher up.
+All stages in DQB2 have a max elevation of 96 blocks.
+
+@defproc[(sampler? [x any/c])
+         any/c]{
+ A sampler is a basic building block for many terraforming techniques.
+
+ A sampler is basically a function that accepts an @tech{XZ} coordinate and
+ returns either an integer or @(racket #f).
+ The meaning of the integer depends on how it is being used; for example,
+ @(racket make-hill) uses the result of the sampler to define the hill's
+ elevation at that point.
+ When a sampler returns @(racket #f), it always means "the given XZ was
+ not contained inside this sampler."
+
+ The set of all @tech{XZ}s for which a sampler returns non-false is
+ the @deftech{domain} of the sampler.
+}
 
 @defproc[(bitmap-sampler [filename path-string?]
                          [#:rgb grayscale grayscale-spec?]
                          [#:invert? invert? any/c #f]
                          [#:normalize normalize normalize-spec? #f]
                          [#:project project project-spec?])
-         fixnum-sampler?]{
- Creates a sampler from the bitmap specified by @(racket filename).
- NOMERGE - need to explain what a sampler is.
+         sampler?]{
+ Creates a @(racket sampler?) from the bitmap specified by @(racket filename).
  For every pixel that is not fully transparent, these 4 transformations will
- be applied @bold{in the following order}:
+ be applied @bold{in the following order} to define the value
+ that will be returned by this sampler.
  @(itemlist
    @item{@(racket grayscale) -- Applies the given @(racket grayscale-spec?).}
    @item{@(racket invert?) -- When true, the grayscale value will be inverted.
@@ -317,6 +343,8 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
  function receives. Wraps that sampler inside a hill adjuster which
  can be used with @(racket make-hill).
 }
+
+@subsection{Image Utilities}
 
 @defproc[(get-template-image [id symbol?])
          pict?]{

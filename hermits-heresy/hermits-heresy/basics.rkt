@@ -4,11 +4,12 @@
          XZ (struct-out xz) xz->values
          Rect make-rect rect-relative-xz
          rect-start rect-end rect-width rect-height rect-contains?
+         rect-intersect rect-union
          for/rect
          Point point? make-point point-y point-x point-z
          Chunk-Layout chunk-translate chunk-count
          simple?
-         (struct-out fixnum-sampler) Fixnum-Sampler
+         (struct-out fixnum-sampler) Fixnum-Sampler sampler?
          prop:authentic
          with-absolute-seed
          )
@@ -74,6 +75,8 @@
               [end : XZ])
   #:type-name Rect #:transparent)
 
+(define zero-rect (rect (xz 0 0) (xz 0 0)))
+
 (define (make-rect [a : XZ] [b : XZ])
   ; Ensure that `start` is always the upper left and `end` the lower right
   (define-values (x1 z1) (xz->values a))
@@ -110,6 +113,58 @@
        (ufx< z z2)
        (make-xz (ufx- x x1) (ufx- z z1))))
 
+(define-values (rect-intersect rect-union)
+  (let ()
+    (define-syntax-rule (find f get-rect get-coord a b)
+      (let loop : Fixnum ([val : Fixnum (get-coord (get-rect a))]
+                          [rest : (Listof Rect) b])
+        (if (empty? rest)
+            val
+            (loop (f val (get-coord (get-rect (car rest))))
+                  (cdr rest)))))
+
+    (: rect-intersect (-> Rect Rect * Rect))
+    (define (rect-intersect a . b)
+      (let ([start-x (find max rect-start xz-x a b)]
+            [start-z (find max rect-start xz-z a b)]
+            [end-x (find min rect-end xz-x a b)]
+            [end-z (find min rect-end xz-z a b)])
+        (cond
+          [(or (ufx>= start-x end-x)
+               (ufx>= start-z end-z))
+           zero-rect]
+          [else
+           (make-rect (xz start-x start-z)
+                      (xz end-x end-z))])))
+
+    (: rect-union (-> Rect Rect * Rect))
+    (define (rect-union a . b)
+      (let ([start-x (find min rect-start xz-x a b)]
+            [start-z (find min rect-start xz-z a b)]
+            [end-x (find max rect-end xz-x a b)]
+            [end-z (find max rect-end xz-z a b)])
+        (make-rect (xz start-x start-z)
+                   (xz end-x end-z))))
+
+    (values rect-intersect rect-union)))
+
+{module+ test
+  (let ([r1 (make-rect (xz 20 21) (xz 50 41))]
+        [r2 (make-rect (xz 30 31) (xz 40 51))]
+        [r3 (make-rect (xz 10 11) (xz 35 36))])
+    (check-equal? (rect-intersect r1 r2 r3)
+                  (make-rect (xz 30 31) (xz 35 36)))
+    (check-equal? (rect-union r1 r2 r3)
+                  (make-rect (xz 10 11) (xz 50 51))))
+  (let* ([r1 (make-rect (xz 110 110) (xz 120 120))]
+         [r2 (make-rect (xz 410 410) (xz 420 420))]
+         [i (rect-intersect r1 r2)])
+    ; The use of 0,0 isn't super important here...
+    (check-equal? i (make-rect (xz 0 0) (xz 0 0)))
+    ; ... but the fact that it doesn't contain that XZ is important:
+    (check-false (rect-contains? i (xz 0 0))))
+  }
+
 (define-syntax-rule (for/rect ([#:z z:id #:x x:id #:rect rect]) body ...)
   (let* ([rect-id rect]
          [start (rect-start rect-id)]
@@ -133,6 +188,8 @@
   #:type-name Fixnum-Sampler
   #:property prop:authentic #t
   #:transparent)
+
+(define sampler? fixnum-sampler?)
 
 
 

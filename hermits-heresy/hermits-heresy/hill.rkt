@@ -2,7 +2,6 @@
 
 (provide Hill hill? area->hill area->hill2 bitmap->hill
          make-hill
-         bitmap-hill-adjuster
          hill-area hill-elevations)
 
 (require "area.rkt"
@@ -10,6 +9,7 @@
          "basics.rkt"
          "block.rkt"
          "bitmap-sampler.rkt"
+         "combine-samplers.rkt"
          "ufx.rkt"
          typed/pict
          (only-in typed/racket/draw Bitmap%))
@@ -106,40 +106,9 @@
                        (lambda args #f)))
   (hill the-area (make-immutable-hash (hash->list elevations))))
 
-(struct hill-adjuster ([func : (-> XZ (U #f Fixnum) (U #f Fixnum))])
-  #:type-name Hill-Adjuster
-  #:property prop:authentic #t
-  #:transparent)
-
-(define (standard-hill-adjuster [sampler : Fixnum-Sampler])
-  (define func (fixnum-sampler-func sampler))
-  (define (adjust [xz : XZ] [val : (U #f Fixnum)])
-    (and val
-         (ufx+ val (or (func xz) 0))))
-  (hill-adjuster adjust))
-
-(: bitmap-hill-adjuster (->* [(U (Instance Bitmap%) Path-String)
-                              #:rgb Grayscale-Spec
-                              #:project Project-Spec
-                              ]
-                             [#:invert? Any
-                              #:normalize Normalize-Spec
-                              ]
-                             Hill-Adjuster))
-(define (bitmap-hill-adjuster arg
-                              #:rgb rgb-spec
-                              #:invert? [rgb-invert? #f]
-                              #:normalize [normalize-spec #f]
-                              #:project project-spec)
-  (standard-hill-adjuster
-   (make-bitmap-sampler arg
-                        #:rgb rgb-spec
-                        #:invert? rgb-invert?
-                        #:normalize normalize-spec
-                        #:project project-spec)))
-
-(: make-hill (-> Fixnum-Sampler Hill-Adjuster * Hill))
-(define (make-hill primary . adjusters)
+(: make-hill (-> Fixnum-Sampler Sampler-Combiner * Hill))
+(define (make-hill first-sampler . combiners)
+  (define primary (combine-samplers:list first-sampler combiners))
   (define bounding-rect (fixnum-sampler-bounding-rect primary))
   (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
 
@@ -152,25 +121,9 @@
 
   (define primary-func (fixnum-sampler-func primary))
 
-  (: apply-adjusters (-> (U #f Fixnum) XZ (Listof Hill-Adjuster)
-                         (U #f Fixnum)))
-  (define (apply-adjusters sample xz adjusters)
-    (match adjusters
-      [(list) sample]
-      [(list a adjusters ...)
-       (let* ([func (hill-adjuster-func a)]
-              [sample (func xz sample)])
-         (apply-adjusters sample xz adjusters))]))
-
-  ; NOMERGE get rid of this temp logging:
-  (define all-funcs (cons primary-func
-                          (map hill-adjuster-func adjusters)))
-  (println (list "any impersonators?" (ormap impersonator? all-funcs)))
-
   (for/rect ([#:z z #:x x #:rect bounding-rect])
     (let* ([xz (xz x z)]
-           [sample (primary-func xz)]
-           [sample (apply-adjusters sample xz adjusters)])
+           [sample (primary-func xz)])
       (when (and sample
                  ; If any samples are 0 or less, drop them now
                  ; to save time during the traversal later.

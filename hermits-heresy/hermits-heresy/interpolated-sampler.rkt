@@ -1,5 +1,7 @@
 #lang typed/racket
 
+(provide make-interpolated-sampler)
+
 (require "basics.rkt"
          "ufx.rkt"
          "interpolator.rkt"
@@ -18,6 +20,8 @@
 (: make-interpolated-sampler (-> Rect Positive-Fixnum (U (Listof Fixnum)
                                                          (List Fixnum '.. Fixnum))
                                  Interpolated-Sampler))
+; NOMERGE this should accept (U Area Rect) to allow more power
+; to define the sampler's domain.
 (define (make-interpolated-sampler bounding-rect scale range)
   (define interpolator (make-interpolator bounding-rect scale))
 

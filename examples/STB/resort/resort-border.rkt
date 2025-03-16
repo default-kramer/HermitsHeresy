@@ -18,24 +18,6 @@
   'recurring
   )
 
-;;;;;;; I THINK THIS IS IT:
-(define-syntax-rule (ignore ...) (void))
-
-(ignore
- (combine-samplers
-  (bitmap-sampler ...)
-  (function #:operator +
-            (bitmap-sampler ...)
-            #:fallback 0)
-  (intersection #:operator +
-                ; fallback does not apply to #:intersect
-                (bitmap-sampler ...))
-  (union #:fallback-in 0
-         #:operator +
-         (bitmap-sampler ...)
-         #:fallback 0)))
-
-
 {begin
   (save-dir "C:/Users/kramer/Documents/My Games/DRAGON QUEST BUILDERS II/Steam/76561198073553084/SD/")
 
@@ -76,20 +58,14 @@
                      #:rgb 'g
                      #:normalize '[0 .. N-1]
                      #:project '([lightest 31] [step -1]))
-     (bitmap-hill-adjuster "sea-dropoff.bmp"
-                           #:rgb 'max
-                           #:project '([darkest 0] [step -1]))))
-  #;(define sea-hill
-      (make-hill
-       (bitmap-sampler "sea.bmp"
-                       #:rgb 'g
-                       #:normalize '[0 .. N-1]
-                       #:project '([lightest 31] [step -1]))
-       (function #:operator +
-                 (bitmap-sampler "sea-dropoff.bmp"
+     (function + (bitmap-sampler "sea-dropoff.bmp"
                                  #:rgb 'max
-                                 #:project '([darkest 0] [step -1]))
-                 #:fallback 0)))
+                                 #:project '([darkest 0] [step -1])))
+     ; TEMP TESTING:
+     (function - (make-interpolated-sampler
+                  (make-rect (xz 0 0) (xz 900 900))
+                  12 ; scale
+                  '[0 0 1 1 2]))))
 
   ; TODO don't re-read the bitmap, get this area from the hill
   (define sea-area (bitmap->area "sea.bmp"))
@@ -130,7 +106,6 @@
                          (block 'Sea-water-shallow-block))]
       [(recurring) (values 469 ; yellow hardwood tile
                            (block 'Strange-Sand)
-                           ; need to clear some more items
                            (block 'Sea-water-full-block)
                            (block 'Sea-water-shallow-block))]))
 
