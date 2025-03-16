@@ -242,6 +242,59 @@ All stages in DQB2 have a max elevation of 96 blocks.
  the @deftech{domain} of the sampler.
 }
 
+@defproc[(combine-samplers [sampler sampler?]
+                           [combiner sampler-combiner?] ...)
+         sampler?]{
+ Starts with the given @(racket sampler) and applies each @(racket combiner)
+ in order to produce a new sampler.
+
+ A combiner is a @(racket sampler?) with some extra information
+ on how it should be combined with the incoming sampler.
+ The three kinds of combiners are @(racket function), @(racket intersection), and @(racket union).
+}
+
+@defproc[(function [operation (or/c '+ '-)]
+                   [sampler sampler?]
+                   [#:fallback fallback (or/c #f fixnum?) #f])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will exactly equal the domain
+ of the incoming sampler.
+ For any @tech{XZ}s at which the given @(racket sampler) is undefined,
+ the @(racket fallback) will be used.
+ A @(racket fallback) of @(racket #f) does not mean "produce false";
+ it means "produce the incoming value unchanged."
+}
+
+@defproc[(intersection [operation (or/c '+ '-)]
+                       [sampler sampler?])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will be the intersection of the
+ incoming domain and the given @(racket sampler)'s domain.
+ That is, for any @tech{XZ}s at which the given @(racket sampler) is undefined,
+ the combined sampler is also undefined.
+}
+
+@defproc[(union [operation (or/c '+ '-)]
+                [sampler sampler?])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will be the union of the
+ incoming domain and the given @(racket sampler)'s domain.
+ Whenever one of the samplers (the incoming sampler or the given @(racket sampler))
+ is undefined, the value from the other sampler will be produced.
+}
+
 @defproc[(bitmap-sampler [filename path-string?]
                          [#:rgb grayscale grayscale-spec?]
                          [#:invert? invert? any/c #f]
@@ -331,17 +384,6 @@ All stages in DQB2 have a max elevation of 96 blocks.
  to the endpoints of the inclusive input range, which can be much wider than the
  range of values that actually occur when (for example)
  a @(racket normalize-spec?) of @(racket #f) is used.
-}
-
-@defproc[(bitmap-hill-adjuster [filename path-string?]
-                               [#:rgb grayscale grayscale-spec?]
-                               [#:invert? invert? any/c #f]
-                               [#:normalize normalize normalize-spec? #f]
-                               [#:project project project-spec?])
-         hill-adjuster?]{
- Creates a @(racket bitmap-sampler) using the same arguments that this
- function receives. Wraps that sampler inside a hill adjuster which
- can be used with @(racket make-hill).
 }
 
 @subsection{Image Utilities}
@@ -574,19 +616,15 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
   given dy value. Positive values raise the selection; negative values lower it.})
 }
 
-@defproc[(make-hill [sampler fixnum-sampler?]
-                    [adjuster hill-adjuster?] ...)
+@defproc[(make-hill [sampler sampler?]
+                    [combiner sampler-combiner?] ...)
          hill?]{
- Creates a hill from the given @(racket sampler).
- If any @(racket adjuster)s are present, they will be applied in order
- to the output from the @(racket sampler).
- The final output defines the elevation of the hill.
+ Creates a hill from the given @(racket sampler) and @(racket combiner)s,
+ which are combined the same way as in @(racket combine-samplers).
+
+ The output of the combined sampler defines the elevation of the hill.
 
  The hill can be used with @(racket in-hill?) inside a traversal.
-
- The @(racket sampler) can be a @(racket bitmap-sampler).
-
- Each @(racket adjuster) can be a @(racket bitmap-hill-adjuster).
 
  DQB2 supports a max elevation of 96.
  Any samples greater than 96 will be equivalent to 96.
