@@ -192,21 +192,18 @@
 (define sampler? fixnum-sampler?)
 
 
-
 ; Maybe someday I will want `with-relative-seed` which would also be affected
 ; (deterministically of course) by any enclosing uses of `with-*-seed`.
 ; Hence the name `with-absolute-seed` here.
 (define-syntax-rule (with-absolute-seed [seed:expr] body ...)
   (let* ([seed (ann seed:expr Integer)]
-         [seed (if (< seed 4294944442)
+         [seed (if (positive? seed)
                    seed
-                   (error "seed must be less than 4294944442, got:" seed))]
-         [seed (if (> seed 0)
-                   (ann seed Positive-Integer)
-                   (error "seed must be greater than 0, got:" seed))]
-         [vec (vector-immutable seed seed seed seed seed seed)]
+                   (error "seed must be positive, got:" seed))]
+         [vec (vector-immutable 1 1 1 1 1 1)]
          [prng (vector->pseudo-random-generator vec)])
     (parameterize ([current-pseudo-random-generator prng])
+      (random-seed seed)
       body ...)))
 
 {module+ test
@@ -222,19 +219,19 @@
             (vector-set! counts idx (+ 1 (vector-ref counts idx))))))
       (let ([lo (apply min (vector->list counts))]
             [hi (apply max (vector->list counts))])
-        (println (list "min:" lo "max:" hi "should be near:" (/ trials range))))))
+        (println (list "min:" lo "max:" hi "should surround:" (/ trials range))))))
 
   ; Any of these failing would indicate a breaking change:
   (check-equal? (with-absolute-seed [3] (random 100))
-                0)
+                94)
   (check-equal? (with-absolute-seed [88112233] (random 100))
-                45)
+                41)
   (check-equal? (with-absolute-seed [7654321] (random 100))
-                88)
+                9)
   ; min seed:
   (check-equal? (with-absolute-seed [1] (random 100))
-                0)
+                50)
   ; max seed:
-  (check-equal? (with-absolute-seed [4294944441] (random 100))
-                87)
+  (check-equal? (with-absolute-seed [2147483647] (random 100))
+                48)
   }
