@@ -343,4 +343,7 @@
   (check-equal? (block 'Clear-water-full-block) 128)
   (check-equal? (block 'Sea-water-full-block) 341)
   (check-equal? (block 'Sea-water-shallow-block) 349)
+  ; More of the same:
+  (check-equal? (block 'Clear-water-surface-block) 383)
+  (check-equal? (block 'Clear-water-shallow-block) 343)
   }
