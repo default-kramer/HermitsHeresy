@@ -525,6 +525,8 @@
 
   (define full-area (chunk-layout->chunky-area (stage-chunk-layout stage)))
 
+  (define xz-visit-counter : Fixnum 0)
+
   (define (check-bedrock [xz : XZ])
     (or (not respect-bedrock?)
         (ufx= 1 (or (stage-read stage (make-point xz 0)) -1))))
@@ -560,6 +562,7 @@
               (set! i (ufx+ 1 i)))))
 
         (when (or cannot-optimize? in-any-area?)
+          (set! xz-visit-counter (ufx+ 1 xz-visit-counter))
           (define-values (x z) (xz->values xz))
           (t:set-argbox-x! args x)
           (t:set-argbox-z! args z)
@@ -580,6 +583,7 @@ If so, just do an area-intersect with the stage full area, right?")))
             (callback)
             (stage-write! stage proof p (t:argbox-block args))
             ))))
+    (show-msg "traverse visited ~a XZ coordinates" xz-visit-counter)
     (show-msg "traverse ignored ~a attempts to overwrite an item"
               (t:argbox-skipped-item-count args))
     (void)))

@@ -17,7 +17,7 @@
 
   (define aquarium-area (bitmap->area "resort-aquarium.bmp"))
 
-  (copy-all-save-files! #:from 'B02 #:to 'B00)
+  ;(copy-all-save-files! #:from 'B02 #:to 'B00)
 
   (define dst (load-stage 'IoA 'B00))
 
@@ -27,7 +27,7 @@
        (cond
          [(< YYY 35) #f]
          [(block-matches? 'Gravel-Block 'Masonry-Wall 'Modern-Masonry-Block
-                          'Iron-Block 'Vault-Tile)
+                          'Iron-Block 'Vault-Tile 'Sooty-Softwood)
           #f]
          [(< YYY 40)
           ;(set-block! 'Muddy-Water-full-block)

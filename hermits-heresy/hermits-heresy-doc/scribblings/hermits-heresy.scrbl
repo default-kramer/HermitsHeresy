@@ -214,6 +214,178 @@ Thanks to Aura and Sapphire645 for contributions to Hermit's Heresy.
  Will produce an error if the destination directory has not been @seclink[make-slot-writable-tag]{made writable}.
 }
 
+@subsection{Samplers}
+An @deftech{XZ} coordinate consists of two values.
+When referring to a DQB2 stage, larger values of X indicate "more east"
+and larger values of Z indicate "more south".
+When working with images, larger values of X indicate "more right"
+and larger values of Z indicate "more down".
+This correspondence allows you to use images to define edits to a DQB2 stage.
+
+To fully specify a point in 3D space, you need an @tech{XZ} plus a Y coordinate.
+The Y coordinate specifies elevation; larger values are higher up.
+All stages in DQB2 have a max elevation of 96 blocks.
+
+@defproc[(sampler? [x any/c])
+         any/c]{
+ A sampler is a basic building block for many terraforming techniques.
+
+ A sampler is basically a function that accepts an @tech{XZ} coordinate and
+ returns either an integer or @(racket #f).
+ The meaning of the integer depends on how it is being used; for example,
+ @(racket make-hill) uses the result of the sampler to define the hill's
+ elevation at that point.
+ When a sampler returns @(racket #f), it always means "the given XZ was
+ not contained inside this sampler."
+
+ The set of all @tech{XZ}s for which a sampler returns non-false is
+ the @deftech{domain} of the sampler.
+}
+
+@defproc[(combine-samplers [sampler sampler?]
+                           [combiner sampler-combiner?] ...)
+         sampler?]{
+ Starts with the given @(racket sampler) and applies each @(racket combiner)
+ in order to produce a new sampler.
+
+ A combiner is a @(racket sampler?) with some extra information
+ on how it should be combined with the incoming sampler.
+ The three kinds of combiners are @(racket function), @(racket intersection), and @(racket union).
+}
+
+@defproc[(function [operation (or/c '+ '-)]
+                   [sampler sampler?]
+                   [#:fallback fallback (or/c #f fixnum?) #f])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will exactly equal the domain
+ of the incoming sampler.
+ For any @tech{XZ}s at which the given @(racket sampler) is undefined,
+ the @(racket fallback) will be used.
+ A @(racket fallback) of @(racket #f) does not mean "produce false";
+ it means "produce the incoming value unchanged."
+}
+
+@defproc[(intersection [operation (or/c '+ '-)]
+                       [sampler sampler?])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will be the intersection of the
+ incoming domain and the given @(racket sampler)'s domain.
+ That is, for any @tech{XZ}s at which the given @(racket sampler) is undefined,
+ the combined sampler is also undefined.
+}
+
+@defproc[(union [operation (or/c '+ '-)]
+                [sampler sampler?])
+         sampler-combiner?]{
+ To be used with @(racket combine-samplers).
+
+ The combined sampler will add or subtract the given @(racket sampler)'s
+ value from the incoming value.
+ The @tech{domain} of the combined sampler will be the union of the
+ incoming domain and the given @(racket sampler)'s domain.
+ Whenever one of the samplers (the incoming sampler or the given @(racket sampler))
+ is undefined, the value from the other sampler will be produced.
+}
+
+@defproc[(bitmap-sampler [filename path-string?]
+                         [#:rgb grayscale grayscale-spec?]
+                         [#:invert? invert? any/c #f]
+                         [#:normalize normalize normalize-spec? #f]
+                         [#:project project project-spec?])
+         sampler?]{
+ Creates a @(racket sampler?) from the bitmap specified by @(racket filename).
+ For every pixel that is not fully transparent, these 4 transformations will
+ be applied @bold{in the following order} to define the value
+ that will be returned by this sampler.
+ @(itemlist
+   @item{@(racket grayscale) -- Applies the given @(racket grayscale-spec?).}
+   @item{@(racket invert?) -- When true, the grayscale value will be inverted.
+  The resulting value will remain in the inclusive range @(racket [0 .. 255]).}
+   @item{@(racket normalize) -- Applies the given @(racket normalize-spec?).}
+   @item{@(racket project) -- Applies the given @(racket project-spec?).})
+}
+
+@defproc[(grayscale-spec? [spec any/c]) any/c]{
+ Step 1 of the @(racket bitmap-sampler) pipeline.
+
+ A grayscale spec describes how to produce a single grayscale value from an RGB pixel.
+ The resulting value will always be in the inclusive range @(racket [0 .. 255]).
+ @(itemlist
+   @item{@(racket 'r) -- Selects the pixel's red component.}
+   @item{@(racket 'g) -- Selects the pixel's green component.}
+   @item{@(racket 'b) -- Selects the pixel's blue component.}
+   @item{@(racket 'max) -- Selects whichever of R,G,B has the maximum (lightest) value.}
+   @item{@(racket 'min) -- Selects whichever of R,G,B has the minimum (darkest) value.})
+}
+
+@defproc[(normalize-spec? [spec any/c]) any/c]{
+ Step 3 of the @(racket bitmap-sampler) pipeline.
+
+ A normalize spec describes how to compress or remap a range of grayscale values.
+ The input range is assumed to be the inclusive @(racket [0 .. 255]).
+ @(itemlist
+   @item{@(racket #f) -- No normalization. The output range remains defined
+  as the inclusive @(racket [0 .. 255]) regardless of what values actually exist.}
+   @item{@(racket '[0 .. N-1]) -- Scans the entire input (such as a bitmap)
+  to find the @(racket N) distinct grayscale values that actually occur.
+  Remaps those values such that the output range is the inclusive @(racket '[0 .. N-1]).
+  For example, if the input has 3 distinct grayscale values @(racket '(22 100 144))
+  the output mapping will be equivalent to
+  @(racketblock
+    (case input
+      [(22) 0]
+      [(100) 1]
+      [(144) 2]
+      [else (error "impossible")]))
+  This is useful so that you can create bitmaps with human-friendly contrast
+  and remap them to a more useful and predictable range.})
+}
+
+@defproc[(project-spec? [spec any/c]) any/c]{
+ Step 4 of the @(racket bitmap-sampler) pipeline.
+
+ A project spec defines an arbitrary projection.
+ @margin-note{Here I am using examples rather than precise Racket contracts.}
+ @(itemlist
+   @item{@(racket #f) -- The identity function; output matches input.}
+   @item{@(racket '([darkest 55] [step 2])) -- Declares an anchor:
+  the darkest (minimum) value of the input range will be projected to 55.
+  For each step taken towards the lightest (maximum) value of the input range,
+  the projected value will increase by 2 (the "step").
+  This example might be used to build a hill starting at elevation 55 which
+  increases by 2 steps at a time.}
+   @item{@(racket '([lightest 31] [step -1])) -- Declares an anchor:
+  the lightest (maximum) value of the input range will be projected to 31.
+  For each step taken towards the darkest (minimum) value of the input range,
+  the projected value will decrease by 1 (the "step").
+  This example might be used to build a seafloor at elevation 31 which decreases
+  by 1 step at a time.}
+   @item{@(racket '[43 44 45 46]) -- Asserts that the input range will have exactly 4
+  values and projects them to the values of the given list of integers.
+  The darkest (minimum) value projects to the first element of the list
+  and the lightest (maximum) value projects to the last element of the list.})
+
+ To be technically precise, @(racket 'lightest) and @(racket 'darkest) must
+ specify a @(racket fixnum?) as the anchor; while the @(racket 'step) must
+ be an @(racket exact?) and @(racket rational?) number.
+ For example @(racket '([lightest 40] [step -2/3])) would mean "The lightest value
+ of the input range is projected to 40. For every 2 steps taken towards the
+ darkest value of the input range, the projected value decreases by 3."
+
+ It is important to remember that @(racket 'lightest) and @(racket 'darkest) refer
+ to the endpoints of the inclusive input range, which can be much wider than the
+ range of values that actually occur when (for example)
+ a @(racket normalize-spec?) of @(racket #f) is used.
+}
+
 @subsection{Image Utilities}
 
 @defproc[(get-template-image [id symbol?])
@@ -444,6 +616,21 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
   given dy value. Positive values raise the selection; negative values lower it.})
 }
 
+@defproc[(make-hill [sampler sampler?]
+                    [combiner sampler-combiner?] ...)
+         hill?]{
+ Creates a hill from the given @(racket sampler) and @(racket combiner)s,
+ which are combined the same way as in @(racket combine-samplers).
+
+ The output of the combined sampler defines the elevation of the hill.
+
+ The hill can be used with @(racket in-hill?) inside a traversal.
+
+ DQB2 supports a max elevation of 96.
+ Any samples greater than 96 will be equivalent to 96.
+ Any samples of 0 or less are eagerly excluded from the hill.
+}
+
 @defproc[(generate-platform-layout [width positive-fixnum?]
                                    [depth positive-fixnum?])
          platform-layout?]{
@@ -559,7 +746,7 @@ For example, here is how a traversal could be used to replace certain blocks wit
 
  Returns true if the current xzy coordinate is inside the given @(racket hill),
  false otherwise.
- Hills can be created using @(racket bitmap->hill).
+ Hills can be created using @(racket make-hill) or @(racket bitmap->hill).
 }
 
 @defform[(in-platform-hills?! platform-hills)]{

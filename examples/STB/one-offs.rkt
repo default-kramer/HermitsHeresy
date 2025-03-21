@@ -12,11 +12,11 @@
 
     (define stage (load-stage 'IoA 'B02))
     (define the-pict
-      (let* ([block1 (block 'Carved-Castle-Tile)]
+      (let* ([block1 (block 'Light-Dolomite)]
              [block2 (+ #x800 block1)]
              [color #xFF0000FF])
         (stage->pict stage (hash block1 color block2 color))))
-    (let ([filename "resort-aquarium.bmp"])
+    (let ([filename "resort-dolomite.bmp"])
       (send (pict->bitmap the-pict) save-file filename 'bmp)
       (println (format "updated: ~a" filename)))
     }

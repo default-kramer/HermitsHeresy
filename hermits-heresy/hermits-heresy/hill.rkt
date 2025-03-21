@@ -1,12 +1,15 @@
 #lang typed/racket
 
 (provide Hill hill? area->hill area->hill2 bitmap->hill
+         make-hill
          hill-area hill-elevations)
 
 (require "area.rkt"
          "chunky-area.rkt"
          "basics.rkt"
          "block.rkt"
+         "bitmap-sampler.rkt"
+         "combine-samplers.rkt"
          "ufx.rkt"
          typed/pict
          (only-in typed/racket/draw Bitmap%))
@@ -97,8 +100,32 @@
     (error (format "Expected some fully-transparent pixels and some other pixels, but ~a pixels are fully-transparent."
                    (if all-empty? "all" "zero"))))
   (define the-area
-    (build-chunky-area width depth
+    (build-chunky-area (make-rect (xz 0 0) (xz width depth))
                        (lambda ([xz : XZ])
                          (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
                        (lambda args #f)))
+  (hill the-area (make-immutable-hash (hash->list elevations))))
+
+(: make-hill (-> Fixnum-Sampler Sampler-Combiner * Hill))
+(define (make-hill first-sampler . combiners)
+  (define sampler (combine-samplers:list first-sampler combiners))
+  (define bounding-rect (fixnum-sampler-bounding-rect sampler))
+  (define sample-func (fixnum-sampler-func sampler))
+  (define elevations (ann (make-hash) (Mutable-HashTable (Pairof Integer Integer) Fixnum)))
+
+  (for/rect ([#:z z #:x x #:rect bounding-rect])
+    (let* ([xz (xz x z)]
+           [sample (sample-func xz)])
+      (when (and sample
+                 ; If any samples are 0 or less, drop them now
+                 ; to save time during the traversal later.
+                 (ufx> sample 0))
+        (hash-set! elevations (cons x z) sample))))
+
+  (define the-area
+    (build-chunky-area bounding-rect
+                       (lambda ([xz : XZ])
+                         (hash-ref elevations (cons (xz-x xz) (xz-z xz)) #f))
+                       (lambda args #f)))
+
   (hill the-area (make-immutable-hash (hash->list elevations))))
