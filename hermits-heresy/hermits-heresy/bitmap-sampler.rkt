@@ -7,7 +7,7 @@
 (require "basics.rkt"
          "ufx.rkt"
          typed/pict
-         (only-in typed/racket/draw Bitmap%))
+         (only-in typed/racket/draw Bitmap% read-bitmap))
 
 (struct bitmap-sampler fixnum-sampler
   () ; may want to add filename for error messaging someday
@@ -128,10 +128,9 @@
      (let* ([vec : (Vectorof Fixnum) (list->vector fixnums)]
             [need-count (ufx+ 1 (ufx- inclusive-range-hi inclusive-range-lo))]
             [have-count (vector-length vec)])
-       (when (ufx< have-count need-count)
-         ; NOMERGE include need-count and echo back the given list
-         ; and write a test for this error message
-         (error "Insufficient #:values were provided."))
+       (when (not (ufx= have-count need-count))
+         (error (format "The #:project list should have ~a elements, but got:" need-count)
+                fixnums))
        (lambda (xz)
          (let ([byte (sampler xz)])
            (and byte
@@ -152,7 +151,12 @@
                              #:normalize [normalize-spec #f]
                              #:project project-spec
                              )
-  (define bmp (bitmap arg))
+  (define bmp
+    ; Don't pass a path-string into `bitmap` as it will return a pict
+    ; containing an error message! Use read-bitmap instead.
+    (if (path-string? arg)
+        (bitmap (read-bitmap arg))
+        (bitmap arg)))
   (define width : Fixnum
     (let ([w (pict-width bmp)])
       (or (and (fixnum? w) (cast w Fixnum))
@@ -166,9 +170,9 @@
   (define-syntax-rule (make-rgb-func [a r g b] body ...)
     (ann (lambda ([xz : XZ])
            (define-values (x z) (xz->values xz))
-           (and (ufx> x 0)
+           (and (ufx>= x 0)
                 (ufx< x width)
-                (ufx> z 0)
+                (ufx>= z 0)
                 (ufx< z height)
                 (let* ([index (ufx+ x (ufx* z width))]
                        [index (ufx* 4 index)]
