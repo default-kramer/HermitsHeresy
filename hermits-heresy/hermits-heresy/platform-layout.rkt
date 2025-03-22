@@ -17,8 +17,9 @@
  }
 
 ; The body is the part of a platform that does not overlap a neighbor.
-; The platform may be tall or short.
-(struct body ([width : Fixnum])
+; Platforms will alternate: tall, short, tall, short...
+(struct body ([width : Fixnum]
+              [tall? : Boolean])
   #:transparent #:type-name Body)
 
 ; The linkage defines how to connect 2 neighboring bodies.
@@ -34,30 +35,39 @@
 (define (fxrandom lo hi)
   (cast (random lo hi) Fixnum))
 
-(: generate-plan (-> Fixnum Plan))
-(define (generate-plan count)
+(: generate-plan (-> Fixnum Boolean Plan))
+(define (generate-plan count tall?)
   (cond
     [(> count 0)
-     (let ([w (fxrandom 3 7)]
-           [o (fxrandom 2 5)]
-           [d (fxrandom 1 3)])
-       (list* (body w)
+     ; Tall platforms look goofy when only 3 wide because 2 of that
+     ; width will be used for border, leaving the main platform
+     ; having width=1 where it extrudes.
+     (let* ([min-width (if tall? 4 3)]
+            [w (fxrandom min-width 7)]
+            [o (fxrandom 2 5)]
+            [d (fxrandom 1 3)])
+       (list* (body w tall?)
               (linkage o d)
-              (generate-plan (sub1 count))))]
+              (generate-plan (sub1 count) (not tall?))))]
     [else (list)]))
 
-(: generate-plan2 (-> Fixnum Plan))
-(define (generate-plan2 need-length)
-  (let loop ([len 0])
+(: generate-plan2 (-> Fixnum Boolean Plan))
+(define (generate-plan2 need-length tall?)
+  (let loop ([len 0]
+             [tall? : Boolean tall?])
     (cond
       [(ufx>= len need-length) (list)]
       [else
-       (let* ([w (fxrandom 3 7)]
+       ; Tall platforms look goofy when only 3 wide because 2 of that
+       ; width will be used for border, leaving the main platform
+       ; having width=1 where it extrudes.
+       (let* ([min-width (if tall? 4 3)]
+              [w (fxrandom min-width 7)]
               [o (fxrandom 2 5)]
               [d (fxrandom 1 3)])
-         (list* (body w)
+         (list* (body w tall?)
                 (linkage o d)
-                (loop (:ufx+ len w o))))])))
+                (loop (:ufx+ len w o) (not tall?))))])))
 
 (: straighten (-> Plan Fixnum Plan))
 ; Randomly negates some linkage depths.
@@ -133,7 +143,9 @@
   (: recurse (-> Plan Fixnum Boolean (Listof Slice)))
   (define (recurse plan running-depth tall?)
     (match plan
-      [(list (body width) more ...)
+      [(list (body width planned-tall?) more ...)
+       (when (not (eq? tall? planned-tall?))
+         (error "assert fail? tall/short did not alternate?"))
        (let* ([depth (ADJUST_DEPTH running-depth)]
               [padding (get-padding running-depth)])
          (cons (slice width
@@ -275,7 +287,7 @@
    (lc-superimpose slice-pict backstop-pict))
 
 
- (let* ([plan (generate-plan 10)]
+ (let* ([plan (generate-plan 10 #t)]
         [wall (generate-wall plan)])
    (values plan
            (wall-slices wall)
@@ -284,15 +296,15 @@
 
 
  (define (p2 [I : Fixnum])
-   (let* ([plan (list (body 3)
+   (let* ([plan (list (body 3 #t)
                       (linkage 4 1)
-                      (body 6)
+                      (body 6 #f)
                       (linkage 3 -2)
-                      (body 4)
+                      (body 4 #t)
                       (linkage 3 I)
-                      (body 4)
+                      (body 4 #f)
                       (linkage 2 -1)
-                      (body 5)
+                      (body 5 #t)
                       )])
      (generate-wall plan)))
  (scale (wall->pict (p2 1)) 10)
@@ -387,7 +399,7 @@
   (define array2d (make-bytes (ufx* w h) UNSET))
 
   (define (gen-wall [len : Fixnum])
-    (let* ([plan (generate-plan2 len)]
+    (let* ([plan (generate-plan2 len #t)]
            [plan (straighten plan 7)])
       (generate-wall plan)))
   (define (sample [i : Integer] [wall : (Vectorof Pixel-Slice)] [j : Integer])
@@ -465,7 +477,7 @@
     (platform-layout w h array2d)))
 
 {MAIN
- (define (TODO3 [w : Fixnum] [h : Fixnum])
+ (define (TODO3 [w : Positive-Fixnum] [h : Positive-Fixnum])
    (let* ([ph (generate-platform-layout w h)]
           [pixelvec (make-bytes (:ufx* 4 w h))]
           [bytes (platform-layout-array2d ph)])
