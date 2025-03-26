@@ -1,10 +1,22 @@
 #lang racket
 
+; Don't forget
+; * above-hill? seems like it would be useful
+; * you could allow a traversal to write to a megablueprint by
+;   providing alternate implementations of set-block! et al...
+;   You could do both at the same time (write to stage and blueprint/log)
+; * you could export platform-hills to a bitmap to allow the user to specify elevation
+;  - as separate bitmaps: lo, hi, and borders
+; * you could reimplement translation,rotation,reflection as sampler combiners
+;  - although would need a new type for a 3D block sampler
+
+
 ; Adds the North and West borders to the new, cozier resort area.
 ; Also rebuilds some of the sea and beach.
 
 (require hermits-heresy
-         (submod hermits-heresy undocumented))
+         (submod hermits-heresy undocumented)
+         (prefix-in ph- "../platform-hills.rkt"))
 
 (define release-mode
   ; A "one-way" release, not suitable for ongoing building.
@@ -57,7 +69,8 @@
      (bitmap-sampler "sea.bmp"
                      #:rgb 'g
                      #:normalize '[0 .. N-1]
-                     #:project '([lightest 31] [step -1]))
+                     ; Should end at 31, just below the shallow sea level
+                     #:project '[23 24 25 26 27 28 29 30 31])
      (function + (bitmap-sampler "sea-dropoff.bmp"
                                  #:rgb 'max
                                  #:project '([darkest 0] [step -1])))
@@ -70,30 +83,6 @@
   ; TODO don't re-read the bitmap, get this area from the hill
   (define sea-area (bitmap->area "sea.bmp"))
 
-  (define ph-resort-border-west-lo
-    (make-platform-hills (generate-platform-layout 40 105)
-                         #:x 560 #:z 290
-                         #:peak-y 44))
-  (define ph-resort-border-west-hi
-    (make-platform-hills (generate-platform-layout 30 90)
-                         #:x 560 #:z 290
-                         #:peak-y 54))
-  ; To avoid draw distance problems when looking from the NE corner to the SW
-  ; corner, lower the hill as it goes south.
-  (define ph-resort-border-west-extra-lo
-    (make-platform-hills (generate-platform-layout 40 65)
-                         #:x 560 #:z 385
-                         #:peak-y 39))
-
-  (define ph-resort-border-north-lo
-    (make-platform-hills (generate-platform-layout 320 40)
-                         #:x 400 #:z 262
-                         #:peak-y 44))
-  (define ph-resort-border-north-hi
-    (make-platform-hills (generate-platform-layout 305 30)
-                         #:x 400 #:z 262
-                         #:peak-y 54))
-
   ; Confirmed that a virgin IoA sea uses 341 (full) and 349 (shallow).
   (define-values (sandy-sandstone
                   stony-sand
@@ -104,7 +93,7 @@
                          (block 'Stony-Sand)
                          (block 'Sea-water-full-block)
                          (block 'Sea-water-shallow-block))]
-      [(recurring) (values 469 ; yellow hardwood tile
+      [(recurring) (values (block 'Strange-Sand) ; 469 ; yellow hardwood tile
                            (block 'Strange-Sand)
                            (block 'Sea-water-full-block)
                            (block 'Sea-water-shallow-block))]))
@@ -114,7 +103,8 @@
   (define trav!
     (traversal
      ; update the minimap trick:
-     #;(when (and (= YYY 60)
+     #;(when (and (in-area? beach-area)
+                  (= YYY 60)
                   (not (= 0 (remainder XXX 96)))
                   (not (= 0 (remainder ZZZ 96))))
          (set-block! 120))
@@ -170,8 +160,11 @@
        [(and do-hills?
              (or (in-platform-hills?! ph-resort-border-north-hi)
                  (in-platform-hills?! ph-resort-border-west-hi)
+                 (in-platform-hills?! ph-dock-border-north)
                  (in-platform-hills?! ph-resort-border-north-lo)
                  (in-platform-hills?! ph-resort-border-west-lo)
+                 (in-platform-hills?! ph-dock-enclave-west)
+                 (in-platform-hills?! ph-dock-enclave-south)
                  (in-platform-hills?! ph-resort-border-west-extra-lo)))
         #t]
        [(in-area? beach-protect) #f]
