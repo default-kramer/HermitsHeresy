@@ -29,7 +29,7 @@
                         [short-border : PHill])
   #:transparent #:type-name Platform-Hills)
 
-(: make-platform-hills (-> Platform-Layout
+(: make-platform-hills (-> (U Platform-Layout Area Path-String)
                            [#:x Fixnum]
                            [#:z Fixnum]
                            [#:wall-block (U Symbol Fixnum)]
@@ -39,15 +39,39 @@
                            [#:tall-y Fixnum]
                            [#:short-y Fixnum]
                            Platform-Hills))
-(define (make-platform-hills layout
-                             #:x [dx 0]
-                             #:z [dz 0]
+(define (make-platform-hills layout-arg
+                             #:x [dx : Fixnum 0]
+                             #:z [dz : Fixnum 0]
                              #:wall-block [wall-block 'Umber]
                              #:wall-chisel [wall-chisel 'flat-lo]
                              #:platform-block [platform-block 'Seeded-Mossy-Spoiled-Soil]
                              #:peak-y [peak-y 40]
                              #:tall-y [tall-y -4]
                              #:short-y [short-y -2])
+  (define (area->layout! [area : Area])
+    (let* ([rect (area-bounds area)]
+           [w (rect-width rect)]
+           [h (rect-height rect)]
+           [start (rect-start rect)])
+      (when (not (positive? w))
+        (error "width must be positive, got:" w))
+      (when (not (positive? h))
+        (error "height must be positive, got:" h))
+      (when (not (and (ufx= dx 0) (ufx= dz 0)))
+        (println "WARNING: Using the #:x and/or #:z argument with an area or bitmap is undefined behavior."))
+      (set! dx (ufx+ dx (xz-x start)))
+      (set! dz (ufx+ dz (xz-z start)))
+      (generate-platform-layout w h)))
+
+  (define layout : Platform-Layout
+    (cond
+      [(platform-layout? layout-arg) layout-arg]
+      [(area? layout-arg) (area->layout! layout-arg)]
+      [(path-string? layout-arg)
+       (let ([area (bitmap->chunky-area layout-arg)])
+         (area->layout! area))]
+      [else (error "assert fail" layout-arg)]))
+
   (define WW (platform-layout-width layout))
   (define HH (platform-layout-depth layout))
   (define bounding-rect (make-rect (xz dx dz)

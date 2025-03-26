@@ -20,6 +20,7 @@
          make-hill
          (rename-out [make-bitmap-sampler bitmap-sampler])
          combine-samplers function intersection union
+         with-absolute-seed
 
          ; Provided for not much reason other than documentation convenience:
          sampler?
@@ -71,5 +72,7 @@
                   HHEXPR YYY XXX ZZZ)
          (only-in "traversal/traversal.rkt"
                   argbox-block set-argbox-block!)
+         (only-in "with-seed-untyped.rkt"
+                  with-absolute-seed)
          "traversal/trav-macros.rkt"
          "images.rkt")

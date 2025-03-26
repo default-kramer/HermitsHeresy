@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide generate-platform-layout Platform-Layout
+(provide generate-platform-layout Platform-Layout platform-layout?
          platform-layout-array2d platform-layout-width platform-layout-depth)
 
 (require "ufx.rkt")

@@ -638,7 +638,9 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
  To be used with @(racket make-platform-hills).
 }
 
-@defproc[(make-platform-hills [layout platform-layout?]
+@defproc[(make-platform-hills [layout (or/c platform-layout?
+                                            area?
+                                            path-string?)]
                               [#:x dx fixnum? 0]
                               [#:z dz fixnum? 0]
                               [#:wall-block wall-block (or/c symbol? fixnum?) 'Umber]
@@ -651,8 +653,17 @@ Values could be @(racket 'no 'yes 'yes-even-indestructible).
  Creates platform hills.
  To be used with @(racket in-platform-hills?!).
 
+ The @(racket layout) must be one of:
  @(itemlist
-   @item{The @(racket layout) can be created using @(racket generate-platform-layout).}
+   @item{The result of @(racket generate-platform-layout)}
+   @item{An area, whose bounding rect will be used for the width and depth
+  of @(racket generate-platform-layout). Its offset will also control @(racket dx)
+  and @(racket dz); so you should not provide these arguments.}
+   @item{A @(racket path-string?), which will be used with @(racket bitmap->area)
+  and the resulting area will be used as described above.})
+
+ For the other arguments:
+ @(itemlist
    @item{@(racket dx) translates the hill east or west.}
    @item{@(racket dz) translates the hill south or north.}
    @item{@(racket wall-block) specifies which block to use for the walls.}
@@ -757,4 +768,13 @@ For example, here is how a traversal could be used to replace certain blocks wit
  Otherwise, does nothing and returns false.
 
  Platform hills can be created using @(racket make-platform-hills).
+}
+
+@subsection{Miscellaneous}
+@defform[(with-absolute-seed [seed] body ...)]{
+ Uses the given @(racket seed) to seed a random generator deterministically.
+ Evaluates the given @(racket body) using that random generator,
+ and then restores the generator to its previous state.
+
+ The given @(racket seed) must be an integer that @(racket random-seed) will accept.
 }
