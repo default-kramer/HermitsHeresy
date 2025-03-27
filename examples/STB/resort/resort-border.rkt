@@ -174,9 +174,7 @@
         ; A fishing hole here would probably be good. It will probably
         ; stop Gillian and Finn from fishing in the aquarium...
         (when (< YYY 32)
-          (set-block! 'Stony-Sand))
-        (when (= YYY 37)
-          (set-block! 120))]
+          (set-block! 'Stony-Sand))]
        [(in-area? beach-protect) #f]
        [(in-area? beach-area)
         (when (< YYY 32)
