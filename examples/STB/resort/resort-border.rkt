@@ -40,6 +40,9 @@
 
   (define dst (load-stage 'IoA 'B00))
 
+  ; This was drawn using the platform hills as a guide:
+  (define enclave-area (bitmap->area "enclave.bmp"))
+
   ; The beach protect bitmap was created by doing something like
   #;(stage->pict stage 'Light-Dolomite)
   ; and then manually drawing the rest of the protected area.
@@ -167,6 +170,13 @@
                  (in-platform-hills?! ph-dock-enclave-south)
                  (in-platform-hills?! ph-resort-border-west-extra-lo)))
         #t]
+       [(in-area? enclave-area)
+        ; A fishing hole here would probably be good. It will probably
+        ; stop Gillian and Finn from fishing in the aquarium...
+        (when (< YYY 32)
+          (set-block! 'Stony-Sand))
+        (when (= YYY 37)
+          (set-block! 120))]
        [(in-area? beach-protect) #f]
        [(in-area? beach-area)
         (when (< YYY 32)
