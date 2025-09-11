@@ -62,3 +62,18 @@
     (traverse stage trav #:force-unsound-optimization? #t)
     (save-stage! stage)
     }
+
+#;{begin ; one-off template: minimap update trick
+    (require (submod hermits-heresy undocumented))
+
+    ;(copy-all-save-files! #:from 'B02 #:to 'B00)
+    (define stage (load-stage 'IoA 'B00))
+
+    (define area (bitmap->area "minimap.bmp"))
+    (define trav (traversal
+                  (when (and (in-area? area)
+                             (= YYY 56))
+                    (set-block! 120))))
+    (traverse stage trav #:force-unsound-optimization? #t)
+    (save-stage! stage)
+    }
