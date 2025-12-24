@@ -77,3 +77,20 @@
     (traverse stage trav #:force-unsound-optimization? #t)
     (save-stage! stage)
     }
+
+#;{begin ; flatten an Iridescent BT
+    (require (submod hermits-heresy undocumented))
+    (copy-all-save-files! #:from 'B02 #:to 'B00)
+    (define stage (load-stage 'BT3 'B00))
+
+    (define trav (traversal
+                  (cond
+                    [(> YYY 20)
+                     (set-block! 0)]
+                    [(block-matches? 'Lava-surface-block
+                                     'Lava-shallow-block
+                                     'Lava)
+                     (set-block! 'Grassy-Earth)])))
+    (traverse stage trav #:force-unsound-optimization? #f)
+    (save-stage! stage)
+    }
