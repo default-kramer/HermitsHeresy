@@ -8,7 +8,8 @@
 
 (define collection 'multi)
 
-(define deps '("base"
+(define deps '("gui-lib"
+               "base"
                "db-lib"
                "pict-lib"
                "typed-racket-lib"
